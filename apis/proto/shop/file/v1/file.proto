@@ -1,0 +1,117 @@
+syntax="proto3";
+
+option go_package = "github.com/miiy/goc/component/file/api/v1;file";
+option java_multiple_files = true;
+option java_package = "com.github.miiy.goc.file.api.v1";
+option java_outer_classname = "FileProto";
+
+package goc.user.api.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "google/api/field_behavior.proto";
+
+message File {
+  enum FileStatus {
+    StatusDefault = 0;
+    StatusActive = 1;
+    StatusDisable = 2;
+  }
+  enum FileType {
+    FileTypeDefault = 0;
+    FileTypeImage = 1;
+    FileTypeVideo = 2;
+    FileTypeDoc = 3;
+    FileTypeOther = 4;
+  }
+  int64 id = 1;
+  int64 sys_id = 2;
+  int64 cat_id = 3;
+  int64 item_id = 4;
+  int64 user_id = 5;
+  FileType file_type = 6;
+  string name = 7;
+  string ext = 8;
+  string path = 9;
+  string hash = 10;
+  FileStatus status = 11;
+  // Output only. Creation time of the file.
+  google.protobuf.Timestamp create_time = 12;
+  google.protobuf.Timestamp update_time = 13;
+  google.protobuf.Timestamp delete_time = 14;
+}
+
+message CreateFileRequest {
+  string parent = 1;
+  File file = 2 [(google.api.field_behavior) = REQUIRED];
+  string file_id = 3;
+}
+
+message GetFileRequest {
+  int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message UpdateFileRequest {
+  int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  File file = 2 [(google.api.field_behavior) = REQUIRED];
+  google.protobuf.FieldMask update_mask = 3;
+}
+
+message DeleteFileRequest {
+  int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message ListFilesRequest {
+  int64 sys_id = 1;
+  int64 cat_id = 2;
+  int64 page = 3;
+  int64 page_size = 4;
+}
+
+message ListFilesResponse {
+  int64 total = 1;
+  int64 total_pages = 2;
+  int64 page_size = 3;
+  int64 current_page = 4;
+  repeated File files = 5;
+}
+
+message RowsAffected {
+  int64 rows_affected = 1;
+}
+
+service FileService {
+  rpc CreateFile(CreateFileRequest) returns (File) {
+    option (google.api.http) = {
+      post: "/api/v1/files",
+      body: "*"
+    };
+  }
+
+  rpc GetFile(GetFileRequest) returns (File) {
+    option (google.api.http) = {
+      get: "/api/v1/files/{id}",
+    };
+  }
+
+  rpc UpdateFile(UpdateFileRequest) returns (RowsAffected) {
+    option (google.api.http) = {
+      put: "/api/v1/files/{id}",
+      body: "*"
+    };
+  }
+
+  rpc DeleteFile(DeleteFileRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/api/v1/files/{id}",
+    };
+  }
+
+  rpc ListFiles(ListFilesRequest) returns (ListFilesResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/files",
+    };
+  }
+}
