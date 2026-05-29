@@ -5,15 +5,26 @@ import (
 	"flag"
 	"log"
 
-	postv1 "github.com/miiy/goc-quickstart/post-service/gen/go/shop/post/v1"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
+	postv1 "github.com/miiy/goc-quickstart/post-service/gen/go/blog/post/v1"
 	"github.com/miiy/goc-quickstart/post-service/internal/di"
-	postSrv "github.com/miiy/goc-quickstart/post-service/server/post"
 	"github.com/miiy/goc/grpc/server"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/selector"
 	"go.uber.org/zap/zapgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
+	"google.golang.org/grpc/health"
+	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 )
+
+var NoOpAuthFunc = func(ctx context.Context) (context.Context, error) {
+	return ctx, nil
+}
+
+var NoOpMatcher = func(ctx context.Context, callMeta interceptors.CallMeta) bool {
+	return false
+}
 
 func main() {
 	conf := flag.String("c", "./configs/default.yaml", "config file")
@@ -28,34 +39,37 @@ func main() {
 
 	config := app.Config()
 
-	// set logger
 	logger := app.Logger().ZapLogger()
 	grpclog.SetLoggerV2(zapgrpc.NewLogger(logger))
 
-	// grpc server options
 	var serverOpts []grpc.ServerOption
-	// mTLS
-	serverOpts = append(serverOpts,
-		server.WithMTLS(
+
+	// TLS
+	if config.Server.Grpc.Tls.CertFile != "" && config.Server.Grpc.Tls.KeyFile != "" {
+		tlsOpt, err := server.WithMTLS(
 			config.Server.Grpc.Tls.CertFile,
 			config.Server.Grpc.Tls.KeyFile,
 			config.Server.Grpc.Tls.CaFile,
-		),
-	)
-	// interceptor
+		)
+		if err != nil {
+			log.Fatalf("failed to configure mTLS: %v", err)
+		}
+		serverOpts = append(serverOpts, tlsOpt)
+	}
+
 	serverOpts = append(serverOpts, server.DefaultInterceptor(
 		logger,
-		nil,
-		nil,
+		NoOpAuthFunc,
+		selector.MatchFunc(NoOpMatcher),
 	)...)
 
-	// run server
 	err = server.Run(ctx, server.Options{
 		Network:      "tcp",
 		Addr:         app.Config().Server.Grpc.Addr,
 		ServerOption: serverOpts,
 		RegisterService: func(s server.GRPCServer) {
-			postv1.RegisterPostServiceServer(s, postSrv.NewPostServiceServer())
+			healthpb.RegisterHealthServer(s, health.NewServer())
+			postv1.RegisterPostServiceServer(s, app.PostService())
 			reflection.Register(s)
 		},
 	})

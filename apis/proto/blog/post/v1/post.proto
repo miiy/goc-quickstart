@@ -1,0 +1,137 @@
+syntax = "proto3";
+
+package goc.blog.post.api.v1;
+
+option go_package = "github.com/miiy/goc-quickstart/post-service/gen/go/blog/post/v1;blogpostv1";
+option java_package = "com.github.miiy.goc.blog.post.api.v1";
+
+import "google/protobuf/timestamp.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/field_mask.proto";
+import "google/api/field_behavior.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "Blog API";
+    version: "1.0";
+    contact: {
+      name: "blog project";
+      url: "https://github.com/miiy/goc-quickstart";
+      email: "none@example.com";
+    };
+    license: {
+      name: "MIT License";
+      url: "https://github.com/miiy/goc-quickstart/LICENSE";
+    }
+  };
+  external_docs: {
+    url: "https://github.com/grpc-ecosystem/grpc-gateway";
+    description: "More about goc";
+  }
+  schemes: HTTP;
+  schemes: HTTPS;
+  schemes: WSS;
+};
+
+enum PostStatus {
+  POST_STATUS_UNSPECIFIED = 0;
+  POST_STATUS_DRAFT = 1;
+  POST_STATUS_PUBLISHED = 2;
+}
+
+message Post {
+  int64 id = 1;
+  int64 author_id = 2;
+  string title = 3;
+  string content = 4;
+  PostStatus status = 5;
+  repeated string tags = 6;
+  int64 category_id = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
+  google.protobuf.Timestamp deleted_at = 10;
+}
+
+message GetPostRequest {
+  int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message GetPostResponse {
+  Post post = 1;
+}
+
+message CreatePostRequest {
+  Post post = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message CreatePostResponse {
+  Post post = 1;
+}
+
+message UpdatePostRequest {
+  int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  Post post = 2 [(google.api.field_behavior) = REQUIRED];
+  google.protobuf.FieldMask update_mask = 3;
+}
+
+message UpdatePostResponse {
+  Post post = 1;
+}
+
+message DeletePostRequest {
+  int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message DeletePostResponse {
+}
+
+message ListPostsRequest {
+  int64 author_id = 1;
+  int64 category_id = 2;
+  string tag = 3;
+  int32 page = 4;
+  int32 page_size = 5;
+}
+
+message ListPostsResponse {
+  int64 total = 1;
+  int32 total_pages = 2;
+  int32 page_size = 3;
+  int32 current_page = 4;
+  repeated Post posts = 5;
+}
+
+service PostService {
+  rpc GetPost(GetPostRequest) returns (GetPostResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/posts/{id}"
+    };
+  }
+
+  rpc CreatePost(CreatePostRequest) returns (CreatePostResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/posts",
+      body: "*"
+    };
+  }
+
+  rpc UpdatePost(UpdatePostRequest) returns (UpdatePostResponse) {
+    option (google.api.http) = {
+      put: "/api/v1/posts/{id}",
+      body: "*"
+    };
+  }
+
+  rpc DeletePost(DeletePostRequest) returns (DeletePostResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/posts/{id}"
+    };
+  }
+
+  rpc ListPosts(ListPostsRequest) returns (ListPostsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/posts"
+    };
+  }
+}

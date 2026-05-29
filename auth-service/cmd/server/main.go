@@ -6,8 +6,8 @@ import (
 	"log"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/selector"
-	authpb "github.com/miiy/goc-quickstart/auth-service/gen/go/shop/auth/v1"
-	"github.com/miiy/goc-quickstart/auth-service/internal/auth"
+	authpb "github.com/miiy/goc-quickstart/auth-service/gen/go/blog/auth/v1"
+	"github.com/miiy/goc-quickstart/auth-service/internal/middleware"
 	"github.com/miiy/goc-quickstart/auth-service/internal/di"
 	"github.com/miiy/goc/grpc/server"
 	"go.uber.org/zap/zapgrpc"
@@ -31,35 +31,38 @@ func main() {
 
 	config := app.Config()
 
-	// set logger
 	logger := app.Logger().ZapLogger()
 	grpclog.SetLoggerV2(zapgrpc.NewLogger(logger))
 
-	// grpc server options
 	var serverOpts []grpc.ServerOption
-	// mTLS
-	serverOpts = append(serverOpts,
-		server.WithMTLS(
+
+	// TLS
+	if config.Server.Grpc.Tls.CertFile != "" && config.Server.Grpc.Tls.KeyFile != "" {
+		tlsOpt, err := server.WithMTLS(
 			config.Server.Grpc.Tls.CertFile,
 			config.Server.Grpc.Tls.KeyFile,
 			config.Server.Grpc.Tls.CaFile,
-		),
-	)
+		)
+		if err != nil {
+			log.Fatalf("failed to configure mTLS: %v", err)
+		}
+		serverOpts = append(serverOpts, tlsOpt)
+	}
+
 	// interceptor
 	serverOpts = append(serverOpts, server.DefaultInterceptor(
 		logger,
-		auth.AuthFunc(app.JWTAuth(), app.UserProvider()),
-		selector.MatchFunc(auth.AuthMatchFunc),
+		middleware.AuthFunc(app.JWTAuth(), app.UserProvider()),
+		selector.MatchFunc(middleware.AuthMatchFunc),
 	)...)
 
-	// run server
 	err = server.Run(ctx, server.Options{
 		Network:      "tcp",
 		Addr:         app.Config().Server.Grpc.Addr,
 		ServerOption: serverOpts,
 		RegisterService: func(s server.GRPCServer) {
 			healthpb.RegisterHealthServer(s, health.NewServer())
-			authpb.RegisterAuthServer(s, app.AuthServer())
+			authpb.RegisterAuthServiceServer(s, app.AuthServiceServer())
 			reflection.Register(s)
 		},
 	})

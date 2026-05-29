@@ -2,3 +2,4 @@
 .vscode
 .DS_Store
 gen/openapiv2
+bin

@@ -9,6 +9,8 @@ package di
 import (
 	"github.com/miiy/goc-quickstart/post-service/internal/app"
 	"github.com/miiy/goc-quickstart/post-service/internal/config"
+	"github.com/miiy/goc-quickstart/post-service/internal/repository"
+	"github.com/miiy/goc-quickstart/post-service/internal/service"
 	"github.com/miiy/goc/db"
 	"github.com/miiy/goc/db/gorm"
 	"github.com/miiy/goc/logger"
@@ -39,7 +41,11 @@ func InitApp(conf string) (*app.App, func(), error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	appApp := app.NewApp(configConfig, dbDB, universalClient, loggerLogger)
+	zapLogger := provideZap(loggerLogger)
+	gormDB := provideGorm(dbDB)
+	postRepository := repository.NewPostRepository(gormDB)
+	postServiceServer := service.NewPostServiceServer(zapLogger, postRepository)
+	appApp := app.NewApp(configConfig, dbDB, universalClient, loggerLogger, postServiceServer)
 	return appApp, func() {
 	}, nil
 }

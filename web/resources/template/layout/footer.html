@@ -1,0 +1,14 @@
+{{ define "footer" }}
+<footer class="mt-auto border-top bg-body-tertiary">
+    <div class="container py-4">
+        <div class="row align-items-center gy-3">
+            <div class="col-md">
+                <a class="navbar-brand" href="/">{{ "app.name" | config }}</a>
+            </div>
+            <div class="col-md-auto small text-body-secondary">
+                {{ "app.footerCopyright" | config | unescaped }}
+            </div>
+        </div>
+    </div>
+</footer>
+{{ end }}

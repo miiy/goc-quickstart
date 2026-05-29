@@ -9,6 +9,8 @@ managed:
       module: buf.build/googleapis/googleapis
     - file_option: go_package
       module: buf.build/bufbuild/protovalidate
+    - file_option: go_package
+      module: buf.build/grpc-ecosystem/grpc-gateway
   override:
     - file_option: go_package_prefix
       value: github.com/miiy/goc-quickstart/apis/gen/go

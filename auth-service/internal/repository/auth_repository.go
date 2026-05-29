@@ -16,6 +16,7 @@ type AuthRepository interface {
 	First(ctx context.Context, id uint64, columns ...string) (*entity.User, error)
 	FirstByUsername(ctx context.Context, username string, columns ...string) (*entity.User, error)
 	FirstByMpOpenid(ctx context.Context, openid string, columns ...string) (*entity.User, error)
+	FirstByPhone(ctx context.Context, phone string, columns ...string) (*entity.User, error)
 	UserExist(ctx context.Context, column, value string) (bool, error)
 	FirstByIdentifier(ctx context.Context, identifier string) (*auth.AuthenticatedUser, error)
 }
@@ -66,6 +67,15 @@ func (r *authRepository) FirstByUsername(ctx context.Context, username string, c
 func (r *authRepository) FirstByMpOpenid(ctx context.Context, openid string, columns ...string) (*entity.User, error) {
 	var item entity.User
 	err := r.db.WithContext(ctx).Select(columns).Where("mp_openid=?", openid).First(&item).Error
+	if err != nil {
+		return nil, err
+	}
+	return &item, nil
+}
+
+func (r *authRepository) FirstByPhone(ctx context.Context, phone string, columns ...string) (*entity.User, error) {
+	var item entity.User
+	err := r.db.WithContext(ctx).Select(columns).Where("phone=?", phone).First(&item).Error
 	if err != nil {
 		return nil, err
 	}

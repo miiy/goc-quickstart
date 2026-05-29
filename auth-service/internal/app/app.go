@@ -1,7 +1,7 @@
 package app
 
 import (
-	authpb "github.com/miiy/goc-quickstart/auth-service/gen/go/shop/auth/v1"
+	authpb "github.com/miiy/goc-quickstart/auth-service/gen/go/blog/auth/v1"
 	"github.com/miiy/goc-quickstart/auth-service/internal/config"
 	"github.com/miiy/goc/auth"
 	"github.com/miiy/goc/auth/jwt"
@@ -16,21 +16,21 @@ type App struct {
 	redis        redis.UniversalClient
 	logger       logger.Logger
 	jwtAuth      *jwt.JWTAuth
-	authServer   authpb.AuthServer
+	authService   authpb.AuthServiceServer
 	userProvider auth.UserProvider
 }
 
 var app *App
 
 func NewApp(c *config.Config, db *db.DB, rdb redis.UniversalClient, l logger.Logger, j *jwt.JWTAuth,
-	as authpb.AuthServer, up auth.UserProvider) *App {
+	as authpb.AuthServiceServer, up auth.UserProvider) *App {
 	app = &App{
 		config:       c,
 		db:           db,
 		redis:        rdb,
 		logger:       l,
 		jwtAuth:      j,
-		authServer:   as,
+		authService:   as,
 		userProvider: up,
 	}
 	return app
@@ -56,8 +56,8 @@ func (a *App) JWTAuth() *jwt.JWTAuth {
 	return a.jwtAuth
 }
 
-func (a *App) AuthServer() authpb.AuthServer {
-	return a.authServer
+func (a *App) AuthServiceServer() authpb.AuthServiceServer {
+	return a.authService
 }
 
 func (a *App) UserProvider() auth.UserProvider {

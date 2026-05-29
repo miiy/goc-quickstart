@@ -1,0 +1,64 @@
+{{ define "content" }}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            {{if .Error}}
+            <div class="alert alert-danger" role="alert">{{.Error}}</div>
+            {{end}}
+
+            <div class="card mb-3">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <h1 class="h5 mb-0">Posts</h1>
+                    {{if .IsLoggedIn}}
+                    <a href="/posts/create" class="btn btn-sm btn-primary">Create Post</a>
+                    {{end}}
+                </div>
+                <ul class="list-group list-group-flush">
+                    {{ range .Posts }}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="/posts/{{ .Id }}">{{ .Title }}</a>
+                        <small class="text-body-secondary">{{ .CreatedAt }}</small>
+                    </li>
+                    {{ else }}
+                    <li class="list-group-item">No posts found.</li>
+                    {{ end }}
+                </ul>
+            </div>
+
+            {{if gt .TotalPages 1}}
+            <div class="d-flex justify-content-center">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination">
+                        <li class="page-item {{if not .Pager.HasPrevious}} disabled {{end}}">
+                            <a class="page-link" href="/posts/pages/{{.Pager.Previous}}">上一页</a>
+                        </li>
+                        {{range .Pager.Pages}}
+                        {{if eq .Num -1}}
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {{else}}
+                        <li class="page-item {{if .IsCurrent}} active {{end}}">
+                            <a class="page-link" href="/posts/pages/{{.Num}}">{{.Num}}</a>
+                        </li>
+                        {{end}}
+                        {{end}}
+                        <li class="page-item {{if not .Pager.HasNext}} disabled {{end}}">
+                            <a class="page-link" href="/posts/pages/{{.Pager.Next}}">下一页</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+            {{end}}
+
+        </div>
+    </div>
+</div>
+{{ end}}
+
+{{ define "head" }}
+<style>
+/* Custom styles for the post list page */
+</style>
+<script>
+// You can add any JavaScript code specific to the post list page here
+</script>
+{{ end}}

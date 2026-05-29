@@ -1,0 +1,75 @@
+syntax="proto3";
+
+option go_package = "github.com/miiy/goc-quickstart/user-service/gen/go/blog/user/v1;bloguserv1";
+option java_package = "com.github.miiy.goc.blog.user.api.v1";
+
+package goc.blog.user.api.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/field_mask.proto";
+import "google/api/field_behavior.proto";
+
+enum UserStatus {
+  USER_STATUS_UNSPECIFIED = 0;
+  USER_STATUS_ACTIVE = 1;
+  USER_STATUS_DISABLE = 2;
+}
+
+message User {
+  int64 id = 1;
+  string username = 2;
+  string nickname = 3;
+  string avatar = 4;
+  string email = 5;
+  google.protobuf.Timestamp email_verified_time = 6;
+  string phone = 7;
+  UserStatus status = 8;
+  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp updated_at = 10;
+  google.protobuf.Timestamp deleted_at = 11;
+}
+
+message GetUserRequest {
+  int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message UpdateUserRequest {
+  int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  User user = 2 [(google.api.field_behavior) = REQUIRED];
+  google.protobuf.FieldMask update_mask = 3;
+}
+
+message ListUsersRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message ListUsersResponse {
+  int64 total = 1;
+  int32 total_pages = 2;
+  int32 page_size = 3;
+  int32 current_page = 4;
+  repeated User users = 5;
+}
+
+service UserService {
+  rpc GetUser(GetUserRequest) returns (User) {
+    option (google.api.http) = {
+      get: "/api/v1/users/{id}"
+    };
+  }
+
+  rpc UpdateUser(UpdateUserRequest) returns (User) {
+    option (google.api.http) = {
+      put: "/api/v1/users/{id}",
+      body: "*"
+    };
+  }
+
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/users"
+    };
+  }
+}

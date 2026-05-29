@@ -7,6 +7,8 @@ import (
 	"github.com/google/wire"
 	"github.com/miiy/goc-quickstart/post-service/internal/app"
 	"github.com/miiy/goc-quickstart/post-service/internal/config"
+	postRepo "github.com/miiy/goc-quickstart/post-service/internal/repository"
+	postSrv "github.com/miiy/goc-quickstart/post-service/internal/service"
 	"github.com/miiy/goc/db"
 	"github.com/miiy/goc/db/gorm"
 	"github.com/miiy/goc/logger"
@@ -20,6 +22,7 @@ func InitApp(conf string) (*app.App, func(), error) {
 		wire.NewSet(logger.NewLogger, provideLoggerOption, provideZap),
 		wire.NewSet(db.NewDB, provideDBConfig, provideDBOption, provideGorm),
 		wire.NewSet(redis.NewRedis, provideRedisOptions),
+		wire.NewSet(postRepo.NewPostRepository, postSrv.NewPostServiceServer),
 		app.NewApp,
 	))
 }

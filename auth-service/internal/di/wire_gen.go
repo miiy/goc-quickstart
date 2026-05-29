@@ -10,7 +10,7 @@ import (
 	"github.com/miiy/goc-quickstart/auth-service/internal/app"
 	"github.com/miiy/goc-quickstart/auth-service/internal/config"
 	"github.com/miiy/goc-quickstart/auth-service/internal/repository"
-	"github.com/miiy/goc-quickstart/auth-service/server"
+	"github.com/miiy/goc-quickstart/auth-service/internal/service"
 	"github.com/miiy/goc/auth/jwt"
 	"github.com/miiy/goc/contrib/wechat/miniprogram"
 	"github.com/miiy/goc/db"
@@ -53,8 +53,8 @@ func InitApp(conf string) (*app.App, func(), error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	authServer := server.NewAuthServiceServer(zapLogger, authRepository, tokenRepository, jwtAuth, miniProgram)
-	appApp := app.NewApp(configConfig, dbDB, universalClient, loggerLogger, jwtAuth, authServer, authRepository)
+	authServiceServer := service.NewAuthServiceServer(zapLogger, authRepository, tokenRepository, jwtAuth, miniProgram)
+	appApp := app.NewApp(configConfig, dbDB, universalClient, loggerLogger, jwtAuth, authServiceServer, authRepository)
 	return appApp, func() {
 	}, nil
 }

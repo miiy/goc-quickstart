@@ -1,0 +1,137 @@
+services:
+  # Infrastructure
+  mysql:
+    image: mysql:8.0
+    container_name: blog-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_DATABASE: goc
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./deploy/mysql/init:/docker-entrypoint-initdb.d
+    networks:
+      - blog-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: blog-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - blog-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # gRPC Services
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    container_name: blog-auth-service
+    ports:
+      - "50051:50051"
+    environment:
+      - APP_ENV=production
+    volumes:
+      - ./auth-service/configs:/app/configs:ro
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - blog-network
+
+  user-service:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
+    container_name: blog-user-service
+    ports:
+      - "50053:50053"
+    environment:
+      - APP_ENV=production
+    volumes:
+      - ./user-service/configs:/app/configs:ro
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - blog-network
+
+  post-service:
+    build:
+      context: ./post-service
+      dockerfile: Dockerfile
+    container_name: blog-post-service
+    ports:
+      - "50052:50052"
+    environment:
+      - APP_ENV=production
+    volumes:
+      - ./post-service/configs:/app/configs:ro
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - blog-network
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: blog-api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - APP_ENV=production
+    volumes:
+      - ./api-gateway/configs:/app/configs:ro
+    depends_on:
+      - auth-service
+      - user-service
+      - post-service
+    networks:
+      - blog-network
+
+  # Web Frontend
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: blog-web
+    ports:
+      - "8081:8081"
+    environment:
+      - APP_ENV=production
+    volumes:
+      - ./web/configs:/app/configs:ro
+    depends_on:
+      - api-gateway
+    networks:
+      - blog-network
+
+networks:
+  blog-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  redis_data:

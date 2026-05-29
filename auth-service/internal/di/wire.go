@@ -8,7 +8,7 @@ import (
 	"github.com/miiy/goc-quickstart/auth-service/internal/app"
 	"github.com/miiy/goc-quickstart/auth-service/internal/config"
 	authRepo "github.com/miiy/goc-quickstart/auth-service/internal/repository"
-	authServer "github.com/miiy/goc-quickstart/auth-service/server"
+	authService "github.com/miiy/goc-quickstart/auth-service/internal/service"
 	"github.com/miiy/goc/auth"
 	"github.com/miiy/goc/auth/jwt"
 	"github.com/miiy/goc/contrib/wechat/miniprogram"
@@ -26,7 +26,7 @@ func InitApp(conf string) (*app.App, func(), error) {
 		wire.NewSet(db.NewDB, provideDBConfig, provideDBOption, provideGorm),
 		wire.NewSet(redis.NewRedis, provideRedisOptions),
 		wire.NewSet(jwt.NewJWTAuth, provideJwtAuthOptions),
-		wire.NewSet(authRepo.NewAuthRepository, authServer.NewAuthServiceServer, authRepo.NewTokenRepository, provideMiniProgram),
+		wire.NewSet(authRepo.NewAuthRepository, authService.NewAuthServiceServer, authRepo.NewTokenRepository, provideMiniProgram),
 		wire.Bind(new(auth.UserProvider), new(authRepo.AuthRepository)),
 		app.NewApp,
 	))
