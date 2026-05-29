@@ -49,6 +49,14 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to create session store: %v", err)
 	}
+	if err := sessions.UseJSONSerializer(store); err != nil {
+		log.Fatalf("failed to use JSON session serializer: %v", err)
+	}
+	if cfg.Session.MaxAge > 0 {
+		if err := sessions.SetMaxAge(store, cfg.Session.MaxAge); err != nil {
+			log.Fatalf("failed to set session max age: %v", err)
+		}
+	}
 
 	// create gin engine
 	engine := gin.Default()

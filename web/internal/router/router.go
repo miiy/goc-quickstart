@@ -24,8 +24,8 @@ func Router(r *gin.Engine, store sessions.Store, sessionName string) {
 	// inject login state into template context
 	r.Use(func(c *gin.Context) {
 		session := sessions.Default(c)
-		user := session.Get(gocauthmid.SessionKeyAuthUser)
-		c.Set("isLoggedIn", user != nil)
+		_, ok := gocauthmid.SessionUser(session.Get(gocauthmid.SessionKeyAuthUser))
+		c.Set("isLoggedIn", ok)
 		c.Next()
 	})
 

@@ -1,23 +1,20 @@
 package auth
 
 import (
-	"encoding/gob"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/miiy/goc-quickstart/web/internal/template"
 	gocauth "github.com/miiy/goc/auth"
 	gocauthmid "github.com/miiy/goc/gin/middleware/auth"
 	"github.com/miiy/goc/gin/sessions"
-	"github.com/miiy/goc-quickstart/web/internal/template"
 )
-
-func init() {
-	gob.Register(&gocauth.AuthenticatedUser{})
-}
 
 type AuthFormView struct {
 	template.ViewData
-	Flashes []sessions.Flash
+	Email    string
+	Flashes  []sessions.Flash
+	Username string
 }
 
 type ProfileView struct {
@@ -54,6 +51,8 @@ func Register(c *gin.Context) {
 			Flashes: []sessions.Flash{
 				{Level: sessions.FlashLevelError, Message: "注册失败：" + err.Error()},
 			},
+			Email:    email,
+			Username: username,
 		})
 		return
 	}
@@ -86,21 +85,23 @@ func Login(c *gin.Context) {
 
 	resp, err := authModule.client.Login(c.Request.Context(), username, password)
 	if err != nil {
-		if err := sessions.AddFlash(c, sessions.FlashLevelError, "用户名或密码错误"); err != nil {
-			_ = c.Error(err)
-			c.String(http.StatusInternalServerError, "保存提示信息失败")
-			return
-		}
-		c.Redirect(http.StatusFound, "/login")
+		c.HTML(http.StatusBadRequest, "auth/login", AuthFormView{
+			ViewData: template.ViewData{
+				IsLoggedIn: c.GetBool("isLoggedIn"),
+			},
+			Flashes: []sessions.Flash{
+				{Level: sessions.FlashLevelError, Message: "用户名或密码错误"},
+			},
+			Username: username,
+		})
 		return
 	}
 
-	// Set authenticated user in session
-	user := &gocauth.AuthenticatedUser{
-		Username: resp.User.Username,
-	}
 	session := sessions.Default(c)
-	session.Set(gocauthmid.SessionKeyAuthUser, user)
+	// TODO: Store user id after the auth login response includes it.
+	session.Set(gocauthmid.SessionKeyAuthUser, map[string]any{
+		"username": resp.User.Username,
+	})
 	if err := session.Save(); err != nil {
 		_ = c.Error(err)
 		c.String(http.StatusInternalServerError, "保存会话失败")
@@ -122,7 +123,7 @@ func Logout(c *gin.Context) {
 
 func Profile(c *gin.Context) {
 	session := sessions.Default(c)
-	user, _ := session.Get(gocauthmid.SessionKeyAuthUser).(*gocauth.AuthenticatedUser)
+	user, _ := gocauthmid.SessionUser(session.Get(gocauthmid.SessionKeyAuthUser))
 	c.HTML(http.StatusOK, "auth/profile", ProfileView{
 		ViewData: template.ViewData{
 			IsLoggedIn: c.GetBool("isLoggedIn"),
