@@ -9,6 +9,7 @@ import (
 	pb "github.com/miiy/goc-quickstart/post-service/gen/go/blog/post/v1"
 	"github.com/miiy/goc-quickstart/post-service/internal/entity"
 	"github.com/miiy/goc-quickstart/post-service/internal/repository"
+	gocauth "github.com/miiy/goc/auth"
 	"github.com/miiy/goc/pagination"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
@@ -24,8 +25,9 @@ type PostService struct {
 }
 
 var (
-	ErrInvalidArgument = errors.New("invalid argument")
-	ErrPostNotFound    = errors.New("post not found")
+	ErrInvalidArgument  = errors.New("invalid argument")
+	ErrPostNotFound     = errors.New("post not found")
+	ErrPermissionDenied = errors.New("permission denied")
 )
 
 func NewPostServiceServer(logger *zap.Logger, repo repository.PostRepository) pb.PostServiceServer {
@@ -61,11 +63,15 @@ func (s *PostService) CreatePost(ctx context.Context, req *pb.CreatePostRequest)
 	if strings.TrimSpace(req.Post.Title) == "" {
 		return nil, status.Error(codes.InvalidArgument, "title is required")
 	}
+	user, err := authenticatedUser(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	tags, _ := json.Marshal(req.Post.Tags)
 
 	post := &entity.Post{
-		AuthorId:   req.Post.AuthorId,
+		AuthorId:   user.ID,
 		Title:      strings.TrimSpace(req.Post.Title),
 		Content:    req.Post.Content,
 		Status:     int64(req.Post.Status),
@@ -87,8 +93,12 @@ func (s *PostService) UpdatePost(ctx context.Context, req *pb.UpdatePostRequest)
 	if req.Id <= 0 || req.Post == nil {
 		return nil, status.Error(codes.InvalidArgument, ErrInvalidArgument.Error())
 	}
+	user, err := authenticatedUser(ctx)
+	if err != nil {
+		return nil, err
+	}
 
-	_, err := s.repo.First(ctx, req.Id)
+	existing, err := s.repo.First(ctx, req.Id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, status.Error(codes.NotFound, ErrPostNotFound.Error())
@@ -96,11 +106,14 @@ func (s *PostService) UpdatePost(ctx context.Context, req *pb.UpdatePostRequest)
 		s.logger.Error("repo.First", zap.Error(err))
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+	if existing.AuthorId != user.ID {
+		return nil, status.Error(codes.PermissionDenied, ErrPermissionDenied.Error())
+	}
 
 	tags, _ := json.Marshal(req.Post.Tags)
 
 	post := &entity.Post{
-		AuthorId:   req.Post.AuthorId,
+		AuthorId:   existing.AuthorId,
 		Title:      strings.TrimSpace(req.Post.Title),
 		Content:    req.Post.Content,
 		Status:     int64(req.Post.Status),
@@ -111,6 +124,9 @@ func (s *PostService) UpdatePost(ctx context.Context, req *pb.UpdatePostRequest)
 	var columns []string
 	if req.UpdateMask != nil && len(req.UpdateMask.Paths) > 0 {
 		columns = protoPathsToDBColumns(req.UpdateMask.Paths)
+		if len(columns) == 0 {
+			return nil, status.Error(codes.InvalidArgument, "no updatable fields")
+		}
 	}
 
 	rowsAffected, err := s.repo.Update(ctx, req.Id, post, columns...)
@@ -137,6 +153,22 @@ func (s *PostService) DeletePost(ctx context.Context, req *pb.DeletePostRequest)
 	if req.Id <= 0 {
 		return nil, status.Error(codes.InvalidArgument, ErrInvalidArgument.Error())
 	}
+	user, err := authenticatedUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	existing, err := s.repo.First(ctx, req.Id, "id", "author_id")
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, status.Error(codes.NotFound, ErrPostNotFound.Error())
+		}
+		s.logger.Error("repo.First", zap.Error(err))
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	if existing.AuthorId != user.ID {
+		return nil, status.Error(codes.PermissionDenied, ErrPermissionDenied.Error())
+	}
 
 	rowsAffected, err := s.repo.Delete(ctx, req.Id)
 	if err != nil {
@@ -148,6 +180,17 @@ func (s *PostService) DeletePost(ctx context.Context, req *pb.DeletePostRequest)
 	}
 
 	return &pb.DeletePostResponse{}, nil
+}
+
+func authenticatedUser(ctx context.Context) (*gocauth.AuthenticatedUser, error) {
+	user, err := gocauth.ExtractAuthenticatedUser(ctx)
+	if err != nil {
+		return nil, status.Error(codes.Unauthenticated, err.Error())
+	}
+	if user.ID <= 0 {
+		return nil, status.Error(codes.Unauthenticated, "invalid authenticated user")
+	}
+	return user, nil
 }
 
 func (s *PostService) ListPosts(ctx context.Context, req *pb.ListPostsRequest) (*pb.ListPostsResponse, error) {
@@ -222,8 +265,6 @@ func protoPathsToDBColumns(paths []string) []string {
 			columns = append(columns, "tags")
 		case "category_id":
 			columns = append(columns, "category_id")
-		case "author_id":
-			columns = append(columns, "author_id")
 		}
 	}
 	return columns

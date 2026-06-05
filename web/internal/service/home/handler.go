@@ -12,12 +12,11 @@ type HomeView struct {
 }
 
 func indexHandler(c *gin.Context) {
+	view := template.NewViewData(c)
+	view.PageTitle = "Home"
 	c.HTML(200, "home/index", HomeView{
-		ViewData: template.ViewData{
-			PageTitle:  "Home",
-			IsLoggedIn: c.GetBool("isLoggedIn"),
-		},
-		Header:  "header.",
-		Content: "Hello, world.",
+		ViewData: view,
+		Header:   "header.",
+		Content:  "Hello, world.",
 	})
 }

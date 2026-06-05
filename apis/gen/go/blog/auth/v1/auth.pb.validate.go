@@ -58,6 +58,8 @@ func (m *User) validate(all bool) error {
 
 	// no validation rules for Username
 
+	// no validation rules for Id
+
 	if len(errors) > 0 {
 		return UserMultiError(errors)
 	}
@@ -134,6 +136,111 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = UserValidationError{}
+
+// Validate checks the field values on GetAuthenticatedUserRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetAuthenticatedUserRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetAuthenticatedUserRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetAuthenticatedUserRequestMultiError, or nil if none found.
+func (m *GetAuthenticatedUserRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetAuthenticatedUserRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Username
+
+	if len(errors) > 0 {
+		return GetAuthenticatedUserRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetAuthenticatedUserRequestMultiError is an error wrapping multiple
+// validation errors returned by GetAuthenticatedUserRequest.ValidateAll() if
+// the designated constraints aren't met.
+type GetAuthenticatedUserRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetAuthenticatedUserRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetAuthenticatedUserRequestMultiError) AllErrors() []error { return m }
+
+// GetAuthenticatedUserRequestValidationError is the validation error returned
+// by GetAuthenticatedUserRequest.Validate if the designated constraints
+// aren't met.
+type GetAuthenticatedUserRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetAuthenticatedUserRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetAuthenticatedUserRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetAuthenticatedUserRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetAuthenticatedUserRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetAuthenticatedUserRequestValidationError) ErrorName() string {
+	return "GetAuthenticatedUserRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetAuthenticatedUserRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetAuthenticatedUserRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetAuthenticatedUserRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetAuthenticatedUserRequestValidationError{}
 
 // Validate checks the field values on RegisterRequest with the rules defined
 // in the proto definition for this message. If any rules are violated, the

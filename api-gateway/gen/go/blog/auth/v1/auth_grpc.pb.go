@@ -19,22 +19,24 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AuthService_Register_FullMethodName      = "/goc.blog.auth.api.v1.AuthService/Register"
-	AuthService_UsernameCheck_FullMethodName = "/goc.blog.auth.api.v1.AuthService/UsernameCheck"
-	AuthService_EmailCheck_FullMethodName    = "/goc.blog.auth.api.v1.AuthService/EmailCheck"
-	AuthService_PhoneCheck_FullMethodName    = "/goc.blog.auth.api.v1.AuthService/PhoneCheck"
-	AuthService_Login_FullMethodName         = "/goc.blog.auth.api.v1.AuthService/Login"
-	AuthService_SendSmsCode_FullMethodName   = "/goc.blog.auth.api.v1.AuthService/SendSmsCode"
-	AuthService_PhoneAuth_FullMethodName     = "/goc.blog.auth.api.v1.AuthService/PhoneAuth"
-	AuthService_MpLogin_FullMethodName       = "/goc.blog.auth.api.v1.AuthService/MpLogin"
-	AuthService_RefreshToken_FullMethodName  = "/goc.blog.auth.api.v1.AuthService/RefreshToken"
-	AuthService_Logout_FullMethodName        = "/goc.blog.auth.api.v1.AuthService/Logout"
+	AuthService_GetAuthenticatedUser_FullMethodName = "/goc.blog.auth.api.v1.AuthService/GetAuthenticatedUser"
+	AuthService_Register_FullMethodName             = "/goc.blog.auth.api.v1.AuthService/Register"
+	AuthService_UsernameCheck_FullMethodName        = "/goc.blog.auth.api.v1.AuthService/UsernameCheck"
+	AuthService_EmailCheck_FullMethodName           = "/goc.blog.auth.api.v1.AuthService/EmailCheck"
+	AuthService_PhoneCheck_FullMethodName           = "/goc.blog.auth.api.v1.AuthService/PhoneCheck"
+	AuthService_Login_FullMethodName                = "/goc.blog.auth.api.v1.AuthService/Login"
+	AuthService_SendSmsCode_FullMethodName          = "/goc.blog.auth.api.v1.AuthService/SendSmsCode"
+	AuthService_PhoneAuth_FullMethodName            = "/goc.blog.auth.api.v1.AuthService/PhoneAuth"
+	AuthService_MpLogin_FullMethodName              = "/goc.blog.auth.api.v1.AuthService/MpLogin"
+	AuthService_RefreshToken_FullMethodName         = "/goc.blog.auth.api.v1.AuthService/RefreshToken"
+	AuthService_Logout_FullMethodName               = "/goc.blog.auth.api.v1.AuthService/Logout"
 )
 
 // AuthServiceClient is the client API for AuthService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AuthServiceClient interface {
+	GetAuthenticatedUser(ctx context.Context, in *GetAuthenticatedUserRequest, opts ...grpc.CallOption) (*User, error)
 	// register
 	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error)
 	// register check
@@ -59,6 +61,16 @@ type authServiceClient struct {
 
 func NewAuthServiceClient(cc grpc.ClientConnInterface) AuthServiceClient {
 	return &authServiceClient{cc}
+}
+
+func (c *authServiceClient) GetAuthenticatedUser(ctx context.Context, in *GetAuthenticatedUserRequest, opts ...grpc.CallOption) (*User, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(User)
+	err := c.cc.Invoke(ctx, AuthService_GetAuthenticatedUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *authServiceClient) Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error) {
@@ -165,6 +177,7 @@ func (c *authServiceClient) Logout(ctx context.Context, in *LogoutRequest, opts 
 // All implementations must embed UnimplementedAuthServiceServer
 // for forward compatibility.
 type AuthServiceServer interface {
+	GetAuthenticatedUser(context.Context, *GetAuthenticatedUserRequest) (*User, error)
 	// register
 	Register(context.Context, *RegisterRequest) (*RegisterResponse, error)
 	// register check
@@ -191,6 +204,9 @@ type AuthServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedAuthServiceServer struct{}
 
+func (UnimplementedAuthServiceServer) GetAuthenticatedUser(context.Context, *GetAuthenticatedUserRequest) (*User, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetAuthenticatedUser not implemented")
+}
 func (UnimplementedAuthServiceServer) Register(context.Context, *RegisterRequest) (*RegisterResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Register not implemented")
 }
@@ -240,6 +256,24 @@ func RegisterAuthServiceServer(s grpc.ServiceRegistrar, srv AuthServiceServer) {
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&AuthService_ServiceDesc, srv)
+}
+
+func _AuthService_GetAuthenticatedUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAuthenticatedUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).GetAuthenticatedUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_GetAuthenticatedUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).GetAuthenticatedUser(ctx, req.(*GetAuthenticatedUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _AuthService_Register_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -429,6 +463,10 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "goc.blog.auth.api.v1.AuthService",
 	HandlerType: (*AuthServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetAuthenticatedUser",
+			Handler:    _AuthService_GetAuthenticatedUser_Handler,
+		},
 		{
 			MethodName: "Register",
 			Handler:    _AuthService_Register_Handler,

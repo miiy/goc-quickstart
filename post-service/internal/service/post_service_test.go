@@ -7,9 +7,11 @@ import (
 	pb "github.com/miiy/goc-quickstart/post-service/gen/go/blog/post/v1"
 	"github.com/miiy/goc-quickstart/post-service/internal/entity"
 	"github.com/miiy/goc-quickstart/post-service/internal/repository"
+	gocauth "github.com/miiy/goc/auth"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"gorm.io/gorm"
 )
 
@@ -25,6 +27,13 @@ func NewMockPostRepository() *MockPostRepository {
 		posts:  make(map[int64]*entity.Post),
 		nextID: 1,
 	}
+}
+
+func authenticatedContext(userID int64) context.Context {
+	return gocauth.InjectAuthenticatedUser(context.Background(), &gocauth.AuthenticatedUser{
+		ID:       userID,
+		Username: "alice",
+	})
 }
 
 func (m *MockPostRepository) Create(ctx context.Context, post *entity.Post) error {
@@ -151,16 +160,19 @@ func TestPostService_CreatePost(t *testing.T) {
 	service := NewPostServiceServer(logger, repo).(*PostService)
 
 	tests := []struct {
-		name    string
-		req     *pb.CreatePostRequest
-		wantErr bool
-		errCode codes.Code
+		name         string
+		ctx          context.Context
+		req          *pb.CreatePostRequest
+		wantErr      bool
+		errCode      codes.Code
+		wantAuthorID int64
 	}{
 		{
 			name: "create valid post",
+			ctx:  authenticatedContext(42),
 			req: &pb.CreatePostRequest{
 				Post: &pb.Post{
-					AuthorId:   1,
+					AuthorId:   999,
 					Title:      "New Post",
 					Content:    "New Content",
 					Status:     pb.PostStatus_POST_STATUS_DRAFT,
@@ -168,7 +180,8 @@ func TestPostService_CreatePost(t *testing.T) {
 					Tags:       []string{"tag1", "tag2"},
 				},
 			},
-			wantErr: false,
+			wantErr:      false,
+			wantAuthorID: 42,
 		},
 		{
 			name: "create post with empty title",
@@ -188,11 +201,27 @@ func TestPostService_CreatePost(t *testing.T) {
 			wantErr: true,
 			errCode: codes.InvalidArgument,
 		},
+		{
+			name: "create post without authenticated user",
+			ctx:  context.Background(),
+			req: &pb.CreatePostRequest{
+				Post: &pb.Post{
+					Title:   "New Post",
+					Content: "New Content",
+				},
+			},
+			wantErr: true,
+			errCode: codes.Unauthenticated,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resp, err := service.CreatePost(context.Background(), tt.req)
+			ctx := tt.ctx
+			if ctx == nil {
+				ctx = context.Background()
+			}
+			resp, err := service.CreatePost(ctx, tt.req)
 			if tt.wantErr {
 				if err == nil {
 					t.Error("expected error, got nil")
@@ -211,6 +240,9 @@ func TestPostService_CreatePost(t *testing.T) {
 				}
 				if resp.Post.Title != tt.req.Post.Title {
 					t.Errorf("expected title %s, got %s", tt.req.Post.Title, resp.Post.Title)
+				}
+				if resp.Post.AuthorId != tt.wantAuthorID {
+					t.Errorf("expected author id %d, got %d", tt.wantAuthorID, resp.Post.AuthorId)
 				}
 			}
 		})
@@ -234,23 +266,27 @@ func TestPostService_UpdatePost(t *testing.T) {
 
 	tests := []struct {
 		name    string
+		ctx     context.Context
 		req     *pb.UpdatePostRequest
 		wantErr bool
 		errCode codes.Code
 	}{
 		{
 			name: "update existing post",
+			ctx:  authenticatedContext(1),
 			req: &pb.UpdatePostRequest{
 				Id: 1,
 				Post: &pb.Post{
-					Title:   "Updated Title",
-					Content: "Updated Content",
+					AuthorId: 999,
+					Title:    "Updated Title",
+					Content:  "Updated Content",
 				},
 			},
 			wantErr: false,
 		},
 		{
 			name: "update non-existing post",
+			ctx:  authenticatedContext(1),
 			req: &pb.UpdatePostRequest{
 				Id: 999,
 				Post: &pb.Post{
@@ -266,11 +302,52 @@ func TestPostService_UpdatePost(t *testing.T) {
 			wantErr: true,
 			errCode: codes.InvalidArgument,
 		},
+		{
+			name: "update without authenticated user",
+			ctx:  context.Background(),
+			req: &pb.UpdatePostRequest{
+				Id: 1,
+				Post: &pb.Post{
+					Title: "Updated Title",
+				},
+			},
+			wantErr: true,
+			errCode: codes.Unauthenticated,
+		},
+		{
+			name: "update by non-author",
+			ctx:  authenticatedContext(2),
+			req: &pb.UpdatePostRequest{
+				Id: 1,
+				Post: &pb.Post{
+					Title: "Updated Title",
+				},
+			},
+			wantErr: true,
+			errCode: codes.PermissionDenied,
+		},
+		{
+			name: "update author id is rejected",
+			ctx:  authenticatedContext(1),
+			req: &pb.UpdatePostRequest{
+				Id: 1,
+				Post: &pb.Post{
+					AuthorId: 2,
+				},
+				UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"author_id"}},
+			},
+			wantErr: true,
+			errCode: codes.InvalidArgument,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resp, err := service.UpdatePost(context.Background(), tt.req)
+			ctx := tt.ctx
+			if ctx == nil {
+				ctx = context.Background()
+			}
+			resp, err := service.UpdatePost(ctx, tt.req)
 			if tt.wantErr {
 				if err == nil {
 					t.Error("expected error, got nil")
@@ -286,6 +363,9 @@ func TestPostService_UpdatePost(t *testing.T) {
 				}
 				if resp == nil || resp.Post == nil {
 					t.Error("expected response with post")
+				}
+				if resp.Post.AuthorId != 1 {
+					t.Errorf("expected author id to remain 1, got %d", resp.Post.AuthorId)
 				}
 			}
 		})
@@ -307,17 +387,34 @@ func TestPostService_DeletePost(t *testing.T) {
 
 	tests := []struct {
 		name    string
+		ctx     context.Context
 		req     *pb.DeletePostRequest
 		wantErr bool
 		errCode codes.Code
 	}{
 		{
+			name:    "delete without authenticated user",
+			ctx:     context.Background(),
+			req:     &pb.DeletePostRequest{Id: 1},
+			wantErr: true,
+			errCode: codes.Unauthenticated,
+		},
+		{
+			name:    "delete by non-author",
+			ctx:     authenticatedContext(2),
+			req:     &pb.DeletePostRequest{Id: 1},
+			wantErr: true,
+			errCode: codes.PermissionDenied,
+		},
+		{
 			name:    "delete existing post",
+			ctx:     authenticatedContext(1),
 			req:     &pb.DeletePostRequest{Id: 1},
 			wantErr: false,
 		},
 		{
 			name:    "delete non-existing post",
+			ctx:     authenticatedContext(1),
 			req:     &pb.DeletePostRequest{Id: 999},
 			wantErr: true,
 			errCode: codes.NotFound,
@@ -332,7 +429,11 @@ func TestPostService_DeletePost(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := service.DeletePost(context.Background(), tt.req)
+			ctx := tt.ctx
+			if ctx == nil {
+				ctx = context.Background()
+			}
+			_, err := service.DeletePost(ctx, tt.req)
 			if tt.wantErr {
 				if err == nil {
 					t.Error("expected error, got nil")

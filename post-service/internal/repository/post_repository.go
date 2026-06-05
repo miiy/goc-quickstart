@@ -2,11 +2,10 @@ package repository
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/miiy/goc-quickstart/post-service/internal/entity"
-	paginate "github.com/miiy/goc/db/gorm/paginate"
 	"github.com/miiy/goc/db/gorm/model"
+	paginate "github.com/miiy/goc/db/gorm/paginate"
 	"gorm.io/gorm"
 )
 
@@ -57,7 +56,7 @@ func (r *postRepository) List(ctx context.Context, filter *ListFilter, page, pag
 		db = db.Where("category_id = ?", filter.CategoryId)
 	}
 	if filter.Tag != "" {
-		db = db.Where(fmt.Sprintf("tags LIKE '%%%s%%'", filter.Tag))
+		db = db.Where("tags LIKE ?", "%"+filter.Tag+"%")
 	}
 
 	// count

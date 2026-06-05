@@ -10,6 +10,7 @@ type Config struct {
 	Server   ServerConfig             `yaml:"server"`
 	Services map[string]ServiceConfig `yaml:"services"`
 	TLS      TLSConfig                `yaml:"tls"`
+	JWT      JWTConfig                `yaml:"jwt"`
 }
 
 type ServerConfig struct {
@@ -22,6 +23,11 @@ type HTTPConfig struct {
 
 type ServiceConfig struct {
 	Endpoint string `yaml:"endpoint"`
+}
+
+type JWTConfig struct {
+	Secret string `yaml:"secret"`
+	Issuer string `yaml:"issuer"`
 }
 
 type TLSConfig struct {

@@ -1,8 +1,8 @@
 package post
 
 import (
-	"github.com/miiy/goc/logger"
 	"github.com/miiy/goc-quickstart/web/client"
+	"github.com/miiy/goc/logger"
 )
 
 type PostModule struct {

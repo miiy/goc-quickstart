@@ -10,7 +10,6 @@ import (
 	authRepo "github.com/miiy/goc-quickstart/auth-service/internal/repository"
 	authService "github.com/miiy/goc-quickstart/auth-service/internal/service"
 	"github.com/miiy/goc/auth"
-	"github.com/miiy/goc/auth/jwt"
 	"github.com/miiy/goc/contrib/wechat/miniprogram"
 	"github.com/miiy/goc/db"
 	"github.com/miiy/goc/db/gorm"
@@ -25,7 +24,7 @@ func InitApp(conf string) (*app.App, func(), error) {
 		wire.NewSet(logger.NewLogger, provideLoggerOption, provideZap),
 		wire.NewSet(db.NewDB, provideDBConfig, provideDBOption, provideGorm),
 		wire.NewSet(redis.NewRedis, provideRedisOptions),
-		wire.NewSet(jwt.NewJWTAuth, provideJwtAuthOptions),
+		wire.NewSet(auth.NewJWTAuth, provideJwtAuthOptions),
 		wire.NewSet(authRepo.NewAuthRepository, authService.NewAuthServiceServer, authRepo.NewTokenRepository, provideMiniProgram),
 		wire.Bind(new(auth.UserProvider), new(authRepo.AuthRepository)),
 		app.NewApp,
@@ -67,8 +66,8 @@ func provideGorm(db *db.DB) *gorm.DB {
 	return db.Gorm()
 }
 
-func provideJwtAuthOptions(config *config.Config) *jwt.Options {
-	return &jwt.Options{
+func provideJwtAuthOptions(config *config.Config) *auth.Options {
+	return &auth.Options{
 		Secret:    config.Jwt.Secret,
 		Issuer:    config.Jwt.Issuer,
 		ExpiresIn: config.Jwt.ExpiresIn,

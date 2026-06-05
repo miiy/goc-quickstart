@@ -2,8 +2,9 @@ package repository
 
 import (
 	"context"
-	"github.com/redis/go-redis/v9"
 	"time"
+
+	"github.com/miiy/goc/redis"
 )
 
 type TokenRepository interface {
@@ -17,22 +18,22 @@ type tokenRepository struct {
 }
 
 func NewTokenRepository(rdb redis.UniversalClient) TokenRepository {
-	return &authRepository{
+	return &tokenRepository{
 		rdb: rdb,
 	}
 }
 
 // GetToken get token from redis
-func (r *authRepository) Get(ctx context.Context, key string) (string, error) {
+func (r *tokenRepository) Get(ctx context.Context, key string) (string, error) {
 	return r.rdb.Get(ctx, key).Result()
 }
 
 // SetToken set token to redis
-func (r *authRepository) Set(ctx context.Context, key string, value interface{}, expiration time.Duration) error {
+func (r *tokenRepository) Set(ctx context.Context, key string, value interface{}, expiration time.Duration) error {
 	return r.rdb.Set(ctx, key, value, expiration).Err()
 }
 
 // DeleteToken delete token from redis
-func (r *authRepository) Del(ctx context.Context, key string) error {
+func (r *tokenRepository) Del(ctx context.Context, key string) error {
 	return r.rdb.Del(ctx, key).Err()
 }

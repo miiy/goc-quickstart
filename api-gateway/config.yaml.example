@@ -1,0 +1,21 @@
+server:
+  http:
+    addr: 0.0.0.0:8080
+services:
+  auth:
+    endpoint: 127.0.0.1:50051
+  post:
+    endpoint: 127.0.0.1:50052
+  user:
+    endpoint: 127.0.0.1:50053
+  file:
+    endpoint: 127.0.0.1:50054
+jwt:
+  secret: 123456
+  issuer: goc
+tls:
+  enabled: false
+  serverName: "*.goc.dev"
+  certFile: ./configs/x509/client_cert.pem
+  keyFile: ./configs/x509/client_key.pem
+  caFile: ./configs/x509/ca_cert.pem

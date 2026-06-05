@@ -4,66 +4,40 @@ import (
 	"flag"
 	"log"
 
-	"github.com/gin-gonic/gin"
-	"github.com/miiy/goc-quickstart/web/client"
-	"github.com/miiy/goc-quickstart/web/internal/config"
+	"github.com/miiy/goc-quickstart/web/internal/di"
 	"github.com/miiy/goc-quickstart/web/internal/router"
 	"github.com/miiy/goc-quickstart/web/internal/service/auth"
 	"github.com/miiy/goc-quickstart/web/internal/service/post"
-	"github.com/miiy/goc/gin/sessions"
-	"github.com/miiy/goc/logger"
+	"github.com/miiy/goc/gin"
+	ginzap "github.com/miiy/goc/gin/middleware/zap"
+	httpserver "github.com/miiy/goc/http/server"
 )
 
 func main() {
-	conf := flag.String("c", "./configs/default.yaml", "config file")
+	conf := flag.String("c", "./config.yaml", "config file")
 	flag.Parse()
 
-	cfg, err := config.NewConfig(*conf)
+	app, cleanup, err := di.InitApp(*conf)
 	if err != nil {
-		log.Fatalf("failed to load config: %v", err)
-	}
-
-	l, err := logger.NewLogger()
-	if err != nil {
-		log.Fatalf("failed to create logger: %v", err)
-	}
-	defer func() {
-		if sync, ok := l.(interface{ Sync() error }); ok {
-			sync.Sync()
-		}
-	}()
-
-	// create HTTP client for gateway
-	clients, cleanup, err := client.NewClients(cfg.Gateway.Addr)
-	if err != nil {
-		log.Fatalf("failed to create clients: %v", err)
+		log.Fatalf("failed to initialize app: %v", err)
 	}
 	defer cleanup()
 
 	// init modules
-	post.NewModule(l, clients.Post)
-	auth.NewModule(l, clients.Auth)
+	clients := app.Clients()
+	post.NewModule(app.Logger(), clients.Post)
 
-	// init session store
-	store, err := sessions.NewRedisStore(10, "tcp", cfg.Redis.Addr, cfg.Redis.Password, []byte(cfg.Session.Secret))
-	if err != nil {
-		log.Fatalf("failed to create session store: %v", err)
-	}
-	if err := sessions.UseJSONSerializer(store); err != nil {
-		log.Fatalf("failed to use JSON session serializer: %v", err)
-	}
-	if cfg.Session.MaxAge > 0 {
-		if err := sessions.SetMaxAge(store, cfg.Session.MaxAge); err != nil {
-			log.Fatalf("failed to set session max age: %v", err)
-		}
-	}
-
-	// create gin engine
-	engine := gin.Default()
-	router.Router(engine, store, cfg.Session.Name)
+	cfg := app.Config()
+	auth.NewModule(app.Logger(), clients.Auth, app.SessionStore(), cfg.Session.Name)
 
 	log.Printf("Starting server on %s", cfg.Server.HTTP.Addr)
-	if err := engine.Run(cfg.Server.HTTP.Addr); err != nil {
-		log.Fatalf("failed to start server: %v", err)
-	}
+	server := httpserver.New(
+		httpserver.WithAddr(cfg.Server.HTTP.Addr),
+		httpserver.WithLogger(app.Logger().ZapLogger()),
+	)
+	server.Use(ginzap.Ginzap(app.Logger().ZapLogger()), ginzap.RecoveryWithZap(app.Logger().ZapLogger(), true))
+	server.RegisterRouter(func(r *gin.Engine) {
+		router.Router(r, app.SessionStore(), cfg.Session.Name)
+	})
+	server.Run()
 }

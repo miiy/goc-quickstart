@@ -3,7 +3,7 @@ module github.com/miiy/goc-quickstart/web
 go 1.26.0
 
 require (
-	github.com/gin-gonic/gin v1.12.0
+	github.com/google/wire v0.7.0
 	github.com/miiy/goc v0.1.1
 	github.com/spf13/viper v1.20.1
 	github.com/unknwon/paginater v0.0.0-20200328080006-042474bd0eae
@@ -20,6 +20,8 @@ require (
 	github.com/gin-contrib/multitemplate v1.1.2 // indirect
 	github.com/gin-contrib/sessions v1.1.0 // indirect
 	github.com/gin-contrib/sse v1.1.1 // indirect
+	github.com/gin-contrib/zap v1.1.7 // indirect
+	github.com/gin-gonic/gin v1.12.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.30.2 // indirect

@@ -11,7 +11,7 @@ import (
 	"github.com/miiy/goc-quickstart/auth-service/internal/config"
 	"github.com/miiy/goc-quickstart/auth-service/internal/repository"
 	"github.com/miiy/goc-quickstart/auth-service/internal/service"
-	"github.com/miiy/goc/auth/jwt"
+	"github.com/miiy/goc/auth"
 	"github.com/miiy/goc/contrib/wechat/miniprogram"
 	"github.com/miiy/goc/db"
 	"github.com/miiy/goc/db/gorm"
@@ -44,7 +44,7 @@ func InitApp(conf string) (*app.App, func(), error) {
 		return nil, nil, err
 	}
 	jwtOptions := provideJwtAuthOptions(configConfig)
-	jwtAuth := jwt.NewJWTAuth(jwtOptions)
+	jwtAuth := auth.NewJWTAuth(jwtOptions)
 	zapLogger := provideZap(loggerLogger)
 	gormDB := provideGorm(dbDB)
 	authRepository := repository.NewAuthRepository(gormDB)
@@ -96,8 +96,8 @@ func provideGorm(db2 *db.DB) *gorm.DB {
 	return db2.Gorm()
 }
 
-func provideJwtAuthOptions(config2 *config.Config) *jwt.Options {
-	return &jwt.Options{
+func provideJwtAuthOptions(config2 *config.Config) *auth.Options {
+	return &auth.Options{
 		Secret:    config2.Jwt.Secret,
 		Issuer:    config2.Jwt.Issuer,
 		ExpiresIn: config2.Jwt.ExpiresIn,

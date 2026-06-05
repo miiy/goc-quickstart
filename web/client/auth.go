@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 )
 
 type AuthClient struct {
@@ -18,8 +19,30 @@ type LoginResponse struct {
 	TokenType   string `json:"token_type"`
 	ExpiresAt   string `json:"expires_at"`
 	User        struct {
-		Username string `json:"username"`
+		Id       Int64String `json:"id"`
+		Username string      `json:"username"`
 	} `json:"user"`
+}
+
+type Int64String int64
+
+func (v *Int64String) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err == nil {
+		n, err := strconv.ParseInt(s, 10, 64)
+		if err != nil {
+			return err
+		}
+		*v = Int64String(n)
+		return nil
+	}
+
+	var n int64
+	if err := json.Unmarshal(data, &n); err != nil {
+		return err
+	}
+	*v = Int64String(n)
+	return nil
 }
 
 type RegisterResponse struct {
@@ -48,7 +71,7 @@ func (c *AuthClient) Register(ctx context.Context, email, username, password, pa
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +83,7 @@ func (c *AuthClient) Register(ctx context.Context, email, username, password, pa
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("status: %d, body: %s", resp.StatusCode, string(respBody))
+		return nil, parseError(resp.StatusCode, respBody)
 	}
 
 	var result RegisterResponse
@@ -89,7 +112,7 @@ func (c *AuthClient) Login(ctx context.Context, username, password string) (*Log
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +124,7 @@ func (c *AuthClient) Login(ctx context.Context, username, password string) (*Log
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("status: %d, body: %s", resp.StatusCode, string(respBody))
+		return nil, parseError(resp.StatusCode, respBody)
 	}
 
 	var result LoginResponse
@@ -129,14 +152,19 @@ func (c *AuthClient) Logout(ctx context.Context, accessToken string) error {
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.Do(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("status: %d", resp.StatusCode)
+		return parseError(resp.StatusCode, respBody)
 	}
 
 	return nil

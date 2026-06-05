@@ -28,9 +28,9 @@ ENV TZ=Asia/Shanghai
 COPY --from=builder /web /app/web
 
 # Copy config and resources
-COPY configs/ /app/configs/
+COPY config.yaml.example /app/config.yaml
 COPY resources/ /app/resources/
 
 EXPOSE 8081
 
-CMD ["./web"]
+CMD ["./web", "-c", "./config.yaml"]

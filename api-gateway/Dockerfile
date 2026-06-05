@@ -11,7 +11,7 @@ RUN go mod download
 COPY . .
 
 # Build binary
-RUN CGO_ENABLED=0 GOOS=linux go build -o /gateway cmd/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o /gateway ./cmd/server
 
 # Final stage
 FROM debian:bookworm-slim
@@ -28,8 +28,8 @@ ENV TZ=Asia/Shanghai
 COPY --from=builder /gateway /app/gateway
 
 # Copy config
-COPY configs/ /app/configs/
+COPY config.yaml.example /app/config.yaml
 
 EXPOSE 8080
 
-CMD ["./gateway"]
+CMD ["./gateway", "-c", "./config.yaml"]

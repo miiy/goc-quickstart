@@ -15,6 +15,11 @@ import "buf/validate/validate.proto";
 // authenticated user
 message User {
   string username = 1;
+  int64 id = 2;
+}
+
+message GetAuthenticatedUserRequest {
+  string username = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
 // register (email + username + password)
@@ -98,6 +103,8 @@ message LogoutResponse {
 }
 
 service AuthService {
+  rpc GetAuthenticatedUser(GetAuthenticatedUserRequest) returns (User);
+
   // register
   rpc Register(RegisterRequest) returns (RegisterResponse) {
     option (google.api.http) = {

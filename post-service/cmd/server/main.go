@@ -6,10 +6,11 @@ import (
 	"log"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/selector"
 	postv1 "github.com/miiy/goc-quickstart/post-service/gen/go/blog/post/v1"
 	"github.com/miiy/goc-quickstart/post-service/internal/di"
+	grpcauth "github.com/miiy/goc/grpc/interceptor/auth"
 	"github.com/miiy/goc/grpc/server"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/selector"
 	"go.uber.org/zap/zapgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
@@ -18,16 +19,19 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
-var NoOpAuthFunc = func(ctx context.Context) (context.Context, error) {
-	return ctx, nil
+var protectedMethods = map[string]struct{}{
+	postv1.PostService_CreatePost_FullMethodName: {},
+	postv1.PostService_UpdatePost_FullMethodName: {},
+	postv1.PostService_DeletePost_FullMethodName: {},
 }
 
-var NoOpMatcher = func(ctx context.Context, callMeta interceptors.CallMeta) bool {
-	return false
+func protectedMethodMatcher(ctx context.Context, callMeta interceptors.CallMeta) bool {
+	_, ok := protectedMethods[callMeta.FullMethod()]
+	return ok
 }
 
 func main() {
-	conf := flag.String("c", "./configs/default.yaml", "config file")
+	conf := flag.String("c", "./config.yaml", "config file")
 	flag.Parse()
 
 	ctx := context.Background()
@@ -59,8 +63,8 @@ func main() {
 
 	serverOpts = append(serverOpts, server.DefaultInterceptor(
 		logger,
-		NoOpAuthFunc,
-		selector.MatchFunc(NoOpMatcher),
+		grpcauth.MetadataAuthFunc,
+		selector.MatchFunc(protectedMethodMatcher),
 	)...)
 
 	err = server.Run(ctx, server.Options{

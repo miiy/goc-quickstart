@@ -1,23 +1,28 @@
 package post
 
 import (
-	"github.com/miiy/goc-quickstart/web/internal/service/auth"
 	"github.com/miiy/goc/gin"
+	gocauthmid "github.com/miiy/goc/gin/middleware/auth"
 )
 
 func Router(r *gin.Engine) {
-	r.GET("/posts", indexHandler)
-	r.GET("/posts/pages/:page", pagesHandler)
-	r.GET("/posts/:id", showHandler)
+	public := r.Group("")
+	{
+		public.GET("/posts", indexHandler)
+		public.GET("/posts/pages/:page", pagesHandler)
+		public.GET("/posts/:id", showHandler)
+	}
 
-	// 需要登录的操作
-	authRequired := auth.AuthRequired()
-	r.GET("/posts/create", authRequired, createHandler)
-	r.POST("/posts", authRequired, storeHandler)
-	r.GET("/posts/:id/edit", authRequired, editHandler)
-	r.POST("/posts/:id", authRequired, postHandler)
-	r.PUT("/posts/:id", authRequired, updateHandler)
-	r.DELETE("/posts/:id", authRequired, destroyHandler)
+	private := r.Group("")
+	private.Use(gocauthmid.SessionAuthenticationMiddleware("/login"))
+	{
+		private.GET("/posts/create", createHandler)
+		private.POST("/posts", storeHandler)
+		private.GET("/posts/:id/edit", editHandler)
+		private.POST("/posts/:id", postHandler)
+		private.PUT("/posts/:id", updateHandler)
+		private.DELETE("/posts/:id", destroyHandler)
+	}
 }
 
 func Templates() map[string][]string {

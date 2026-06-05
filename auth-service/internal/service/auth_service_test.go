@@ -9,7 +9,6 @@ import (
 	pb "github.com/miiy/goc-quickstart/auth-service/gen/go/blog/auth/v1"
 	"github.com/miiy/goc-quickstart/auth-service/internal/entity"
 	"github.com/miiy/goc/auth"
-	"github.com/miiy/goc/auth/jwt"
 	"github.com/miiy/goc/contrib/wechat/miniprogram"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
@@ -127,6 +126,9 @@ func (m *MockAuthRepository) FirstByIdentifier(ctx context.Context, identifier s
 	if err != nil {
 		return nil, err
 	}
+	if user.Status != entity.UserStatusActive {
+		return nil, gorm.ErrRecordNotFound
+	}
 	return &auth.AuthenticatedUser{
 		ID:       user.ID,
 		Username: user.Username,
@@ -171,6 +173,7 @@ func (m *MockTokenRepository) Del(ctx context.Context, key string) error {
 		return m.err
 	}
 	delete(m.tokens, key)
+	delete(m.ttl, key)
 	return nil
 }
 
@@ -222,11 +225,104 @@ func TestRegisterValidate(t *testing.T) {
 	}
 }
 
+func TestAuthService_GetAuthenticatedUser(t *testing.T) {
+	tests := []struct {
+		name    string
+		setup   func(*MockAuthRepository)
+		req     *pb.GetAuthenticatedUserRequest
+		want    *pb.User
+		wantErr bool
+		errCode codes.Code
+	}{
+		{
+			name: "successful get active user",
+			setup: func(repo *MockAuthRepository) {
+				_ = repo.Create(context.Background(), &entity.User{
+					Username: "active_user",
+					Status:   entity.UserStatusActive,
+				})
+			},
+			req: &pb.GetAuthenticatedUserRequest{Username: "active_user"},
+			want: &pb.User{
+				Id:       1,
+				Username: "active_user",
+			},
+		},
+		{
+			name: "disabled user rejected",
+			setup: func(repo *MockAuthRepository) {
+				_ = repo.Create(context.Background(), &entity.User{
+					Username: "disabled_user",
+					Status:   entity.UserStatusDisabled,
+				})
+			},
+			req:     &pb.GetAuthenticatedUserRequest{Username: "disabled_user"},
+			wantErr: true,
+			errCode: codes.Unauthenticated,
+		},
+		{
+			name:    "missing user rejected",
+			req:     &pb.GetAuthenticatedUserRequest{Username: "missing_user"},
+			wantErr: true,
+			errCode: codes.Unauthenticated,
+		},
+		{
+			name:    "empty username rejected",
+			req:     &pb.GetAuthenticatedUserRequest{Username: " "},
+			wantErr: true,
+			errCode: codes.InvalidArgument,
+		},
+		{
+			name: "repository error",
+			setup: func(repo *MockAuthRepository) {
+				repo.err = errors.New("database error")
+			},
+			req:     &pb.GetAuthenticatedUserRequest{Username: "active_user"},
+			wantErr: true,
+			errCode: codes.Internal,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			logger := zap.NewNop()
+			authRepo := NewMockAuthRepository()
+			tokenRepo := NewMockTokenRepository()
+			jwtAuth := auth.NewJWTAuth(&auth.Options{Secret: "test-secret", ExpiresIn: 3600})
+			mp := &miniprogram.MiniProgram{}
+
+			if tt.setup != nil {
+				tt.setup(authRepo)
+			}
+
+			service := NewAuthServiceServer(logger, authRepo, tokenRepo, jwtAuth, mp).(*AuthService)
+			resp, err := service.GetAuthenticatedUser(context.Background(), tt.req)
+
+			if tt.wantErr {
+				if err == nil {
+					t.Fatal("expected error, got nil")
+				}
+				if code := status.Code(err); code != tt.errCode {
+					t.Fatalf("expected error code %v, got %v", tt.errCode, code)
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
+			if resp.Id != tt.want.Id || resp.Username != tt.want.Username {
+				t.Fatalf("unexpected user: %+v", resp)
+			}
+		})
+	}
+}
+
 func TestAuthService_Register(t *testing.T) {
 	logger := zap.NewNop()
 	authRepo := NewMockAuthRepository()
 	tokenRepo := NewMockTokenRepository()
-	jwtAuth := jwt.NewJWTAuth(&jwt.Options{Secret: "test-secret", ExpiresIn: 3600})
+	jwtAuth := auth.NewJWTAuth(&auth.Options{Secret: "test-secret", ExpiresIn: 3600})
 	mp := &miniprogram.MiniProgram{}
 
 	service := NewAuthServiceServer(logger, authRepo, tokenRepo, jwtAuth, mp).(*AuthService)
@@ -290,6 +386,9 @@ func TestAuthService_Register(t *testing.T) {
 				if resp == nil || resp.User == nil {
 					t.Error("expected response with user")
 				}
+				if resp.User.Id <= 0 {
+					t.Error("expected user id")
+				}
 				if resp.User.Username != tt.req.Username {
 					t.Errorf("expected username %s, got %s", tt.req.Username, resp.User.Username)
 				}
@@ -302,17 +401,19 @@ func TestAuthService_Login(t *testing.T) {
 	logger := zap.NewNop()
 	authRepo := NewMockAuthRepository()
 	tokenRepo := NewMockTokenRepository()
-	jwtAuth := jwt.NewJWTAuth(&jwt.Options{Secret: "test-secret", ExpiresIn: 3600})
+	jwtAuth := auth.NewJWTAuth(&auth.Options{Secret: "test-secret", ExpiresIn: 3600})
 	mp := &miniprogram.MiniProgram{}
 
 	// Create a test user
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
-	authRepo.users[1] = &entity.User{
+	loginUser := &entity.User{
 		Username: "testuser",
 		Password: string(hashedPassword),
 		Email:    "test@example.com",
 		Status:   entity.UserStatusActive,
 	}
+	loginUser.ID = 1
+	authRepo.users[1] = loginUser
 
 	service := NewAuthServiceServer(logger, authRepo, tokenRepo, jwtAuth, mp).(*AuthService)
 
@@ -384,6 +485,12 @@ func TestAuthService_Login(t *testing.T) {
 				if resp.AccessToken == "" {
 					t.Error("expected access token")
 				}
+				if resp.User == nil || resp.User.Id != 1 || resp.User.Username != "testuser" {
+					t.Fatalf("unexpected login user: %+v", resp.User)
+				}
+				if ttl := tokenRepo.ttl[formatTokenKey(resp.AccessToken)]; ttl <= 0 {
+					t.Fatalf("expected positive token ttl, got %v", ttl)
+				}
 			}
 		})
 	}
@@ -393,7 +500,7 @@ func TestAuthService_UserExist(t *testing.T) {
 	logger := zap.NewNop()
 	authRepo := NewMockAuthRepository()
 	tokenRepo := NewMockTokenRepository()
-	jwtAuth := jwt.NewJWTAuth(&jwt.Options{Secret: "test-secret", ExpiresIn: 3600})
+	jwtAuth := auth.NewJWTAuth(&auth.Options{Secret: "test-secret", ExpiresIn: 3600})
 	mp := &miniprogram.MiniProgram{}
 
 	// Create a test user
@@ -466,7 +573,7 @@ func TestAuthService_Logout(t *testing.T) {
 	logger := zap.NewNop()
 	authRepo := NewMockAuthRepository()
 	tokenRepo := NewMockTokenRepository()
-	jwtAuth := jwt.NewJWTAuth(&jwt.Options{Secret: "test-secret", ExpiresIn: 3600})
+	jwtAuth := auth.NewJWTAuth(&auth.Options{Secret: "test-secret", ExpiresIn: 3600})
 	mp := &miniprogram.MiniProgram{}
 
 	// Store a test token
@@ -518,20 +625,30 @@ func TestAuthService_RefreshToken(t *testing.T) {
 	logger := zap.NewNop()
 	authRepo := NewMockAuthRepository()
 	tokenRepo := NewMockTokenRepository()
-	jwtAuth := jwt.NewJWTAuth(&jwt.Options{Secret: "test-secret", ExpiresIn: 3600})
+	jwtAuth := auth.NewJWTAuth(&auth.Options{Secret: "test-secret", ExpiresIn: 3600})
 	mp := &miniprogram.MiniProgram{}
+
+	refreshUser := &entity.User{
+		Username: "testuser",
+		Status:   entity.UserStatusActive,
+	}
+	refreshUser.ID = 1
+	authRepo.users[1] = refreshUser
 
 	service := NewAuthServiceServer(logger, authRepo, tokenRepo, jwtAuth, mp).(*AuthService)
 
 	// Create a valid token
 	claims := jwtAuth.CreateClaims("testuser")
 	validToken, _ := jwtAuth.CreateTokenByClaims(claims)
+	if err := tokenRepo.Set(context.Background(), formatTokenKey(validToken), validToken, time.Hour); err != nil {
+		t.Fatal(err)
+	}
 
 	tests := []struct {
-		name     string
-		req      *pb.RefreshTokenRequest
-		wantErr  bool
-		errCode  codes.Code
+		name    string
+		req     *pb.RefreshTokenRequest
+		wantErr bool
+		errCode codes.Code
 	}{
 		{
 			name:    "successful refresh",
@@ -580,6 +697,18 @@ func TestAuthService_RefreshToken(t *testing.T) {
 				if resp.User == nil || resp.User.Username != "testuser" {
 					t.Error("expected user with username testuser")
 				}
+				if resp.User.Id != 1 {
+					t.Fatalf("expected user id 1, got %d", resp.User.Id)
+				}
+				if _, ok := tokenRepo.tokens[formatTokenKey(validToken)]; ok {
+					t.Fatal("expected old token to be deleted")
+				}
+				if _, ok := tokenRepo.tokens[formatTokenKey(resp.AccessToken)]; !ok {
+					t.Fatal("expected refreshed token to be stored")
+				}
+				if ttl := tokenRepo.ttl[formatTokenKey(resp.AccessToken)]; ttl <= 0 {
+					t.Fatalf("expected positive refreshed token ttl, got %v", ttl)
+				}
 			}
 		})
 	}
@@ -589,7 +718,7 @@ func TestAuthService_SendSmsCode(t *testing.T) {
 	logger := zap.NewNop()
 	authRepo := NewMockAuthRepository()
 	tokenRepo := NewMockTokenRepository()
-	jwtAuth := jwt.NewJWTAuth(&jwt.Options{Secret: "test-secret", ExpiresIn: 3600})
+	jwtAuth := auth.NewJWTAuth(&auth.Options{Secret: "test-secret", ExpiresIn: 3600})
 	mp := &miniprogram.MiniProgram{}
 
 	service := NewAuthServiceServer(logger, authRepo, tokenRepo, jwtAuth, mp).(*AuthService)
@@ -644,7 +773,7 @@ func TestAuthService_PhoneAuth(t *testing.T) {
 	logger := zap.NewNop()
 	authRepo := NewMockAuthRepository()
 	tokenRepo := NewMockTokenRepository()
-	jwtAuth := jwt.NewJWTAuth(&jwt.Options{Secret: "test-secret", ExpiresIn: 3600})
+	jwtAuth := auth.NewJWTAuth(&auth.Options{Secret: "test-secret", ExpiresIn: 3600})
 	mp := &miniprogram.MiniProgram{}
 
 	// Pre-store SMS code
@@ -729,6 +858,9 @@ func TestAuthService_PhoneAuth(t *testing.T) {
 				if resp.AccessToken == "" {
 					t.Error("expected access token")
 				}
+				if resp.User == nil || resp.User.Id <= 0 || resp.User.Username == "" {
+					t.Fatalf("expected user with id and username, got %+v", resp.User)
+				}
 			}
 		})
 	}
@@ -738,15 +870,17 @@ func TestAuthService_PhoneAuth_ExistingUser(t *testing.T) {
 	logger := zap.NewNop()
 	authRepo := NewMockAuthRepository()
 	tokenRepo := NewMockTokenRepository()
-	jwtAuth := jwt.NewJWTAuth(&jwt.Options{Secret: "test-secret", ExpiresIn: 3600})
+	jwtAuth := auth.NewJWTAuth(&auth.Options{Secret: "test-secret", ExpiresIn: 3600})
 	mp := &miniprogram.MiniProgram{}
 
 	// Create existing user
-	authRepo.users[1] = &entity.User{
+	existingUser := &entity.User{
 		Username: "existing_user",
 		Phone:    "13800138001",
 		Status:   entity.UserStatusActive,
 	}
+	existingUser.ID = 1
+	authRepo.users[1] = existingUser
 
 	// Pre-store SMS code
 	tokenRepo.Set(context.Background(), "sms_code:13800138001", "654321", 5*time.Minute)
@@ -768,5 +902,20 @@ func TestAuthService_PhoneAuth_ExistingUser(t *testing.T) {
 
 	if resp.User == nil || resp.User.Username != "existing_user" {
 		t.Error("expected existing user to be returned")
+	}
+	if resp.User.Id != 1 {
+		t.Fatalf("expected existing user id 1, got %d", resp.User.Id)
+	}
+}
+
+func TestAuthService_StoreTokenRejectsExpiredToken(t *testing.T) {
+	service := &AuthService{
+		logger:    zap.NewNop(),
+		tokenRepo: NewMockTokenRepository(),
+	}
+
+	err := service.storeToken(context.Background(), "expired-token", time.Now().Add(-time.Second))
+	if err == nil {
+		t.Fatal("expected expired token error")
 	}
 }

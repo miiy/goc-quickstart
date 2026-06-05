@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"regexp"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -44,4 +45,29 @@ func TestMysqlAuthRepository_Create(t *testing.T) {
 		t.Error(err)
 	}
 
+}
+
+func TestAuthRepository_FirstByIdentifierReturnsActiveUser(t *testing.T) {
+	db, mock, err := newMockDb()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT `id`,`username` FROM `users` WHERE (username = ? AND status = ?) AND `users`.`deleted_at` IS NULL ORDER BY `users`.`id` LIMIT ?")).
+		WithArgs("alice", entity.UserStatusActive, 1).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "username"}).AddRow(42, "alice"))
+
+	repo := NewAuthRepository(db)
+	user, err := repo.FirstByIdentifier(context.Background(), "alice")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if user.ID != 42 || user.Username != "alice" {
+		t.Fatalf("unexpected user: %+v", user)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatal(err)
+	}
 }

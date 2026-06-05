@@ -35,6 +35,11 @@ type CreatePostRequest struct {
 	Post PostInput `json:"post"`
 }
 
+type UpdatePostRequest struct {
+	Post       PostInput `json:"post"`
+	UpdateMask string    `json:"update_mask"`
+}
+
 type PostInput struct {
 	Title    string `json:"title"`
 	Content  string `json:"content"`
@@ -48,7 +53,7 @@ func (c *PostClient) ListPosts(ctx context.Context, page, pageSize int32) (*Post
 		return nil, err
 	}
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +65,7 @@ func (c *PostClient) ListPosts(ctx context.Context, page, pageSize int32) (*Post
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("status: %d, body: %s", resp.StatusCode, string(body))
+		return nil, parseError(resp.StatusCode, body)
 	}
 
 	var result PostListResponse
@@ -78,7 +83,7 @@ func (c *PostClient) GetPost(ctx context.Context, id int64) (*PostResponse, erro
 		return nil, err
 	}
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +95,7 @@ func (c *PostClient) GetPost(ctx context.Context, id int64) (*PostResponse, erro
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("status: %d, body: %s", resp.StatusCode, string(body))
+		return nil, parseError(resp.StatusCode, body)
 	}
 
 	var wrapper struct {
@@ -124,7 +129,7 @@ func (c *PostClient) CreatePost(ctx context.Context, title, content string, auth
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +141,7 @@ func (c *PostClient) CreatePost(ctx context.Context, title, content string, auth
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("status: %d, body: %s", resp.StatusCode, string(respBody))
+		return nil, parseError(resp.StatusCode, respBody)
 	}
 
 	var wrapper struct {
@@ -151,11 +156,12 @@ func (c *PostClient) CreatePost(ctx context.Context, title, content string, auth
 
 func (c *PostClient) UpdatePost(ctx context.Context, id int64, title, content string) (*PostResponse, error) {
 	url := fmt.Sprintf("%s/api/v1/posts/%d", c.baseURL, id)
-	reqBody := CreatePostRequest{
+	reqBody := UpdatePostRequest{
 		Post: PostInput{
 			Title:   title,
 			Content: content,
 		},
+		UpdateMask: "title,content",
 	}
 
 	bodyBytes, err := json.Marshal(reqBody)
@@ -169,7 +175,7 @@ func (c *PostClient) UpdatePost(ctx context.Context, id int64, title, content st
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -181,7 +187,7 @@ func (c *PostClient) UpdatePost(ctx context.Context, id int64, title, content st
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("status: %d, body: %s", resp.StatusCode, string(respBody))
+		return nil, parseError(resp.StatusCode, respBody)
 	}
 
 	var wrapper struct {
@@ -201,15 +207,19 @@ func (c *PostClient) DeletePost(ctx context.Context, id int64) error {
 		return err
 	}
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.Do(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("status: %d, body: %s", resp.StatusCode, string(body))
+		return parseError(resp.StatusCode, body)
 	}
 
 	return nil

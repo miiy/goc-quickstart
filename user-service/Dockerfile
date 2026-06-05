@@ -28,8 +28,8 @@ ENV TZ=Asia/Shanghai
 COPY --from=builder /server /app/server
 
 # Copy config
-COPY configs/ /app/configs/
+COPY config.yaml.example /app/config.yaml
 
 EXPOSE 50053
 
-CMD ["./server"]
+CMD ["./server", "-c", "./config.yaml"]

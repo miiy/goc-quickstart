@@ -562,6 +562,10 @@
       "properties": {
         "username": {
           "type": "string"
+        },
+        "id": {
+          "type": "string",
+          "format": "int64"
         }
       },
       "title": "authenticated user"

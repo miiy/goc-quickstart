@@ -13,6 +13,7 @@ func Router(r *gin.Engine) {
 	g := r.Group("/auth")
 	{
 		g.GET("/logout", Logout)
+		g.POST("/logout", Logout)
 		g.GET("/profile", Profile)
 	}
 }

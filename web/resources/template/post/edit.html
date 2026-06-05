@@ -11,6 +11,7 @@
                     <div class="alert alert-danger" role="alert">{{.Error}}</div>
                     {{end}}
                     <form method="POST" action="/posts/{{ .Post.Id }}">
+                        <input type="hidden" name="_csrf" value="{{ .CSRFToken }}">
                         <input type="hidden" name="_method" value="PUT">
                         <div class="mb-3">
                             <label for="title" class="form-label">Title</label>

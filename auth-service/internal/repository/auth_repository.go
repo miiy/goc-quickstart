@@ -6,7 +6,7 @@ import (
 
 	"github.com/miiy/goc-quickstart/auth-service/internal/entity"
 	"github.com/miiy/goc/auth"
-	"github.com/redis/go-redis/v9"
+	"github.com/miiy/goc/redis"
 	"gorm.io/gorm"
 )
 
@@ -93,7 +93,10 @@ func (r *authRepository) UserExist(ctx context.Context, column, value string) (b
 
 func (r *authRepository) FirstByIdentifier(ctx context.Context, identifier string) (*auth.AuthenticatedUser, error) {
 	var user entity.User
-	err := r.db.WithContext(ctx).Where("username=?", identifier).First(&user).Error
+	err := r.db.WithContext(ctx).
+		Select("id", "username").
+		Where("username = ? AND status = ?", identifier, entity.UserStatusActive).
+		First(&user).Error
 	if err != nil {
 		return nil, err
 	}

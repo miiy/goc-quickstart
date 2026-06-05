@@ -1,0 +1,20 @@
+app:
+  name: blog-web
+  env: local
+  debug: true
+  locale: zh-CN
+  url: localhost
+  footerCopyright: <p class="text-center">&copy; 2024</p>
+redis:
+  addr: 127.0.0.1:6379
+  password:
+  db: 0
+session:
+  name: COOKIE_SESSION
+  secret: secret
+  maxAge: 604800
+server:
+  http:
+    addr: 0.0.0.0:8081
+gateway:
+  addr: 127.0.0.1:8080

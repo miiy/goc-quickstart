@@ -7,10 +7,8 @@ require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/google/wire v0.7.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.3
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0
 	github.com/miiy/goc v0.1.1
 	github.com/miiy/goc/contrib/wechat v0.0.0-20260525063748-95fda6c3e703
-	github.com/redis/go-redis/v9 v9.19.0
 	go.uber.org/zap v1.28.0
 	golang.org/x/crypto v0.52.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20260523011958-0a33c5d7ca68
@@ -32,6 +30,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
+	github.com/redis/go-redis/v9 v9.19.0 // indirect
 	github.com/silenceper/wechat/v2 v2.1.13 // indirect
 	github.com/tidwall/gjson v1.19.0 // indirect
 	github.com/tidwall/match v1.2.0 // indirect

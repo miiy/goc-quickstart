@@ -1,5 +1,5 @@
 .idea
 .DS_Store
-config/*.yaml
-configs
+config.yaml
+configs/x509/
 bin/

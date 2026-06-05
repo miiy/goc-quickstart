@@ -15,10 +15,11 @@
                 </div>
             </div>
 
-            {{if .IsLoggedIn}}
+            {{if .CanManage}}
             <div class="d-flex gap-2 mt-3">
                 <a href="/posts/{{ .Post.Id }}/edit" class="btn btn-primary">Edit</a>
                 <form method="POST" action="/posts/{{ .Post.Id }}">
+                    <input type="hidden" name="_csrf" value="{{ .CSRFToken }}">
                     <input type="hidden" name="_method" value="DELETE">
                     <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
                 </form>

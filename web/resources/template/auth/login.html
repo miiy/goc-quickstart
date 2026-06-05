@@ -11,6 +11,7 @@
                     <div class="alert alert-{{.Level | alertType}}" role="alert">{{.Message}}</div>
                     {{end}}
                     <form action="/login" method="POST">
+                        <input type="hidden" name="_csrf" value="{{ .CSRFToken }}">
                         <div class="mb-3">
                             <label for="username" class="form-label">用户名</label>
                             <input type="text" name="username" id="username" class="form-control" value="{{ .Username }}" required />

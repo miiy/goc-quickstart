@@ -11,6 +11,7 @@
                     <div class="alert alert-danger" role="alert">{{.Error}}</div>
                     {{end}}
                     <form method="POST" action="/posts">
+                        <input type="hidden" name="_csrf" value="{{ .CSRFToken }}">
                         <div class="mb-3">
                             <label for="title" class="form-label">Title</label>
                             <input type="text" class="form-control" id="title" name="title" required>

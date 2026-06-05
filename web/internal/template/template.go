@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/miiy/goc/gin"
+	"github.com/miiy/goc/gin/middleware/csrf"
 	gocTemplate "github.com/miiy/goc/gin/template"
 )
 
@@ -20,14 +21,31 @@ type ViewData struct {
 	Keywords    string
 	Description string
 	IsLoggedIn  bool
+	CSRFToken   string
+}
+
+func NewViewData(c *gin.Context) ViewData {
+	view := ViewData{
+		IsLoggedIn: c.GetBool("isLoggedIn"),
+	}
+	if view.IsLoggedIn {
+		view.CSRFToken = csrf.Token(c)
+	}
+	return view
+}
+
+func NewFormViewData(c *gin.Context) ViewData {
+	view := NewViewData(c)
+	view.CSRFToken = csrf.Token(c)
+	return view
 }
 
 func NotFound(c *gin.Context) {
-	c.HTML(http.StatusNotFound, "pages/404", ViewData{IsLoggedIn: c.GetBool("isLoggedIn")})
+	c.HTML(http.StatusNotFound, "pages/404", NewViewData(c))
 }
 
 func InternalError(c *gin.Context) {
-	c.HTML(http.StatusInternalServerError, "pages/500", ViewData{IsLoggedIn: c.GetBool("isLoggedIn")})
+	c.HTML(http.StatusInternalServerError, "pages/500", NewViewData(c))
 }
 
 // FlashLevelClass maps flash levels to Bootstrap alert CSS classes.

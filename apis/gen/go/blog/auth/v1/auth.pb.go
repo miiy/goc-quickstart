@@ -28,6 +28,7 @@ const (
 type User struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Username      string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
+	Id            int64                  `protobuf:"varint,2,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -69,6 +70,57 @@ func (x *User) GetUsername() string {
 	return ""
 }
 
+func (x *User) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+type GetAuthenticatedUserRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Username      string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetAuthenticatedUserRequest) Reset() {
+	*x = GetAuthenticatedUserRequest{}
+	mi := &file_blog_auth_v1_auth_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetAuthenticatedUserRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetAuthenticatedUserRequest) ProtoMessage() {}
+
+func (x *GetAuthenticatedUserRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_blog_auth_v1_auth_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetAuthenticatedUserRequest.ProtoReflect.Descriptor instead.
+func (*GetAuthenticatedUserRequest) Descriptor() ([]byte, []int) {
+	return file_blog_auth_v1_auth_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *GetAuthenticatedUserRequest) GetUsername() string {
+	if x != nil {
+		return x.Username
+	}
+	return ""
+}
+
 // register (email + username + password)
 type RegisterRequest struct {
 	state                protoimpl.MessageState `protogen:"open.v1"`
@@ -82,7 +134,7 @@ type RegisterRequest struct {
 
 func (x *RegisterRequest) Reset() {
 	*x = RegisterRequest{}
-	mi := &file_blog_auth_v1_auth_proto_msgTypes[1]
+	mi := &file_blog_auth_v1_auth_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -94,7 +146,7 @@ func (x *RegisterRequest) String() string {
 func (*RegisterRequest) ProtoMessage() {}
 
 func (x *RegisterRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_blog_auth_v1_auth_proto_msgTypes[1]
+	mi := &file_blog_auth_v1_auth_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -107,7 +159,7 @@ func (x *RegisterRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterRequest.ProtoReflect.Descriptor instead.
 func (*RegisterRequest) Descriptor() ([]byte, []int) {
-	return file_blog_auth_v1_auth_proto_rawDescGZIP(), []int{1}
+	return file_blog_auth_v1_auth_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *RegisterRequest) GetEmail() string {
@@ -147,7 +199,7 @@ type RegisterResponse struct {
 
 func (x *RegisterResponse) Reset() {
 	*x = RegisterResponse{}
-	mi := &file_blog_auth_v1_auth_proto_msgTypes[2]
+	mi := &file_blog_auth_v1_auth_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -159,7 +211,7 @@ func (x *RegisterResponse) String() string {
 func (*RegisterResponse) ProtoMessage() {}
 
 func (x *RegisterResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_blog_auth_v1_auth_proto_msgTypes[2]
+	mi := &file_blog_auth_v1_auth_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -172,7 +224,7 @@ func (x *RegisterResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterResponse.ProtoReflect.Descriptor instead.
 func (*RegisterResponse) Descriptor() ([]byte, []int) {
-	return file_blog_auth_v1_auth_proto_rawDescGZIP(), []int{2}
+	return file_blog_auth_v1_auth_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *RegisterResponse) GetUser() *User {
@@ -192,7 +244,7 @@ type FieldCheckRequest struct {
 
 func (x *FieldCheckRequest) Reset() {
 	*x = FieldCheckRequest{}
-	mi := &file_blog_auth_v1_auth_proto_msgTypes[3]
+	mi := &file_blog_auth_v1_auth_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -204,7 +256,7 @@ func (x *FieldCheckRequest) String() string {
 func (*FieldCheckRequest) ProtoMessage() {}
 
 func (x *FieldCheckRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_blog_auth_v1_auth_proto_msgTypes[3]
+	mi := &file_blog_auth_v1_auth_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -217,7 +269,7 @@ func (x *FieldCheckRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FieldCheckRequest.ProtoReflect.Descriptor instead.
 func (*FieldCheckRequest) Descriptor() ([]byte, []int) {
-	return file_blog_auth_v1_auth_proto_rawDescGZIP(), []int{3}
+	return file_blog_auth_v1_auth_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *FieldCheckRequest) GetValue() string {
@@ -236,7 +288,7 @@ type FieldCheckResponse struct {
 
 func (x *FieldCheckResponse) Reset() {
 	*x = FieldCheckResponse{}
-	mi := &file_blog_auth_v1_auth_proto_msgTypes[4]
+	mi := &file_blog_auth_v1_auth_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -248,7 +300,7 @@ func (x *FieldCheckResponse) String() string {
 func (*FieldCheckResponse) ProtoMessage() {}
 
 func (x *FieldCheckResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_blog_auth_v1_auth_proto_msgTypes[4]
+	mi := &file_blog_auth_v1_auth_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -261,7 +313,7 @@ func (x *FieldCheckResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FieldCheckResponse.ProtoReflect.Descriptor instead.
 func (*FieldCheckResponse) Descriptor() ([]byte, []int) {
-	return file_blog_auth_v1_auth_proto_rawDescGZIP(), []int{4}
+	return file_blog_auth_v1_auth_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *FieldCheckResponse) GetExist() bool {
@@ -282,7 +334,7 @@ type LoginRequest struct {
 
 func (x *LoginRequest) Reset() {
 	*x = LoginRequest{}
-	mi := &file_blog_auth_v1_auth_proto_msgTypes[5]
+	mi := &file_blog_auth_v1_auth_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -294,7 +346,7 @@ func (x *LoginRequest) String() string {
 func (*LoginRequest) ProtoMessage() {}
 
 func (x *LoginRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_blog_auth_v1_auth_proto_msgTypes[5]
+	mi := &file_blog_auth_v1_auth_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -307,7 +359,7 @@ func (x *LoginRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoginRequest.ProtoReflect.Descriptor instead.
 func (*LoginRequest) Descriptor() ([]byte, []int) {
-	return file_blog_auth_v1_auth_proto_rawDescGZIP(), []int{5}
+	return file_blog_auth_v1_auth_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *LoginRequest) GetUsername() string {
@@ -336,7 +388,7 @@ type LoginResponse struct {
 
 func (x *LoginResponse) Reset() {
 	*x = LoginResponse{}
-	mi := &file_blog_auth_v1_auth_proto_msgTypes[6]
+	mi := &file_blog_auth_v1_auth_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -348,7 +400,7 @@ func (x *LoginResponse) String() string {
 func (*LoginResponse) ProtoMessage() {}
 
 func (x *LoginResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_blog_auth_v1_auth_proto_msgTypes[6]
+	mi := &file_blog_auth_v1_auth_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -361,7 +413,7 @@ func (x *LoginResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoginResponse.ProtoReflect.Descriptor instead.
 func (*LoginResponse) Descriptor() ([]byte, []int) {
-	return file_blog_auth_v1_auth_proto_rawDescGZIP(), []int{6}
+	return file_blog_auth_v1_auth_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *LoginResponse) GetTokenType() string {
@@ -402,7 +454,7 @@ type SendSmsCodeRequest struct {
 
 func (x *SendSmsCodeRequest) Reset() {
 	*x = SendSmsCodeRequest{}
-	mi := &file_blog_auth_v1_auth_proto_msgTypes[7]
+	mi := &file_blog_auth_v1_auth_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -414,7 +466,7 @@ func (x *SendSmsCodeRequest) String() string {
 func (*SendSmsCodeRequest) ProtoMessage() {}
 
 func (x *SendSmsCodeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_blog_auth_v1_auth_proto_msgTypes[7]
+	mi := &file_blog_auth_v1_auth_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -427,7 +479,7 @@ func (x *SendSmsCodeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SendSmsCodeRequest.ProtoReflect.Descriptor instead.
 func (*SendSmsCodeRequest) Descriptor() ([]byte, []int) {
-	return file_blog_auth_v1_auth_proto_rawDescGZIP(), []int{7}
+	return file_blog_auth_v1_auth_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *SendSmsCodeRequest) GetPhone() string {
@@ -445,7 +497,7 @@ type SendSmsCodeResponse struct {
 
 func (x *SendSmsCodeResponse) Reset() {
 	*x = SendSmsCodeResponse{}
-	mi := &file_blog_auth_v1_auth_proto_msgTypes[8]
+	mi := &file_blog_auth_v1_auth_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -457,7 +509,7 @@ func (x *SendSmsCodeResponse) String() string {
 func (*SendSmsCodeResponse) ProtoMessage() {}
 
 func (x *SendSmsCodeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_blog_auth_v1_auth_proto_msgTypes[8]
+	mi := &file_blog_auth_v1_auth_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -470,7 +522,7 @@ func (x *SendSmsCodeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SendSmsCodeResponse.ProtoReflect.Descriptor instead.
 func (*SendSmsCodeResponse) Descriptor() ([]byte, []int) {
-	return file_blog_auth_v1_auth_proto_rawDescGZIP(), []int{8}
+	return file_blog_auth_v1_auth_proto_rawDescGZIP(), []int{9}
 }
 
 // phone auth (auto register if not exists)
@@ -484,7 +536,7 @@ type PhoneAuthRequest struct {
 
 func (x *PhoneAuthRequest) Reset() {
 	*x = PhoneAuthRequest{}
-	mi := &file_blog_auth_v1_auth_proto_msgTypes[9]
+	mi := &file_blog_auth_v1_auth_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -496,7 +548,7 @@ func (x *PhoneAuthRequest) String() string {
 func (*PhoneAuthRequest) ProtoMessage() {}
 
 func (x *PhoneAuthRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_blog_auth_v1_auth_proto_msgTypes[9]
+	mi := &file_blog_auth_v1_auth_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -509,7 +561,7 @@ func (x *PhoneAuthRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PhoneAuthRequest.ProtoReflect.Descriptor instead.
 func (*PhoneAuthRequest) Descriptor() ([]byte, []int) {
-	return file_blog_auth_v1_auth_proto_rawDescGZIP(), []int{9}
+	return file_blog_auth_v1_auth_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *PhoneAuthRequest) GetPhone() string {
@@ -538,7 +590,7 @@ type PhoneAuthResponse struct {
 
 func (x *PhoneAuthResponse) Reset() {
 	*x = PhoneAuthResponse{}
-	mi := &file_blog_auth_v1_auth_proto_msgTypes[10]
+	mi := &file_blog_auth_v1_auth_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -550,7 +602,7 @@ func (x *PhoneAuthResponse) String() string {
 func (*PhoneAuthResponse) ProtoMessage() {}
 
 func (x *PhoneAuthResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_blog_auth_v1_auth_proto_msgTypes[10]
+	mi := &file_blog_auth_v1_auth_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -563,7 +615,7 @@ func (x *PhoneAuthResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PhoneAuthResponse.ProtoReflect.Descriptor instead.
 func (*PhoneAuthResponse) Descriptor() ([]byte, []int) {
-	return file_blog_auth_v1_auth_proto_rawDescGZIP(), []int{10}
+	return file_blog_auth_v1_auth_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *PhoneAuthResponse) GetTokenType() string {
@@ -604,7 +656,7 @@ type MpLoginRequest struct {
 
 func (x *MpLoginRequest) Reset() {
 	*x = MpLoginRequest{}
-	mi := &file_blog_auth_v1_auth_proto_msgTypes[11]
+	mi := &file_blog_auth_v1_auth_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -616,7 +668,7 @@ func (x *MpLoginRequest) String() string {
 func (*MpLoginRequest) ProtoMessage() {}
 
 func (x *MpLoginRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_blog_auth_v1_auth_proto_msgTypes[11]
+	mi := &file_blog_auth_v1_auth_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -629,7 +681,7 @@ func (x *MpLoginRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MpLoginRequest.ProtoReflect.Descriptor instead.
 func (*MpLoginRequest) Descriptor() ([]byte, []int) {
-	return file_blog_auth_v1_auth_proto_rawDescGZIP(), []int{11}
+	return file_blog_auth_v1_auth_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *MpLoginRequest) GetCode() string {
@@ -649,7 +701,7 @@ type RefreshTokenRequest struct {
 
 func (x *RefreshTokenRequest) Reset() {
 	*x = RefreshTokenRequest{}
-	mi := &file_blog_auth_v1_auth_proto_msgTypes[12]
+	mi := &file_blog_auth_v1_auth_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -661,7 +713,7 @@ func (x *RefreshTokenRequest) String() string {
 func (*RefreshTokenRequest) ProtoMessage() {}
 
 func (x *RefreshTokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_blog_auth_v1_auth_proto_msgTypes[12]
+	mi := &file_blog_auth_v1_auth_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -674,7 +726,7 @@ func (x *RefreshTokenRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RefreshTokenRequest.ProtoReflect.Descriptor instead.
 func (*RefreshTokenRequest) Descriptor() ([]byte, []int) {
-	return file_blog_auth_v1_auth_proto_rawDescGZIP(), []int{12}
+	return file_blog_auth_v1_auth_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *RefreshTokenRequest) GetAccessToken() string {
@@ -696,7 +748,7 @@ type RefreshTokenResponse struct {
 
 func (x *RefreshTokenResponse) Reset() {
 	*x = RefreshTokenResponse{}
-	mi := &file_blog_auth_v1_auth_proto_msgTypes[13]
+	mi := &file_blog_auth_v1_auth_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -708,7 +760,7 @@ func (x *RefreshTokenResponse) String() string {
 func (*RefreshTokenResponse) ProtoMessage() {}
 
 func (x *RefreshTokenResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_blog_auth_v1_auth_proto_msgTypes[13]
+	mi := &file_blog_auth_v1_auth_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -721,7 +773,7 @@ func (x *RefreshTokenResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RefreshTokenResponse.ProtoReflect.Descriptor instead.
 func (*RefreshTokenResponse) Descriptor() ([]byte, []int) {
-	return file_blog_auth_v1_auth_proto_rawDescGZIP(), []int{13}
+	return file_blog_auth_v1_auth_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *RefreshTokenResponse) GetTokenType() string {
@@ -762,7 +814,7 @@ type LogoutRequest struct {
 
 func (x *LogoutRequest) Reset() {
 	*x = LogoutRequest{}
-	mi := &file_blog_auth_v1_auth_proto_msgTypes[14]
+	mi := &file_blog_auth_v1_auth_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -774,7 +826,7 @@ func (x *LogoutRequest) String() string {
 func (*LogoutRequest) ProtoMessage() {}
 
 func (x *LogoutRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_blog_auth_v1_auth_proto_msgTypes[14]
+	mi := &file_blog_auth_v1_auth_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -787,7 +839,7 @@ func (x *LogoutRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LogoutRequest.ProtoReflect.Descriptor instead.
 func (*LogoutRequest) Descriptor() ([]byte, []int) {
-	return file_blog_auth_v1_auth_proto_rawDescGZIP(), []int{14}
+	return file_blog_auth_v1_auth_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *LogoutRequest) GetAccessToken() string {
@@ -805,7 +857,7 @@ type LogoutResponse struct {
 
 func (x *LogoutResponse) Reset() {
 	*x = LogoutResponse{}
-	mi := &file_blog_auth_v1_auth_proto_msgTypes[15]
+	mi := &file_blog_auth_v1_auth_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -817,7 +869,7 @@ func (x *LogoutResponse) String() string {
 func (*LogoutResponse) ProtoMessage() {}
 
 func (x *LogoutResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_blog_auth_v1_auth_proto_msgTypes[15]
+	mi := &file_blog_auth_v1_auth_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -830,16 +882,19 @@ func (x *LogoutResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LogoutResponse.ProtoReflect.Descriptor instead.
 func (*LogoutResponse) Descriptor() ([]byte, []int) {
-	return file_blog_auth_v1_auth_proto_rawDescGZIP(), []int{15}
+	return file_blog_auth_v1_auth_proto_rawDescGZIP(), []int{16}
 }
 
 var File_blog_auth_v1_auth_proto protoreflect.FileDescriptor
 
 const file_blog_auth_v1_auth_proto_rawDesc = "" +
 	"\n" +
-	"\x17blog/auth/v1/auth.proto\x12\x14goc.blog.auth.api.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bbuf/validate/validate.proto\"\"\n" +
+	"\x17blog/auth/v1/auth.proto\x12\x14goc.blog.auth.api.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bbuf/validate/validate.proto\"2\n" +
 	"\x04User\x12\x1a\n" +
-	"\busername\x18\x01 \x01(\tR\busername\"\xac\x01\n" +
+	"\busername\x18\x01 \x01(\tR\busername\x12\x0e\n" +
+	"\x02id\x18\x02 \x01(\x03R\x02id\">\n" +
+	"\x1bGetAuthenticatedUserRequest\x12\x1f\n" +
+	"\busername\x18\x01 \x01(\tB\x03\xe0A\x02R\busername\"\xac\x01\n" +
 	"\x0fRegisterRequest\x12\x1d\n" +
 	"\x05email\x18\x01 \x01(\tB\a\xbaH\x04r\x02`\x01R\x05email\x12\x1f\n" +
 	"\busername\x18\x02 \x01(\tB\x03\xe0A\x02R\busername\x12\x1f\n" +
@@ -887,9 +942,9 @@ const file_blog_auth_v1_auth_proto_rawDesc = "" +
 	"\x04user\x18\x04 \x01(\v2\x1a.goc.blog.auth.api.v1.UserR\x04user\"2\n" +
 	"\rLogoutRequest\x12!\n" +
 	"\faccess_token\x18\x01 \x01(\tR\vaccessToken\"\x10\n" +
-	"\x0eLogoutResponse2\xbb\n" +
-	"\n" +
-	"\vAuthService\x12{\n" +
+	"\x0eLogoutResponse2\xa2\v\n" +
+	"\vAuthService\x12e\n" +
+	"\x14GetAuthenticatedUser\x121.goc.blog.auth.api.v1.GetAuthenticatedUserRequest\x1a\x1a.goc.blog.auth.api.v1.User\x12{\n" +
 	"\bRegister\x12%.goc.blog.auth.api.v1.RegisterRequest\x1a&.goc.blog.auth.api.v1.RegisterResponse\" \x82\xd3\xe4\x93\x02\x1a:\x01*\"\x15/api/v1/auth/register\x12\x93\x01\n" +
 	"\rUsernameCheck\x12'.goc.blog.auth.api.v1.FieldCheckRequest\x1a(.goc.blog.auth.api.v1.FieldCheckResponse\"/\x82\xd3\xe4\x93\x02):\x01*\"$/api/v1/auth/register/username_check\x12\x8d\x01\n" +
 	"\n" +
@@ -916,56 +971,59 @@ func file_blog_auth_v1_auth_proto_rawDescGZIP() []byte {
 	return file_blog_auth_v1_auth_proto_rawDescData
 }
 
-var file_blog_auth_v1_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_blog_auth_v1_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
 var file_blog_auth_v1_auth_proto_goTypes = []any{
-	(*User)(nil),                  // 0: goc.blog.auth.api.v1.User
-	(*RegisterRequest)(nil),       // 1: goc.blog.auth.api.v1.RegisterRequest
-	(*RegisterResponse)(nil),      // 2: goc.blog.auth.api.v1.RegisterResponse
-	(*FieldCheckRequest)(nil),     // 3: goc.blog.auth.api.v1.FieldCheckRequest
-	(*FieldCheckResponse)(nil),    // 4: goc.blog.auth.api.v1.FieldCheckResponse
-	(*LoginRequest)(nil),          // 5: goc.blog.auth.api.v1.LoginRequest
-	(*LoginResponse)(nil),         // 6: goc.blog.auth.api.v1.LoginResponse
-	(*SendSmsCodeRequest)(nil),    // 7: goc.blog.auth.api.v1.SendSmsCodeRequest
-	(*SendSmsCodeResponse)(nil),   // 8: goc.blog.auth.api.v1.SendSmsCodeResponse
-	(*PhoneAuthRequest)(nil),      // 9: goc.blog.auth.api.v1.PhoneAuthRequest
-	(*PhoneAuthResponse)(nil),     // 10: goc.blog.auth.api.v1.PhoneAuthResponse
-	(*MpLoginRequest)(nil),        // 11: goc.blog.auth.api.v1.MpLoginRequest
-	(*RefreshTokenRequest)(nil),   // 12: goc.blog.auth.api.v1.RefreshTokenRequest
-	(*RefreshTokenResponse)(nil),  // 13: goc.blog.auth.api.v1.RefreshTokenResponse
-	(*LogoutRequest)(nil),         // 14: goc.blog.auth.api.v1.LogoutRequest
-	(*LogoutResponse)(nil),        // 15: goc.blog.auth.api.v1.LogoutResponse
-	(*timestamppb.Timestamp)(nil), // 16: google.protobuf.Timestamp
+	(*User)(nil),                        // 0: goc.blog.auth.api.v1.User
+	(*GetAuthenticatedUserRequest)(nil), // 1: goc.blog.auth.api.v1.GetAuthenticatedUserRequest
+	(*RegisterRequest)(nil),             // 2: goc.blog.auth.api.v1.RegisterRequest
+	(*RegisterResponse)(nil),            // 3: goc.blog.auth.api.v1.RegisterResponse
+	(*FieldCheckRequest)(nil),           // 4: goc.blog.auth.api.v1.FieldCheckRequest
+	(*FieldCheckResponse)(nil),          // 5: goc.blog.auth.api.v1.FieldCheckResponse
+	(*LoginRequest)(nil),                // 6: goc.blog.auth.api.v1.LoginRequest
+	(*LoginResponse)(nil),               // 7: goc.blog.auth.api.v1.LoginResponse
+	(*SendSmsCodeRequest)(nil),          // 8: goc.blog.auth.api.v1.SendSmsCodeRequest
+	(*SendSmsCodeResponse)(nil),         // 9: goc.blog.auth.api.v1.SendSmsCodeResponse
+	(*PhoneAuthRequest)(nil),            // 10: goc.blog.auth.api.v1.PhoneAuthRequest
+	(*PhoneAuthResponse)(nil),           // 11: goc.blog.auth.api.v1.PhoneAuthResponse
+	(*MpLoginRequest)(nil),              // 12: goc.blog.auth.api.v1.MpLoginRequest
+	(*RefreshTokenRequest)(nil),         // 13: goc.blog.auth.api.v1.RefreshTokenRequest
+	(*RefreshTokenResponse)(nil),        // 14: goc.blog.auth.api.v1.RefreshTokenResponse
+	(*LogoutRequest)(nil),               // 15: goc.blog.auth.api.v1.LogoutRequest
+	(*LogoutResponse)(nil),              // 16: goc.blog.auth.api.v1.LogoutResponse
+	(*timestamppb.Timestamp)(nil),       // 17: google.protobuf.Timestamp
 }
 var file_blog_auth_v1_auth_proto_depIdxs = []int32{
 	0,  // 0: goc.blog.auth.api.v1.RegisterResponse.user:type_name -> goc.blog.auth.api.v1.User
-	16, // 1: goc.blog.auth.api.v1.LoginResponse.expires_at:type_name -> google.protobuf.Timestamp
+	17, // 1: goc.blog.auth.api.v1.LoginResponse.expires_at:type_name -> google.protobuf.Timestamp
 	0,  // 2: goc.blog.auth.api.v1.LoginResponse.user:type_name -> goc.blog.auth.api.v1.User
-	16, // 3: goc.blog.auth.api.v1.PhoneAuthResponse.expires_at:type_name -> google.protobuf.Timestamp
+	17, // 3: goc.blog.auth.api.v1.PhoneAuthResponse.expires_at:type_name -> google.protobuf.Timestamp
 	0,  // 4: goc.blog.auth.api.v1.PhoneAuthResponse.user:type_name -> goc.blog.auth.api.v1.User
-	16, // 5: goc.blog.auth.api.v1.RefreshTokenResponse.expires_at:type_name -> google.protobuf.Timestamp
+	17, // 5: goc.blog.auth.api.v1.RefreshTokenResponse.expires_at:type_name -> google.protobuf.Timestamp
 	0,  // 6: goc.blog.auth.api.v1.RefreshTokenResponse.user:type_name -> goc.blog.auth.api.v1.User
-	1,  // 7: goc.blog.auth.api.v1.AuthService.Register:input_type -> goc.blog.auth.api.v1.RegisterRequest
-	3,  // 8: goc.blog.auth.api.v1.AuthService.UsernameCheck:input_type -> goc.blog.auth.api.v1.FieldCheckRequest
-	3,  // 9: goc.blog.auth.api.v1.AuthService.EmailCheck:input_type -> goc.blog.auth.api.v1.FieldCheckRequest
-	3,  // 10: goc.blog.auth.api.v1.AuthService.PhoneCheck:input_type -> goc.blog.auth.api.v1.FieldCheckRequest
-	5,  // 11: goc.blog.auth.api.v1.AuthService.Login:input_type -> goc.blog.auth.api.v1.LoginRequest
-	7,  // 12: goc.blog.auth.api.v1.AuthService.SendSmsCode:input_type -> goc.blog.auth.api.v1.SendSmsCodeRequest
-	9,  // 13: goc.blog.auth.api.v1.AuthService.PhoneAuth:input_type -> goc.blog.auth.api.v1.PhoneAuthRequest
-	11, // 14: goc.blog.auth.api.v1.AuthService.MpLogin:input_type -> goc.blog.auth.api.v1.MpLoginRequest
-	12, // 15: goc.blog.auth.api.v1.AuthService.RefreshToken:input_type -> goc.blog.auth.api.v1.RefreshTokenRequest
-	14, // 16: goc.blog.auth.api.v1.AuthService.Logout:input_type -> goc.blog.auth.api.v1.LogoutRequest
-	2,  // 17: goc.blog.auth.api.v1.AuthService.Register:output_type -> goc.blog.auth.api.v1.RegisterResponse
-	4,  // 18: goc.blog.auth.api.v1.AuthService.UsernameCheck:output_type -> goc.blog.auth.api.v1.FieldCheckResponse
-	4,  // 19: goc.blog.auth.api.v1.AuthService.EmailCheck:output_type -> goc.blog.auth.api.v1.FieldCheckResponse
-	4,  // 20: goc.blog.auth.api.v1.AuthService.PhoneCheck:output_type -> goc.blog.auth.api.v1.FieldCheckResponse
-	6,  // 21: goc.blog.auth.api.v1.AuthService.Login:output_type -> goc.blog.auth.api.v1.LoginResponse
-	8,  // 22: goc.blog.auth.api.v1.AuthService.SendSmsCode:output_type -> goc.blog.auth.api.v1.SendSmsCodeResponse
-	10, // 23: goc.blog.auth.api.v1.AuthService.PhoneAuth:output_type -> goc.blog.auth.api.v1.PhoneAuthResponse
-	6,  // 24: goc.blog.auth.api.v1.AuthService.MpLogin:output_type -> goc.blog.auth.api.v1.LoginResponse
-	13, // 25: goc.blog.auth.api.v1.AuthService.RefreshToken:output_type -> goc.blog.auth.api.v1.RefreshTokenResponse
-	15, // 26: goc.blog.auth.api.v1.AuthService.Logout:output_type -> goc.blog.auth.api.v1.LogoutResponse
-	17, // [17:27] is the sub-list for method output_type
-	7,  // [7:17] is the sub-list for method input_type
+	1,  // 7: goc.blog.auth.api.v1.AuthService.GetAuthenticatedUser:input_type -> goc.blog.auth.api.v1.GetAuthenticatedUserRequest
+	2,  // 8: goc.blog.auth.api.v1.AuthService.Register:input_type -> goc.blog.auth.api.v1.RegisterRequest
+	4,  // 9: goc.blog.auth.api.v1.AuthService.UsernameCheck:input_type -> goc.blog.auth.api.v1.FieldCheckRequest
+	4,  // 10: goc.blog.auth.api.v1.AuthService.EmailCheck:input_type -> goc.blog.auth.api.v1.FieldCheckRequest
+	4,  // 11: goc.blog.auth.api.v1.AuthService.PhoneCheck:input_type -> goc.blog.auth.api.v1.FieldCheckRequest
+	6,  // 12: goc.blog.auth.api.v1.AuthService.Login:input_type -> goc.blog.auth.api.v1.LoginRequest
+	8,  // 13: goc.blog.auth.api.v1.AuthService.SendSmsCode:input_type -> goc.blog.auth.api.v1.SendSmsCodeRequest
+	10, // 14: goc.blog.auth.api.v1.AuthService.PhoneAuth:input_type -> goc.blog.auth.api.v1.PhoneAuthRequest
+	12, // 15: goc.blog.auth.api.v1.AuthService.MpLogin:input_type -> goc.blog.auth.api.v1.MpLoginRequest
+	13, // 16: goc.blog.auth.api.v1.AuthService.RefreshToken:input_type -> goc.blog.auth.api.v1.RefreshTokenRequest
+	15, // 17: goc.blog.auth.api.v1.AuthService.Logout:input_type -> goc.blog.auth.api.v1.LogoutRequest
+	0,  // 18: goc.blog.auth.api.v1.AuthService.GetAuthenticatedUser:output_type -> goc.blog.auth.api.v1.User
+	3,  // 19: goc.blog.auth.api.v1.AuthService.Register:output_type -> goc.blog.auth.api.v1.RegisterResponse
+	5,  // 20: goc.blog.auth.api.v1.AuthService.UsernameCheck:output_type -> goc.blog.auth.api.v1.FieldCheckResponse
+	5,  // 21: goc.blog.auth.api.v1.AuthService.EmailCheck:output_type -> goc.blog.auth.api.v1.FieldCheckResponse
+	5,  // 22: goc.blog.auth.api.v1.AuthService.PhoneCheck:output_type -> goc.blog.auth.api.v1.FieldCheckResponse
+	7,  // 23: goc.blog.auth.api.v1.AuthService.Login:output_type -> goc.blog.auth.api.v1.LoginResponse
+	9,  // 24: goc.blog.auth.api.v1.AuthService.SendSmsCode:output_type -> goc.blog.auth.api.v1.SendSmsCodeResponse
+	11, // 25: goc.blog.auth.api.v1.AuthService.PhoneAuth:output_type -> goc.blog.auth.api.v1.PhoneAuthResponse
+	7,  // 26: goc.blog.auth.api.v1.AuthService.MpLogin:output_type -> goc.blog.auth.api.v1.LoginResponse
+	14, // 27: goc.blog.auth.api.v1.AuthService.RefreshToken:output_type -> goc.blog.auth.api.v1.RefreshTokenResponse
+	16, // 28: goc.blog.auth.api.v1.AuthService.Logout:output_type -> goc.blog.auth.api.v1.LogoutResponse
+	18, // [18:29] is the sub-list for method output_type
+	7,  // [7:18] is the sub-list for method input_type
 	7,  // [7:7] is the sub-list for extension type_name
 	7,  // [7:7] is the sub-list for extension extendee
 	0,  // [0:7] is the sub-list for field type_name
@@ -982,7 +1040,7 @@ func file_blog_auth_v1_auth_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_blog_auth_v1_auth_proto_rawDesc), len(file_blog_auth_v1_auth_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   16,
+			NumMessages:   17,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

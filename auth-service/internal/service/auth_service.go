@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"crypto/md5"
+	cryptorand "crypto/rand"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"strings"
@@ -11,7 +13,7 @@ import (
 	pb "github.com/miiy/goc-quickstart/auth-service/gen/go/blog/auth/v1"
 	"github.com/miiy/goc-quickstart/auth-service/internal/entity"
 	"github.com/miiy/goc-quickstart/auth-service/internal/repository"
-	"github.com/miiy/goc/auth/jwt"
+	"github.com/miiy/goc/auth"
 	"github.com/miiy/goc/contrib/wechat/miniprogram"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
@@ -26,7 +28,7 @@ type AuthService struct {
 	logger    *zap.Logger
 	authRepo  repository.AuthRepository
 	tokenRepo repository.TokenRepository
-	jwtAuth   *jwt.JWTAuth
+	jwtAuth   *auth.JWTAuth
 	mp        *miniprogram.MiniProgram
 }
 
@@ -44,7 +46,7 @@ var (
 	ErrWrongPassword = errors.New("wrong password")
 )
 
-func NewAuthServiceServer(logger *zap.Logger, authRepo repository.AuthRepository, tokenRepo repository.TokenRepository, jwtAuth *jwt.JWTAuth, mp *miniprogram.MiniProgram) pb.AuthServiceServer {
+func NewAuthServiceServer(logger *zap.Logger, authRepo repository.AuthRepository, tokenRepo repository.TokenRepository, jwtAuth *auth.JWTAuth, mp *miniprogram.MiniProgram) pb.AuthServiceServer {
 	return &AuthService{
 		logger:    logger,
 		authRepo:  authRepo,
@@ -52,6 +54,27 @@ func NewAuthServiceServer(logger *zap.Logger, authRepo repository.AuthRepository
 		jwtAuth:   jwtAuth,
 		mp:        mp,
 	}
+}
+
+func (s *AuthService) GetAuthenticatedUser(ctx context.Context, req *pb.GetAuthenticatedUserRequest) (*pb.User, error) {
+	username := strings.TrimSpace(req.Username)
+	if username == "" {
+		return nil, status.Error(codes.InvalidArgument, ErrInvalidArgument.Error())
+	}
+
+	user, err := s.authRepo.FirstByIdentifier(ctx, username)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, status.Error(codes.Unauthenticated, ErrUserNotFound.Error())
+		}
+		s.logger.Error("authRepo.FirstByIdentifier", zap.Error(err))
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &pb.User{
+		Id:       user.ID,
+		Username: user.Username,
+	}, nil
 }
 
 func registerValidate(req *pb.RegisterRequest) error {
@@ -84,6 +107,15 @@ func (s *AuthService) Register(ctx context.Context, req *pb.RegisterRequest) (*p
 		return nil, status.Error(codes.AlreadyExists, ErrUsernameOrEmailExist.Error())
 	}
 
+	exist, err = s.authRepo.UserExist(ctx, entity.UserColumnEmail, req.Email)
+	if err != nil {
+		s.logger.Error("authRepo.UserExist", zap.Error(err))
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	if exist {
+		return nil, status.Error(codes.AlreadyExists, ErrUsernameOrEmailExist.Error())
+	}
+
 	hashPasswd, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		s.logger.Error("bcrypt.GenerateFromPassword", zap.Error(err))
@@ -108,6 +140,7 @@ func (s *AuthService) Register(ctx context.Context, req *pb.RegisterRequest) (*p
 
 	return &pb.RegisterResponse{
 		User: &pb.User{
+			Id:       user.ID,
 			Username: user.Username,
 		},
 	}, nil
@@ -158,13 +191,20 @@ func (s *AuthService) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Logi
 		s.logger.Error("authRepo.FirstByUsername", zap.Error(err))
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+	if user.Status != entity.UserStatusActive {
+		return nil, status.Error(codes.NotFound, ErrUserNotFound.Error())
+	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password))
 	if err != nil {
 		return nil, status.Error(codes.NotFound, ErrWrongPassword.Error())
 	}
 
-	claims := s.jwtAuth.CreateClaims(user.Username)
+	claims, err := s.createClaims(user.Username)
+	if err != nil {
+		s.logger.Error("createClaims", zap.Error(err))
+		return nil, status.Error(codes.Internal, err.Error())
+	}
 	token, err := s.jwtAuth.CreateTokenByClaims(claims)
 	if err != nil {
 		s.logger.Error("jwtAuth.CreateTokenByClaims", zap.Error(err))
@@ -173,9 +213,7 @@ func (s *AuthService) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Logi
 
 	// store token
 	expiresTime := claims.ExpiresAt.Time
-	err = s.tokenRepo.Set(ctx, formatTokenKey(token), token, time.Now().Sub(expiresTime))
-	if err != nil {
-		s.logger.Error("tokenRepo.Set", zap.Error(err))
+	if err := s.storeToken(ctx, token, expiresTime); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -184,6 +222,7 @@ func (s *AuthService) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Logi
 		AccessToken: token,
 		ExpiresAt:   timestamppb.New(expiresTime),
 		User: &pb.User{
+			Id:       user.ID,
 			Username: user.Username,
 		},
 	}, nil
@@ -238,7 +277,11 @@ func (s *AuthService) MpLogin(ctx context.Context, req *pb.MpLoginRequest) (*pb.
 	}
 
 	// create jwt token
-	claims := s.jwtAuth.CreateClaims(user.Username)
+	claims, err := s.createClaims(user.Username)
+	if err != nil {
+		s.logger.Error("createClaims", zap.Error(err))
+		return nil, status.Error(codes.Internal, err.Error())
+	}
 	token, err := s.jwtAuth.CreateTokenByClaims(claims)
 	if err != nil {
 		s.logger.Error("jwtAuth.CreateTokenByClaims", zap.Error(err))
@@ -247,10 +290,7 @@ func (s *AuthService) MpLogin(ctx context.Context, req *pb.MpLoginRequest) (*pb.
 
 	// store token
 	expiresTime := claims.ExpiresAt.Time
-	ttl := expiresTime.Sub(time.Now())
-	err = s.tokenRepo.Set(ctx, formatTokenKey(token), token, ttl)
-	if err != nil {
-		s.logger.Error("tokenRepo.Set", zap.Error(err))
+	if err := s.storeToken(ctx, token, expiresTime); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -259,6 +299,7 @@ func (s *AuthService) MpLogin(ctx context.Context, req *pb.MpLoginRequest) (*pb.
 		AccessToken: token,
 		ExpiresAt:   timestamppb.New(expiresTime),
 		User: &pb.User{
+			Id:       user.ID,
 			Username: user.Username,
 		},
 	}, nil
@@ -329,7 +370,11 @@ func (s *AuthService) PhoneAuth(ctx context.Context, req *pb.PhoneAuthRequest) (
 	}
 
 	// create jwt token
-	claims := s.jwtAuth.CreateClaims(user.Username)
+	claims, err := s.createClaims(user.Username)
+	if err != nil {
+		s.logger.Error("createClaims", zap.Error(err))
+		return nil, status.Error(codes.Internal, err.Error())
+	}
 	token, err := s.jwtAuth.CreateTokenByClaims(claims)
 	if err != nil {
 		s.logger.Error("jwtAuth.CreateTokenByClaims", zap.Error(err))
@@ -337,9 +382,7 @@ func (s *AuthService) PhoneAuth(ctx context.Context, req *pb.PhoneAuthRequest) (
 	}
 
 	expiresTime := claims.ExpiresAt.Time
-	err = s.tokenRepo.Set(ctx, formatTokenKey(token), token, expiresTime.Sub(time.Now()))
-	if err != nil {
-		s.logger.Error("tokenRepo.Set", zap.Error(err))
+	if err := s.storeToken(ctx, token, expiresTime); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -348,6 +391,7 @@ func (s *AuthService) PhoneAuth(ctx context.Context, req *pb.PhoneAuthRequest) (
 		AccessToken: token,
 		ExpiresAt:   timestamppb.New(expiresTime),
 		User: &pb.User{
+			Id:       user.ID,
 			Username: user.Username,
 		},
 	}, nil
@@ -364,6 +408,19 @@ func (s *AuthService) RefreshToken(ctx context.Context, request *pb.RefreshToken
 		s.logger.Error("jwtAuth.ParseToken", zap.Error(err))
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+	if _, err := s.tokenRepo.Get(ctx, formatTokenKey(request.AccessToken)); err != nil {
+		return nil, status.Error(codes.Unauthenticated, "token expired or revoked")
+	}
+
+	user, err := s.authRepo.FirstByIdentifier(ctx, oldClaims.Username)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, status.Error(codes.Unauthenticated, ErrUserNotFound.Error())
+		}
+		s.logger.Error("authRepo.FirstByIdentifier", zap.Error(err))
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
 	// delete old token
 	err = s.tokenRepo.Del(ctx, formatTokenKey(request.AccessToken))
 	if err != nil {
@@ -371,7 +428,11 @@ func (s *AuthService) RefreshToken(ctx context.Context, request *pb.RefreshToken
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	// create new token
-	claims := s.jwtAuth.CreateClaims(oldClaims.Username)
+	claims, err := s.createClaims(oldClaims.Username)
+	if err != nil {
+		s.logger.Error("createClaims", zap.Error(err))
+		return nil, status.Error(codes.Internal, err.Error())
+	}
 	token, err := s.jwtAuth.CreateTokenByClaims(claims)
 	if err != nil {
 		s.logger.Error("jwtAuth.CreateTokenByClaims", zap.Error(err))
@@ -379,11 +440,18 @@ func (s *AuthService) RefreshToken(ctx context.Context, request *pb.RefreshToken
 	}
 
 	expiresTime := claims.ExpiresAt.Time
+	if err := s.storeToken(ctx, token, expiresTime); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
 	return &pb.RefreshTokenResponse{
 		TokenType:   "Bearer",
 		AccessToken: token,
 		ExpiresAt:   timestamppb.New(expiresTime),
-		User:        &pb.User{Username: claims.Username},
+		User: &pb.User{
+			Id:       user.ID,
+			Username: user.Username,
+		},
 	}, nil
 }
 
@@ -400,6 +468,36 @@ func (s *AuthService) Logout(ctx context.Context, req *pb.LogoutRequest) (*pb.Lo
 
 func formatTokenKey(token string) string {
 	return fmt.Sprintf(AuthTokenKey, fmt.Sprintf("%x", md5.Sum([]byte(token))))
+}
+
+func (s *AuthService) storeToken(ctx context.Context, token string, expiresTime time.Time) error {
+	ttl := time.Until(expiresTime)
+	if ttl <= 0 {
+		return errors.New("token already expired")
+	}
+	if err := s.tokenRepo.Set(ctx, formatTokenKey(token), token, ttl); err != nil {
+		s.logger.Error("tokenRepo.Set", zap.Error(err))
+		return err
+	}
+	return nil
+}
+
+func (s *AuthService) createClaims(username string) (*auth.UserClaims, error) {
+	claims := s.jwtAuth.CreateClaims(username)
+	tokenID, err := newTokenID()
+	if err != nil {
+		return nil, err
+	}
+	claims.ID = tokenID
+	return claims, nil
+}
+
+func newTokenID() (string, error) {
+	var buf [16]byte
+	if _, err := cryptorand.Read(buf[:]); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(buf[:]), nil
 }
 
 func randUserName() string {

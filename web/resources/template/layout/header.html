@@ -21,8 +21,11 @@
                         <a class="nav-link" href="/login">登录</a>
                     </li>
                     {{else}}
-                    <li class="nav-item">
-                        <a class="nav-link" href="/auth/logout">退出</a>
+                    <li class="nav-item d-flex align-items-center">
+                        <form method="POST" action="/auth/logout" class="m-0">
+                            <input type="hidden" name="_csrf" value="{{ .CSRFToken }}">
+                            <button type="submit" class="nav-link btn btn-link p-0">退出</button>
+                        </form>
                     </li>
                     {{end}}
                 </ul>

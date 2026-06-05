@@ -4,7 +4,6 @@ import (
 	authpb "github.com/miiy/goc-quickstart/auth-service/gen/go/blog/auth/v1"
 	"github.com/miiy/goc-quickstart/auth-service/internal/config"
 	"github.com/miiy/goc/auth"
-	"github.com/miiy/goc/auth/jwt"
 	"github.com/miiy/goc/db"
 	"github.com/miiy/goc/logger"
 	"github.com/miiy/goc/redis"
@@ -15,14 +14,14 @@ type App struct {
 	db           *db.DB
 	redis        redis.UniversalClient
 	logger       logger.Logger
-	jwtAuth      *jwt.JWTAuth
-	authService   authpb.AuthServiceServer
+	jwtAuth      *auth.JWTAuth
+	authService  authpb.AuthServiceServer
 	userProvider auth.UserProvider
 }
 
 var app *App
 
-func NewApp(c *config.Config, db *db.DB, rdb redis.UniversalClient, l logger.Logger, j *jwt.JWTAuth,
+func NewApp(c *config.Config, db *db.DB, rdb redis.UniversalClient, l logger.Logger, j *auth.JWTAuth,
 	as authpb.AuthServiceServer, up auth.UserProvider) *App {
 	app = &App{
 		config:       c,
@@ -30,7 +29,7 @@ func NewApp(c *config.Config, db *db.DB, rdb redis.UniversalClient, l logger.Log
 		redis:        rdb,
 		logger:       l,
 		jwtAuth:      j,
-		authService:   as,
+		authService:  as,
 		userProvider: up,
 	}
 	return app
@@ -52,7 +51,7 @@ func (a *App) Logger() logger.Logger {
 	return a.logger
 }
 
-func (a *App) JWTAuth() *jwt.JWTAuth {
+func (a *App) JWTAuth() *auth.JWTAuth {
 	return a.jwtAuth
 }
 

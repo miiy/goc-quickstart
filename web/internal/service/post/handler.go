@@ -7,6 +7,7 @@ import (
 	"github.com/miiy/goc-quickstart/web/client"
 	"github.com/miiy/goc-quickstart/web/internal/template"
 	"github.com/miiy/goc/gin"
+	gocauthmid "github.com/miiy/goc/gin/middleware/auth"
 	"github.com/unknwon/paginater"
 )
 
@@ -23,8 +24,9 @@ type PostListViewData struct {
 
 type PostDetailViewData struct {
 	template.ViewData
-	Post  *client.PostResponse
-	Error string
+	Post      *client.PostResponse
+	CanManage bool
+	Error     string
 }
 
 type PostFormData struct {
@@ -64,9 +66,7 @@ func pagesHandler(c *gin.Context) {
 
 func newPostListViewData(c *gin.Context, resp *client.PostListResponse, page, pageSize int32) PostListViewData {
 	view := PostListViewData{
-		ViewData: template.ViewData{
-			IsLoggedIn: c.GetBool("isLoggedIn"),
-		},
+		ViewData:    template.NewViewData(c),
 		CurrentPage: page,
 		PageSize:    pageSize,
 		Pager:       paginater.New(0, int(pageSize), int(page), 5),
@@ -91,23 +91,33 @@ func showHandler(c *gin.Context) {
 		return
 	}
 
+	viewData := template.NewViewData(c)
+	if c.GetBool("isLoggedIn") {
+		viewData = template.NewFormViewData(c)
+	}
 	c.HTML(http.StatusOK, "post/detail", PostDetailViewData{
-		ViewData: template.ViewData{IsLoggedIn: c.GetBool("isLoggedIn")},
-		Post:     p,
+		ViewData:  viewData,
+		Post:      p,
+		CanManage: canManagePost(c, p),
 	})
 }
 
 func createHandler(c *gin.Context) {
 	c.HTML(http.StatusOK, "post/create", PostFormData{
-		ViewData: template.ViewData{IsLoggedIn: c.GetBool("isLoggedIn")},
+		ViewData: template.NewFormViewData(c),
 	})
 }
 
 func storeHandler(c *gin.Context) {
 	title := c.PostForm("title")
 	content := c.PostForm("content")
+	authorID, ok := gocauthmid.GetAuthUserID(c)
+	if !ok {
+		c.Status(http.StatusForbidden)
+		return
+	}
 
-	_, err := postModule.client.CreatePost(c.Request.Context(), title, content, 1)
+	_, err := postModule.client.CreatePost(c.Request.Context(), title, content, authorID)
 	if err != nil {
 		template.InternalError(c)
 		return
@@ -124,9 +134,13 @@ func editHandler(c *gin.Context) {
 		template.NotFound(c)
 		return
 	}
+	if !canManagePost(c, p) {
+		c.Status(http.StatusForbidden)
+		return
+	}
 
 	c.HTML(http.StatusOK, "post/edit", PostFormData{
-		ViewData: template.ViewData{IsLoggedIn: c.GetBool("isLoggedIn")},
+		ViewData: template.NewFormViewData(c),
 		Post:     p,
 	})
 }
@@ -136,7 +150,17 @@ func updateHandler(c *gin.Context) {
 	title := c.PostForm("title")
 	content := c.PostForm("content")
 
-	_, err := postModule.client.UpdatePost(c.Request.Context(), id, title, content)
+	p, err := postModule.client.GetPost(c.Request.Context(), id)
+	if err != nil {
+		template.NotFound(c)
+		return
+	}
+	if !canManagePost(c, p) {
+		c.Status(http.StatusForbidden)
+		return
+	}
+
+	_, err = postModule.client.UpdatePost(c.Request.Context(), id, title, content)
 	if err != nil {
 		template.InternalError(c)
 		return
@@ -159,11 +183,29 @@ func postHandler(c *gin.Context) {
 func destroyHandler(c *gin.Context) {
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 
-	err := postModule.client.DeletePost(c.Request.Context(), id)
+	p, err := postModule.client.GetPost(c.Request.Context(), id)
+	if err != nil {
+		template.NotFound(c)
+		return
+	}
+	if !canManagePost(c, p) {
+		c.Status(http.StatusForbidden)
+		return
+	}
+
+	err = postModule.client.DeletePost(c.Request.Context(), id)
 	if err != nil {
 		template.InternalError(c)
 		return
 	}
 
 	c.Redirect(http.StatusFound, "/posts")
+}
+
+func canManagePost(c *gin.Context, post *client.PostResponse) bool {
+	if post == nil || post.AuthorId <= 0 {
+		return false
+	}
+	userID, ok := gocauthmid.GetAuthUserID(c)
+	return ok && userID == post.AuthorId
 }

@@ -6,6 +6,7 @@ import (
 
 	pb "github.com/miiy/goc-quickstart/user-service/gen/go/blog/user/v1"
 	"github.com/miiy/goc-quickstart/user-service/internal/entity"
+	gocauth "github.com/miiy/goc/auth"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -26,6 +27,24 @@ func NewMockUserRepository() *MockUserRepository {
 	}
 }
 
+func authenticatedContext(userID int64) context.Context {
+	return gocauth.InjectAuthenticatedUser(context.Background(), &gocauth.AuthenticatedUser{
+		ID:       userID,
+		Username: "testuser",
+	})
+}
+
+func testUser(id int64) *entity.User {
+	user := &entity.User{
+		Username: "testuser",
+		Nickname: "Test User",
+		Email:    "test@example.com",
+		Status:   1,
+	}
+	user.ID = id
+	return user
+}
+
 func (m *MockUserRepository) Create(ctx context.Context, user *entity.User) error {
 	if m.err != nil {
 		return m.err
@@ -44,6 +63,7 @@ func (m *MockUserRepository) Update(ctx context.Context, id int64, user *entity.
 		return 0, nil
 	}
 	user.ID = id
+	user.Username = m.users[id].Username
 	m.users[id] = user
 	return 1, nil
 }
@@ -85,33 +105,46 @@ func TestUserService_GetUser(t *testing.T) {
 	repo := NewMockUserRepository()
 
 	// Create a test user
-	repo.users[1] = &entity.User{
-		Username: "testuser",
-		Nickname: "Test User",
-		Email:    "test@example.com",
-		Status:   1,
-	}
+	repo.users[1] = testUser(1)
 
 	service := NewUserServiceServer(logger, repo).(*UserService)
 
 	tests := []struct {
+		ctx     context.Context
 		name    string
 		req     *pb.GetUserRequest
 		wantErr bool
 		errCode codes.Code
 	}{
 		{
+			ctx:     authenticatedContext(1),
 			name:    "get existing user",
 			req:     &pb.GetUserRequest{Id: 1},
 			wantErr: false,
 		},
 		{
+			ctx:     authenticatedContext(999),
 			name:    "get non-existing user",
 			req:     &pb.GetUserRequest{Id: 999},
 			wantErr: true,
 			errCode: codes.NotFound,
 		},
 		{
+			ctx:     authenticatedContext(1),
+			name:    "get another user rejected",
+			req:     &pb.GetUserRequest{Id: 2},
+			wantErr: true,
+			errCode: codes.PermissionDenied,
+		},
+		{
+			ctx:     context.Background(),
+			name:    "get without authenticated user",
+			req:     &pb.GetUserRequest{Id: 1},
+			wantErr: true,
+			errCode: codes.Unauthenticated,
+		},
+		{
+			ctx:     context.Background(),
 			name:    "invalid id",
 			req:     &pb.GetUserRequest{Id: 0},
 			wantErr: true,
@@ -121,7 +154,7 @@ func TestUserService_GetUser(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resp, err := service.GetUser(context.Background(), tt.req)
+			resp, err := service.GetUser(tt.ctx, tt.req)
 			if tt.wantErr {
 				if err == nil {
 					t.Error("expected error, got nil")
@@ -148,22 +181,19 @@ func TestUserService_UpdateUser(t *testing.T) {
 	repo := NewMockUserRepository()
 
 	// Create a test user
-	repo.users[1] = &entity.User{
-		Username: "testuser",
-		Nickname: "Test User",
-		Email:    "test@example.com",
-		Status:   1,
-	}
+	repo.users[1] = testUser(1)
 
 	service := NewUserServiceServer(logger, repo).(*UserService)
 
 	tests := []struct {
+		ctx     context.Context
 		name    string
 		req     *pb.UpdateUserRequest
 		wantErr bool
 		errCode codes.Code
 	}{
 		{
+			ctx:  authenticatedContext(1),
 			name: "update existing user",
 			req: &pb.UpdateUserRequest{
 				Id: 1,
@@ -175,6 +205,7 @@ func TestUserService_UpdateUser(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			ctx:  authenticatedContext(999),
 			name: "update non-existing user",
 			req: &pb.UpdateUserRequest{
 				Id: 999,
@@ -186,6 +217,31 @@ func TestUserService_UpdateUser(t *testing.T) {
 			errCode: codes.NotFound,
 		},
 		{
+			ctx:  authenticatedContext(2),
+			name: "update another user rejected",
+			req: &pb.UpdateUserRequest{
+				Id: 1,
+				User: &pb.User{
+					Nickname: "Updated Nickname",
+				},
+			},
+			wantErr: true,
+			errCode: codes.PermissionDenied,
+		},
+		{
+			ctx:  context.Background(),
+			name: "update without authenticated user",
+			req: &pb.UpdateUserRequest{
+				Id: 1,
+				User: &pb.User{
+					Nickname: "Updated Nickname",
+				},
+			},
+			wantErr: true,
+			errCode: codes.Unauthenticated,
+		},
+		{
+			ctx:     authenticatedContext(1),
 			name:    "update with nil user",
 			req:     &pb.UpdateUserRequest{Id: 1, User: nil},
 			wantErr: true,
@@ -195,7 +251,7 @@ func TestUserService_UpdateUser(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resp, err := service.UpdateUser(context.Background(), tt.req)
+			resp, err := service.UpdateUser(tt.ctx, tt.req)
 			if tt.wantErr {
 				if err == nil {
 					t.Error("expected error, got nil")
@@ -223,34 +279,24 @@ func TestUserService_ListUsers(t *testing.T) {
 
 	// Create test users
 	for i := 1; i <= 5; i++ {
-		repo.users[int64(i)] = &entity.User{
-			Username: "testuser",
-			Nickname: "Test User",
-			Email:    "test@example.com",
-			Status:   1,
-		}
+		repo.users[int64(i)] = testUser(int64(i))
 	}
 
 	service := NewUserServiceServer(logger, repo).(*UserService)
 
-	resp, err := service.ListUsers(context.Background(), &pb.ListUsersRequest{
+	_, err := service.ListUsers(authenticatedContext(1), &pb.ListUsersRequest{
 		Page:     1,
 		PageSize: 10,
 	})
-
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
+	if status.Code(err) != codes.PermissionDenied {
+		t.Fatalf("expected permission denied, got %v", err)
 	}
 
-	if resp == nil {
-		t.Fatal("expected response")
-	}
-
-	if resp.Total != 5 {
-		t.Errorf("expected total 5, got %d", resp.Total)
-	}
-
-	if len(resp.Users) != 5 {
-		t.Errorf("expected 5 users, got %d", len(resp.Users))
+	_, err = service.ListUsers(context.Background(), &pb.ListUsersRequest{
+		Page:     1,
+		PageSize: 10,
+	})
+	if status.Code(err) != codes.Unauthenticated {
+		t.Fatalf("expected unauthenticated, got %v", err)
 	}
 }

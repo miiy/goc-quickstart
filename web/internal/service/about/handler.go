@@ -6,8 +6,7 @@ import (
 )
 
 func indexHandler(c *gin.Context) {
-	c.HTML(200, "about/index", template.ViewData{
-		PageTitle:  "About",
-		IsLoggedIn: c.GetBool("isLoggedIn"),
-	})
+	view := template.NewViewData(c)
+	view.PageTitle = "About"
+	c.HTML(200, "about/index", view)
 }

@@ -7,7 +7,7 @@ import (
 	pb "github.com/miiy/goc-quickstart/user-service/gen/go/blog/user/v1"
 	"github.com/miiy/goc-quickstart/user-service/internal/entity"
 	"github.com/miiy/goc-quickstart/user-service/internal/repository"
-	"github.com/miiy/goc/pagination"
+	gocauth "github.com/miiy/goc/auth"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -22,8 +22,9 @@ type UserService struct {
 }
 
 var (
-	ErrInvalidArgument = errors.New("invalid argument")
-	ErrUserNotFound    = errors.New("user not found")
+	ErrInvalidArgument  = errors.New("invalid argument")
+	ErrUserNotFound     = errors.New("user not found")
+	ErrPermissionDenied = errors.New("permission denied")
 )
 
 func NewUserServiceServer(logger *zap.Logger, repo repository.UserRepository) pb.UserServiceServer {
@@ -36,6 +37,9 @@ func NewUserServiceServer(logger *zap.Logger, repo repository.UserRepository) pb
 func (s *UserService) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.User, error) {
 	if req.Id <= 0 {
 		return nil, status.Error(codes.InvalidArgument, ErrInvalidArgument.Error())
+	}
+	if err := requireSelf(ctx, req.Id); err != nil {
+		return nil, err
 	}
 
 	user, err := s.repo.First(ctx, req.Id)
@@ -53,6 +57,9 @@ func (s *UserService) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.
 func (s *UserService) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb.User, error) {
 	if req.Id <= 0 || req.User == nil {
 		return nil, status.Error(codes.InvalidArgument, ErrInvalidArgument.Error())
+	}
+	if err := requireSelf(ctx, req.Id); err != nil {
+		return nil, err
 	}
 
 	_, err := s.repo.First(ctx, req.Id)
@@ -96,43 +103,43 @@ func (s *UserService) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest)
 }
 
 func (s *UserService) ListUsers(ctx context.Context, req *pb.ListUsersRequest) (*pb.ListUsersResponse, error) {
-	page := int64(req.Page)
-	pageSize := int64(req.PageSize)
+	if _, err := authenticatedUser(ctx); err != nil {
+		return nil, err
+	}
+	return nil, status.Error(codes.PermissionDenied, ErrPermissionDenied.Error())
+}
 
-	// 列表只查询需要的字段，不查询 password
-	columns := []string{"id", "username", "nickname", "avatar", "email", "phone", "status", "created_at", "updated_at"}
-
-	users, total, err := s.repo.List(ctx, page, pageSize, columns...)
+func authenticatedUser(ctx context.Context) (*gocauth.AuthenticatedUser, error) {
+	user, err := gocauth.ExtractAuthenticatedUser(ctx)
 	if err != nil {
-		s.logger.Error("repo.List", zap.Error(err))
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
-
-	pbUsers := make([]*pb.User, 0, len(users))
-	for _, u := range users {
-		pbUsers = append(pbUsers, entityToProto(u))
+	if user.ID <= 0 {
+		return nil, status.Error(codes.Unauthenticated, "invalid authenticated user")
 	}
+	return user, nil
+}
 
-	pg := pagination.NewPagination(page, pageSize, total)
-
-	return &pb.ListUsersResponse{
-		Total:       pg.Total,
-		TotalPages:  int32(pg.LastPage),
-		PageSize:    int32(pg.PerPage),
-		CurrentPage: int32(pg.CurrentPage),
-		Users:       pbUsers,
-	}, nil
+func requireSelf(ctx context.Context, id int64) error {
+	user, err := authenticatedUser(ctx)
+	if err != nil {
+		return err
+	}
+	if user.ID != id {
+		return status.Error(codes.PermissionDenied, ErrPermissionDenied.Error())
+	}
+	return nil
 }
 
 func entityToProto(u *entity.User) *pb.User {
 	user := &pb.User{
-		Id:       u.ID,
-		Username: u.Username,
-		Nickname: u.Nickname,
-		Avatar:   u.Avatar,
-		Email:    u.Email,
-		Phone:    u.Phone,
-		Status:   pb.UserStatus(u.Status),
+		Id:        u.ID,
+		Username:  u.Username,
+		Nickname:  u.Nickname,
+		Avatar:    u.Avatar,
+		Email:     u.Email,
+		Phone:     u.Phone,
+		Status:    pb.UserStatus(u.Status),
 		CreatedAt: timestamppb.New(u.CreatedAt),
 		UpdatedAt: timestamppb.New(u.UpdatedAt),
 	}
