@@ -1,0 +1,149 @@
+syntax = "proto3";
+
+package nova.post.v1;
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option go_package = "github.com/miiy/goc-quickstart/nova-post/gen/go/nova/post/v1;novapostv1";
+option java_package = "com.github.miiy.nova.post.v1";
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "Post API"
+    version: "1.0"
+    contact: {
+      name: "nova project"
+      url: "https://github.com/miiy/goc-quickstart"
+      email: "none@example.com"
+    }
+    license: {
+      name: "MIT License"
+      url: "https://github.com/miiy/goc-quickstart/LICENSE"
+    }
+  }
+  external_docs: {
+    url: "https://github.com/grpc-ecosystem/grpc-gateway"
+    description: "More about goc"
+  }
+  schemes: HTTP
+  schemes: HTTPS
+  schemes: WSS
+};
+
+// PostStatus describes the publication state of a post.
+enum PostStatus {
+  POST_STATUS_UNSPECIFIED = 0;
+  POST_STATUS_DRAFT = 1;
+  POST_STATUS_PUBLISHED = 2;
+}
+
+// Post describes an article published by a user.
+message Post {
+  int64 id = 1;
+  int64 author_id = 2;
+  string title = 3;
+  string content = 4;
+  PostStatus status = 5;
+  repeated string tags = 6;
+  int64 category_id = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
+  google.protobuf.Timestamp deleted_at = 10;
+  // Populated by the API gateway from nova-user for web responses.
+  string author_name = 11;
+}
+
+// GetPostRequest identifies a post by id.
+message GetPostRequest {
+  int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// GetPostResponse returns a single post.
+message GetPostResponse {
+  Post post = 1;
+}
+
+// CreatePostRequest carries the post to create.
+message CreatePostRequest {
+  Post post = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// CreatePostResponse returns the created post.
+message CreatePostResponse {
+  Post post = 1;
+}
+
+// UpdatePostRequest carries post fields to update.
+message UpdatePostRequest {
+  int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  Post post = 2 [(google.api.field_behavior) = REQUIRED];
+  google.protobuf.FieldMask update_mask = 3;
+}
+
+// UpdatePostResponse returns the updated post.
+message UpdatePostResponse {
+  Post post = 1;
+}
+
+// DeletePostRequest identifies a post to delete.
+message DeletePostRequest {
+  int64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// DeletePostResponse is returned after a post is deleted.
+message DeletePostResponse {}
+
+// ListPostsRequest carries filters and pagination options for posts.
+message ListPostsRequest {
+  int64 author_id = 1;
+  int64 category_id = 2;
+  string tag = 3;
+  int32 page = 4;
+  int32 page_size = 5;
+}
+
+// ListPostsResponse returns a paginated list of posts.
+message ListPostsResponse {
+  int64 total = 1;
+  int32 total_pages = 2;
+  int32 page_size = 3;
+  int32 current_page = 4;
+  repeated Post posts = 5;
+}
+
+// PostService manages article publishing and post queries.
+service PostService {
+  // GetPost returns a single post by id.
+  rpc GetPost(GetPostRequest) returns (GetPostResponse) {
+    option (google.api.http) = {get: "/api/v1/posts/{id}"};
+  }
+
+  // CreatePost creates a new post.
+  rpc CreatePost(CreatePostRequest) returns (CreatePostResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/posts"
+      body: "*"
+    };
+  }
+
+  // UpdatePost updates mutable fields for a post.
+  rpc UpdatePost(UpdatePostRequest) returns (UpdatePostResponse) {
+    option (google.api.http) = {
+      put: "/api/v1/posts/{id}"
+      body: "*"
+    };
+  }
+
+  // DeletePost deletes a post by id.
+  rpc DeletePost(DeletePostRequest) returns (DeletePostResponse) {
+    option (google.api.http) = {delete: "/api/v1/posts/{id}"};
+  }
+
+  // ListPosts returns posts matched by filters and pagination.
+  rpc ListPosts(ListPostsRequest) returns (ListPostsResponse) {
+    option (google.api.http) = {get: "/api/v1/posts"};
+  }
+}

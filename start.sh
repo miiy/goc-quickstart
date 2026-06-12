@@ -46,18 +46,18 @@ start_service() {
 rm -f "$PID_FILE"
 
 # gRPC microservices
-start_service "auth-service"   "auth-service"   "go run ./cmd/server/main.go -c ./config.yaml"
-start_service "user-service"   "user-service"   "go run ./cmd/server/main.go -c ./config.yaml"
-start_service "post-service"   "post-service"   "go run ./cmd/server/main.go -c ./config.yaml"
-start_service "upload-service" "upload-service" "go run ./cmd/server/main.go -c ./config.yaml"
+start_service "nova-auth"   "nova-auth"   "go run ./cmd/server/main.go -c ./config.yaml"
+start_service "nova-user"   "nova-user"   "go run ./cmd/server/main.go -c ./config.yaml"
+start_service "nova-post"   "nova-post"   "go run ./cmd/server/main.go -c ./config.yaml"
+start_service "nova-file"   "nova-file" "go run ./cmd/server/main.go -c ./config.yaml"
 
 sleep 2
 
 # HTTP gateway
-start_service "api-gateway"    "api-gateway"    "go run ./cmd/server/main.go -c ./config.yaml"
+start_service "nova-gateway"    "nova-gateway"    "go run ./cmd/server/main.go -c ./config.yaml"
 
 # Web frontend
-start_service "web"            "web"            "go run ./cmd/server/main.go -c ./config.yaml"
+start_service "nova-web"         "nova-web"       "go run ./cmd/server/main.go -c ./config.yaml"
 
 echo ""
 echo "All services started. Logs: $LOG_DIR/"

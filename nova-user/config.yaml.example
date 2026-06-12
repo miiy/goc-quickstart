@@ -1,0 +1,36 @@
+app:
+  name: nova-user
+  env: local
+  debug: true
+  version: 1.0
+database:
+  driver: mysql
+  host: 127.0.0.1
+  port: 3306
+  database: goc
+  username: root
+  password: 123456
+redis:
+  addrs:
+    - 127.0.0.1:6379
+  password:
+  db: 0
+server:
+  grpc:
+    addr: 0.0.0.0:50052
+    tls:
+      certFile:
+      keyFile:
+      caFile:
+grpcClient:
+  endpoint: 127.0.0.1:50052
+  tls:
+    serverName: "*.goc.dev"
+    certFile: ./configs/x509/client_cert.pem
+    keyFile: ./configs/x509/client_key.pem
+    caFile: ./configs/x509/ca_cert.pem
+jwt:
+  secret: 123456
+  expiresIn: 7200
+snowflake:
+  node: 1

@@ -1,12 +1,12 @@
-SERVICES := auth-service user-service post-service upload-service api-gateway web apidoc-server
-WIRE_SERVICES := auth-service user-service post-service upload-service
+SERVICES := nova-auth nova-user nova-post nova-file nova-gateway nova-web nova-apidoc
+WIRE_SERVICES := nova-auth nova-user nova-post nova-file nova-web
 GOLANGCI_LINT ?= golangci-lint
 DOCKER_COMPOSE ?= docker-compose
 
 .DEFAULT_GOAL := help
 
 .PHONY: help proto proto-deps proto-generate proto-copy proto-clean wire build test lint fmt clean \
-	docker-up docker-down docker-build dev-auth dev-auth-client dev-user dev-post dev-upload dev-gateway \
+	docker-up docker-down docker-build dev-auth dev-auth-client dev-user dev-post dev-file dev-gateway \
 	dev-web dev-apidoc
 
 help:
@@ -15,8 +15,8 @@ help:
 	@echo "Targets:"
 	@echo "  proto          Update buf deps, clean, generate, and copy generated files"
 	@echo "  proto-deps     Update buf dependencies"
-	@echo "  proto-generate Generate proto and OpenAPI files under apis/gen"
-	@echo "  proto-copy     Copy generated files from apis/gen to services"
+	@echo "  proto-generate Generate proto and OpenAPI files under nova-proto/gen"
+	@echo "  proto-copy     Copy generated files from nova-proto/gen to services"
 	@echo "  proto-clean    Remove generated proto/OpenAPI files"
 	@echo "  wire           Generate Wire code for DI-based services"
 	@echo "  build          Build all Go projects"
@@ -92,25 +92,25 @@ docker-build:
 	$(DOCKER_COMPOSE) build
 
 dev-auth:
-	$(MAKE) -C auth-service run
+	$(MAKE) -C nova-auth run
 
 dev-auth-client:
-	$(MAKE) -C auth-service run-client
+	$(MAKE) -C nova-auth run-client
 
 dev-user:
-	$(MAKE) -C user-service run
+	$(MAKE) -C nova-user run
 
 dev-post:
-	$(MAKE) -C post-service run
+	$(MAKE) -C nova-post run
 
-dev-upload:
-	$(MAKE) -C upload-service run
+dev-file:
+	$(MAKE) -C nova-file run
 
 dev-gateway:
-	$(MAKE) -C api-gateway run
+	$(MAKE) -C nova-gateway run
 
 dev-web:
-	$(MAKE) -C web run
+	$(MAKE) -C nova-web run
 
 dev-apidoc:
-	$(MAKE) -C apidoc-server run
+	$(MAKE) -C nova-apidoc run
