@@ -59,6 +59,7 @@ type ServerGrpc struct {
 }
 
 type ServerGrpcTLS struct {
+	Enabled  bool   `yaml:"enabled"`
 	CertFile string `yaml:"certFile"`
 	KeyFile  string `yaml:"keyFile"`
 	CaFile   string `yaml:"caFile"`

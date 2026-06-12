@@ -10,12 +10,12 @@ import (
 	"github.com/miiy/goc-quickstart/nova-post/internal/entity"
 	"github.com/miiy/goc-quickstart/nova-post/internal/repository"
 	gocauth "github.com/miiy/goc/auth"
+	"github.com/miiy/goc/db/gorm"
+	"github.com/miiy/goc/logger/zap"
 	"github.com/miiy/goc/pagination"
-	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"gorm.io/gorm"
 )
 
 type PostService struct {
@@ -73,6 +73,7 @@ func (s *PostService) CreatePost(ctx context.Context, req *pb.CreatePostRequest)
 	post := &entity.Post{
 		AuthorId:   user.ID,
 		Title:      strings.TrimSpace(req.Post.Title),
+		CoverUrl:   strings.TrimSpace(req.Post.CoverUrl),
 		Content:    req.Post.Content,
 		Status:     int64(req.Post.Status),
 		Tags:       string(tags),
@@ -115,6 +116,7 @@ func (s *PostService) UpdatePost(ctx context.Context, req *pb.UpdatePostRequest)
 	post := &entity.Post{
 		AuthorId:   existing.AuthorId,
 		Title:      strings.TrimSpace(req.Post.Title),
+		CoverUrl:   strings.TrimSpace(req.Post.CoverUrl),
 		Content:    req.Post.Content,
 		Status:     int64(req.Post.Status),
 		Tags:       string(tags),
@@ -204,7 +206,7 @@ func (s *PostService) ListPosts(ctx context.Context, req *pb.ListPostsRequest) (
 	}
 
 	// 列表只查询需要的字段，不查询 content
-	columns := []string{"id", "author_id", "title", "status", "tags", "category_id", "created_at", "updated_at"}
+	columns := []string{"id", "author_id", "title", "cover_url", "status", "tags", "category_id", "created_at", "updated_at"}
 
 	posts, total, err := s.repo.List(ctx, filter, page, pageSize, columns...)
 	if err != nil {
@@ -236,6 +238,7 @@ func entityToProto(p *entity.Post) *pb.Post {
 		Id:         p.ID,
 		AuthorId:   p.AuthorId,
 		Title:      p.Title,
+		CoverUrl:   p.CoverUrl,
 		Content:    p.Content,
 		Status:     pb.PostStatus(p.Status),
 		Tags:       tags,
@@ -259,6 +262,8 @@ func protoPathsToDBColumns(paths []string) []string {
 			columns = append(columns, "title")
 		case "content":
 			columns = append(columns, "content")
+		case "cover_url":
+			columns = append(columns, "cover_url")
 		case "status":
 			columns = append(columns, "status")
 		case "tags":

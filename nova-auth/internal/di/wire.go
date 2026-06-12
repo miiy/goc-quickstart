@@ -14,8 +14,8 @@ import (
 	"github.com/miiy/goc/db"
 	"github.com/miiy/goc/db/gorm"
 	"github.com/miiy/goc/logger"
+	"github.com/miiy/goc/logger/zap"
 	"github.com/miiy/goc/redis"
-	"go.uber.org/zap"
 )
 
 func InitApp(conf string) (*app.App, func(), error) {

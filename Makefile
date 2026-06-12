@@ -30,19 +30,19 @@ help:
 	@echo "  dev-*          Run a single project locally"
 
 proto:
-	$(MAKE) -C apis proto
+	$(MAKE) -C nova-proto proto
 
 proto-deps:
-	$(MAKE) -C apis deps
+	$(MAKE) -C nova-proto deps
 
 proto-generate:
-	$(MAKE) -C apis generate
+	$(MAKE) -C nova-proto generate
 
 proto-copy:
-	$(MAKE) -C apis copy
+	$(MAKE) -C nova-proto copy
 
 proto-clean:
-	$(MAKE) -C apis clean-all
+	$(MAKE) -C nova-proto clean-all
 
 wire:
 	@set -e; for service in $(WIRE_SERVICES); do \
@@ -63,7 +63,7 @@ test:
 	done
 
 lint:
-	$(MAKE) -C apis lint
+	$(MAKE) -C nova-proto lint
 	@set -e; for service in $(SERVICES); do \
 		echo ">>> lint: $$service"; \
 		(cd $$service && $(GOLANGCI_LINT) run ./...); \
@@ -80,7 +80,7 @@ clean:
 		echo ">>> clean: $$service"; \
 		$(MAKE) -C $$service clean; \
 	done
-	$(MAKE) -C apis clean
+	$(MAKE) -C nova-proto clean
 
 docker-up:
 	$(DOCKER_COMPOSE) up -d

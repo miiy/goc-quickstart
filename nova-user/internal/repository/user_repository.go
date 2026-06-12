@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/miiy/goc-quickstart/nova-user/internal/entity"
-	paginate "github.com/miiy/goc/db/gorm/paginate"
-	"gorm.io/gorm"
+	"github.com/miiy/goc/db/gorm"
+	"github.com/miiy/goc/db/gorm/paginate"
 )
 
 type UserRepository interface {

@@ -8,7 +8,7 @@ import (
 
 type AuthModule struct {
 	logger       logger.Logger
-	client       *client.AuthClient
+	authClient   *client.AuthClient
 	sessionStore sessions.Store
 	sessionName  string
 }
@@ -18,7 +18,7 @@ var authModule *AuthModule
 func NewModule(logger logger.Logger, authClient *client.AuthClient, sessionStore sessions.Store, sessionName string) *AuthModule {
 	authModule = &AuthModule{
 		logger:       logger,
-		client:       authClient,
+		authClient:   authClient,
 		sessionStore: sessionStore,
 		sessionName:  sessionName,
 	}

@@ -11,7 +11,7 @@ import (
 	"github.com/miiy/goc-quickstart/nova-file/internal/config"
 	"github.com/miiy/goc-quickstart/nova-file/internal/entity"
 	gocauth "github.com/miiy/goc/auth"
-	"go.uber.org/zap"
+	"github.com/miiy/goc/logger/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -37,7 +37,7 @@ func fileTestContext(userID int64) context.Context {
 	})
 }
 
-func TestCreateFileAvatarWritesFileAndRecord(t *testing.T) {
+func TestUploadFileAvatarWritesFileAndRecord(t *testing.T) {
 	dir := t.TempDir()
 	repo := &mockFileRepository{}
 	service := NewFileServiceServer(zap.NewNop(), repo, config.Storage{
@@ -47,7 +47,7 @@ func TestCreateFileAvatarWritesFileAndRecord(t *testing.T) {
 	}).(*FileService)
 
 	content := validPNGBytes()
-	resp, err := service.CreateFile(fileTestContext(7), &pb.CreateFileRequest{
+	resp, err := service.UploadFile(fileTestContext(7), &pb.UploadFileRequest{
 		Scene:    pb.FileScene_FILE_SCENE_AVATAR,
 		Filename: "avatar.png",
 		MimeType: "image/png",
@@ -82,13 +82,49 @@ func TestCreateFileAvatarWritesFileAndRecord(t *testing.T) {
 	}
 }
 
-func TestCreateFileRejectsUnsupportedMime(t *testing.T) {
+func TestUploadFilePostCoverWritesFileAndRecord(t *testing.T) {
+	dir := t.TempDir()
+	repo := &mockFileRepository{}
+	service := NewFileServiceServer(zap.NewNop(), repo, config.Storage{
+		Root:             dir,
+		PublicURL:        "http://cdn.test/files",
+		MaxAvatarSize:    1024,
+		MaxPostCoverSize: 2048,
+	}).(*FileService)
+
+	content := validPNGBytes()
+	resp, err := service.UploadFile(fileTestContext(7), &pb.UploadFileRequest{
+		Scene:    pb.FileScene_FILE_SCENE_POST_COVER,
+		Filename: "cover.png",
+		MimeType: "image/png",
+		Content:  content,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.GetFile().GetScene() != pb.FileScene_FILE_SCENE_POST_COVER {
+		t.Fatalf("scene = %v, want post cover", resp.GetFile().GetScene())
+	}
+	if !strings.HasPrefix(resp.GetFile().GetObjectKey(), "post-covers/") {
+		t.Fatalf("object key = %q, want post-covers prefix", resp.GetFile().GetObjectKey())
+	}
+	if repo.file == nil || repo.file.Scene != entity.FileScenePostCover {
+		t.Fatalf("file record not saved with post cover scene: %+v", repo.file)
+	}
+
+	savedPath := filepath.Join(dir, filepath.FromSlash(resp.GetFile().GetObjectKey()))
+	if _, err := os.Stat(savedPath); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestUploadFileRejectsUnsupportedMime(t *testing.T) {
 	service := NewFileServiceServer(zap.NewNop(), &mockFileRepository{}, config.Storage{
 		Root:          t.TempDir(),
 		MaxAvatarSize: 1024,
 	}).(*FileService)
 
-	_, err := service.CreateFile(fileTestContext(7), &pb.CreateFileRequest{
+	_, err := service.UploadFile(fileTestContext(7), &pb.UploadFileRequest{
 		Scene:    pb.FileScene_FILE_SCENE_AVATAR,
 		MimeType: "text/plain",
 		Content:  []byte("plain text"),
@@ -98,13 +134,30 @@ func TestCreateFileRejectsUnsupportedMime(t *testing.T) {
 	}
 }
 
-func TestCreateFileRejectsOversizedAvatar(t *testing.T) {
+func TestUploadFileRejectsOversizedPostCover(t *testing.T) {
+	service := NewFileServiceServer(zap.NewNop(), &mockFileRepository{}, config.Storage{
+		Root:             t.TempDir(),
+		MaxAvatarSize:    1024,
+		MaxPostCoverSize: 1,
+	}).(*FileService)
+
+	_, err := service.UploadFile(fileTestContext(7), &pb.UploadFileRequest{
+		Scene:    pb.FileScene_FILE_SCENE_POST_COVER,
+		MimeType: "image/png",
+		Content:  validPNGBytes(),
+	})
+	if status.Code(err) != codes.ResourceExhausted {
+		t.Fatalf("code = %v, want ResourceExhausted, err=%v", status.Code(err), err)
+	}
+}
+
+func TestUploadFileRejectsOversizedAvatar(t *testing.T) {
 	service := NewFileServiceServer(zap.NewNop(), &mockFileRepository{}, config.Storage{
 		Root:          t.TempDir(),
 		MaxAvatarSize: 1,
 	}).(*FileService)
 
-	_, err := service.CreateFile(fileTestContext(7), &pb.CreateFileRequest{
+	_, err := service.UploadFile(fileTestContext(7), &pb.UploadFileRequest{
 		Scene:    pb.FileScene_FILE_SCENE_AVATAR,
 		MimeType: "image/png",
 		Content:  validPNGBytes(),
@@ -114,13 +167,13 @@ func TestCreateFileRejectsOversizedAvatar(t *testing.T) {
 	}
 }
 
-func TestCreateFileRequiresAuthenticatedUser(t *testing.T) {
+func TestUploadFileRequiresAuthenticatedUser(t *testing.T) {
 	service := NewFileServiceServer(zap.NewNop(), &mockFileRepository{}, config.Storage{
 		Root:          t.TempDir(),
 		MaxAvatarSize: 1024,
 	}).(*FileService)
 
-	_, err := service.CreateFile(context.Background(), &pb.CreateFileRequest{
+	_, err := service.UploadFile(context.Background(), &pb.UploadFileRequest{
 		Scene:    pb.FileScene_FILE_SCENE_AVATAR,
 		MimeType: "image/png",
 		Content:  validPNGBytes(),

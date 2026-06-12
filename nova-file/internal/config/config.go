@@ -54,6 +54,7 @@ type ServerGrpc struct {
 }
 
 type ServerGrpcTLS struct {
+	Enabled  bool   `yaml:"enabled"`
 	CertFile string `yaml:"certFile"`
 	KeyFile  string `yaml:"keyFile"`
 	CaFile   string `yaml:"caFile"`
@@ -76,9 +77,10 @@ type Snowflake struct {
 }
 
 type Storage struct {
-	Root          string `yaml:"root"`
-	PublicURL     string `yaml:"publicUrl"`
-	MaxAvatarSize int64  `yaml:"maxAvatarSize"`
+	Root             string `yaml:"root"`
+	PublicURL        string `yaml:"publicUrl"`
+	MaxAvatarSize    int64  `yaml:"maxAvatarSize"`
+	MaxPostCoverSize int64  `yaml:"maxPostCoverSize"`
 }
 
 var config *Config

@@ -242,22 +242,22 @@ var _ interface {
 	ErrorName() string
 } = FileValidationError{}
 
-// Validate checks the field values on CreateFileRequest with the rules defined
+// Validate checks the field values on UploadFileRequest with the rules defined
 // in the proto definition for this message. If any rules are violated, the
 // first error encountered is returned, or nil if there are no violations.
-func (m *CreateFileRequest) Validate() error {
+func (m *UploadFileRequest) Validate() error {
 	return m.validate(false)
 }
 
-// ValidateAll checks the field values on CreateFileRequest with the rules
+// ValidateAll checks the field values on UploadFileRequest with the rules
 // defined in the proto definition for this message. If any rules are
 // violated, the result is a list of violation errors wrapped in
-// CreateFileRequestMultiError, or nil if none found.
-func (m *CreateFileRequest) ValidateAll() error {
+// UploadFileRequestMultiError, or nil if none found.
+func (m *UploadFileRequest) ValidateAll() error {
 	return m.validate(true)
 }
 
-func (m *CreateFileRequest) validate(all bool) error {
+func (m *UploadFileRequest) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
@@ -273,19 +273,19 @@ func (m *CreateFileRequest) validate(all bool) error {
 	// no validation rules for Content
 
 	if len(errors) > 0 {
-		return CreateFileRequestMultiError(errors)
+		return UploadFileRequestMultiError(errors)
 	}
 
 	return nil
 }
 
-// CreateFileRequestMultiError is an error wrapping multiple validation errors
-// returned by CreateFileRequest.ValidateAll() if the designated constraints
+// UploadFileRequestMultiError is an error wrapping multiple validation errors
+// returned by UploadFileRequest.ValidateAll() if the designated constraints
 // aren't met.
-type CreateFileRequestMultiError []error
+type UploadFileRequestMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
-func (m CreateFileRequestMultiError) Error() string {
+func (m UploadFileRequestMultiError) Error() string {
 	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
@@ -294,11 +294,11 @@ func (m CreateFileRequestMultiError) Error() string {
 }
 
 // AllErrors returns a list of validation violation errors.
-func (m CreateFileRequestMultiError) AllErrors() []error { return m }
+func (m UploadFileRequestMultiError) AllErrors() []error { return m }
 
-// CreateFileRequestValidationError is the validation error returned by
-// CreateFileRequest.Validate if the designated constraints aren't met.
-type CreateFileRequestValidationError struct {
+// UploadFileRequestValidationError is the validation error returned by
+// UploadFileRequest.Validate if the designated constraints aren't met.
+type UploadFileRequestValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -306,24 +306,24 @@ type CreateFileRequestValidationError struct {
 }
 
 // Field function returns field value.
-func (e CreateFileRequestValidationError) Field() string { return e.field }
+func (e UploadFileRequestValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e CreateFileRequestValidationError) Reason() string { return e.reason }
+func (e UploadFileRequestValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e CreateFileRequestValidationError) Cause() error { return e.cause }
+func (e UploadFileRequestValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e CreateFileRequestValidationError) Key() bool { return e.key }
+func (e UploadFileRequestValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e CreateFileRequestValidationError) ErrorName() string {
-	return "CreateFileRequestValidationError"
+func (e UploadFileRequestValidationError) ErrorName() string {
+	return "UploadFileRequestValidationError"
 }
 
 // Error satisfies the builtin error interface
-func (e CreateFileRequestValidationError) Error() string {
+func (e UploadFileRequestValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -335,14 +335,14 @@ func (e CreateFileRequestValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sCreateFileRequest.%s: %s%s",
+		"invalid %sUploadFileRequest.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = CreateFileRequestValidationError{}
+var _ error = UploadFileRequestValidationError{}
 
 var _ interface {
 	Field() string
@@ -350,24 +350,24 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = CreateFileRequestValidationError{}
+} = UploadFileRequestValidationError{}
 
-// Validate checks the field values on CreateFileResponse with the rules
+// Validate checks the field values on UploadFileResponse with the rules
 // defined in the proto definition for this message. If any rules are
 // violated, the first error encountered is returned, or nil if there are no violations.
-func (m *CreateFileResponse) Validate() error {
+func (m *UploadFileResponse) Validate() error {
 	return m.validate(false)
 }
 
-// ValidateAll checks the field values on CreateFileResponse with the rules
+// ValidateAll checks the field values on UploadFileResponse with the rules
 // defined in the proto definition for this message. If any rules are
 // violated, the result is a list of violation errors wrapped in
-// CreateFileResponseMultiError, or nil if none found.
-func (m *CreateFileResponse) ValidateAll() error {
+// UploadFileResponseMultiError, or nil if none found.
+func (m *UploadFileResponse) ValidateAll() error {
 	return m.validate(true)
 }
 
-func (m *CreateFileResponse) validate(all bool) error {
+func (m *UploadFileResponse) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
@@ -378,7 +378,7 @@ func (m *CreateFileResponse) validate(all bool) error {
 		switch v := interface{}(m.GetFile()).(type) {
 		case interface{ ValidateAll() error }:
 			if err := v.ValidateAll(); err != nil {
-				errors = append(errors, CreateFileResponseValidationError{
+				errors = append(errors, UploadFileResponseValidationError{
 					field:  "File",
 					reason: "embedded message failed validation",
 					cause:  err,
@@ -386,7 +386,7 @@ func (m *CreateFileResponse) validate(all bool) error {
 			}
 		case interface{ Validate() error }:
 			if err := v.Validate(); err != nil {
-				errors = append(errors, CreateFileResponseValidationError{
+				errors = append(errors, UploadFileResponseValidationError{
 					field:  "File",
 					reason: "embedded message failed validation",
 					cause:  err,
@@ -395,7 +395,7 @@ func (m *CreateFileResponse) validate(all bool) error {
 		}
 	} else if v, ok := interface{}(m.GetFile()).(interface{ Validate() error }); ok {
 		if err := v.Validate(); err != nil {
-			return CreateFileResponseValidationError{
+			return UploadFileResponseValidationError{
 				field:  "File",
 				reason: "embedded message failed validation",
 				cause:  err,
@@ -404,19 +404,19 @@ func (m *CreateFileResponse) validate(all bool) error {
 	}
 
 	if len(errors) > 0 {
-		return CreateFileResponseMultiError(errors)
+		return UploadFileResponseMultiError(errors)
 	}
 
 	return nil
 }
 
-// CreateFileResponseMultiError is an error wrapping multiple validation errors
-// returned by CreateFileResponse.ValidateAll() if the designated constraints
+// UploadFileResponseMultiError is an error wrapping multiple validation errors
+// returned by UploadFileResponse.ValidateAll() if the designated constraints
 // aren't met.
-type CreateFileResponseMultiError []error
+type UploadFileResponseMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
-func (m CreateFileResponseMultiError) Error() string {
+func (m UploadFileResponseMultiError) Error() string {
 	msgs := make([]string, 0, len(m))
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
@@ -425,11 +425,11 @@ func (m CreateFileResponseMultiError) Error() string {
 }
 
 // AllErrors returns a list of validation violation errors.
-func (m CreateFileResponseMultiError) AllErrors() []error { return m }
+func (m UploadFileResponseMultiError) AllErrors() []error { return m }
 
-// CreateFileResponseValidationError is the validation error returned by
-// CreateFileResponse.Validate if the designated constraints aren't met.
-type CreateFileResponseValidationError struct {
+// UploadFileResponseValidationError is the validation error returned by
+// UploadFileResponse.Validate if the designated constraints aren't met.
+type UploadFileResponseValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -437,24 +437,24 @@ type CreateFileResponseValidationError struct {
 }
 
 // Field function returns field value.
-func (e CreateFileResponseValidationError) Field() string { return e.field }
+func (e UploadFileResponseValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e CreateFileResponseValidationError) Reason() string { return e.reason }
+func (e UploadFileResponseValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e CreateFileResponseValidationError) Cause() error { return e.cause }
+func (e UploadFileResponseValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e CreateFileResponseValidationError) Key() bool { return e.key }
+func (e UploadFileResponseValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e CreateFileResponseValidationError) ErrorName() string {
-	return "CreateFileResponseValidationError"
+func (e UploadFileResponseValidationError) ErrorName() string {
+	return "UploadFileResponseValidationError"
 }
 
 // Error satisfies the builtin error interface
-func (e CreateFileResponseValidationError) Error() string {
+func (e UploadFileResponseValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -466,14 +466,14 @@ func (e CreateFileResponseValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sCreateFileResponse.%s: %s%s",
+		"invalid %sUploadFileResponse.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = CreateFileResponseValidationError{}
+var _ error = UploadFileResponseValidationError{}
 
 var _ interface {
 	Field() string
@@ -481,4 +481,4 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = CreateFileResponseValidationError{}
+} = UploadFileResponseValidationError{}

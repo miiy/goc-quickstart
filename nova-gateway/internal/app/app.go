@@ -12,6 +12,7 @@ import (
 	"github.com/miiy/goc-quickstart/nova-gateway/internal/config"
 	"github.com/miiy/goc/auth"
 	goccredentials "github.com/miiy/goc/grpc/credentials"
+	"github.com/miiy/goc/logger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
@@ -19,6 +20,7 @@ import (
 
 type App struct {
 	config  *config.Config
+	logger  logger.Logger
 	jwtAuth *auth.JWTAuth
 
 	authClient authv1.AuthServiceClient
@@ -29,10 +31,10 @@ type App struct {
 	conns []*grpc.ClientConn
 }
 
-func NewApp(cfg *config.Config) (_ *App, err error) {
+func NewApp(cfg *config.Config, logger logger.Logger) (_ *App, cleanup func(), err error) {
 	creds, err := transportCredentials(cfg)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	var conns []*grpc.ClientConn
 	defer func() {
@@ -43,30 +45,31 @@ func NewApp(cfg *config.Config) (_ *App, err error) {
 
 	authConn, err := dialService(cfg, "auth", creds)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	conns = append(conns, authConn)
 
 	postConn, err := dialService(cfg, "post", creds)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	conns = append(conns, postConn)
 
 	userConn, err := dialService(cfg, "user", creds)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	conns = append(conns, userConn)
 
 	fileConn, err := dialService(cfg, "file", creds)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	conns = append(conns, fileConn)
 
-	return &App{
+	gatewayApp := &App{
 		config: cfg,
+		logger: logger,
 		jwtAuth: auth.NewJWTAuth(&auth.Options{
 			Secret: cfg.JWT.Secret,
 			Issuer: cfg.JWT.Issuer,
@@ -76,11 +79,18 @@ func NewApp(cfg *config.Config) (_ *App, err error) {
 		fileClient: filev1.NewFileServiceClient(fileConn),
 		userClient: userv1.NewUserServiceClient(userConn),
 		conns:      conns,
+	}
+	return gatewayApp, func() {
+		_ = gatewayApp.Close()
 	}, nil
 }
 
 func (a *App) Config() *config.Config {
 	return a.config
+}
+
+func (a *App) Logger() logger.Logger {
+	return a.logger
 }
 
 func (a *App) JWTAuth() *auth.JWTAuth {

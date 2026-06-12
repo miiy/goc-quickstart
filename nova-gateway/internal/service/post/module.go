@@ -6,13 +6,13 @@ import (
 )
 
 type Module struct {
-	client     postv1.PostServiceClient
+	postClient postv1.PostServiceClient
 	userClient authorUserClient
 }
 
-func NewModule(client postv1.PostServiceClient, userClient userv1.UserServiceClient) *Module {
+func NewModule(postClient postv1.PostServiceClient, userClient userv1.UserServiceClient) *Module {
 	return &Module{
-		client:     client,
+		postClient: postClient,
 		userClient: userClient,
 	}
 }

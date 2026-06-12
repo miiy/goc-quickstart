@@ -26,7 +26,7 @@ func main() {
 
 	// init modules
 	clients := app.Clients()
-	post.NewModule(app.Logger(), clients.Post)
+	post.NewModule(app.Logger(), clients.Post, clients.File)
 
 	cfg := app.Config()
 	auth.NewModule(app.Logger(), clients.Auth, app.SessionStore(), cfg.Session.Name)

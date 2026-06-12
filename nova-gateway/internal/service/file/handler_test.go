@@ -17,12 +17,12 @@ import (
 )
 
 type fakeFileClient struct {
-	req *filev1.CreateFileRequest
+	req *filev1.UploadFileRequest
 }
 
-func (f *fakeFileClient) CreateFile(ctx context.Context, in *filev1.CreateFileRequest, opts ...grpc.CallOption) (*filev1.CreateFileResponse, error) {
+func (f *fakeFileClient) UploadFile(ctx context.Context, in *filev1.UploadFileRequest, opts ...grpc.CallOption) (*filev1.UploadFileResponse, error) {
 	f.req = in
-	return &filev1.CreateFileResponse{
+	return &filev1.UploadFileResponse{
 		File: &filev1.File{Url: "http://cdn.test/files/avatars/2026/06/avatar.png"},
 	}, nil
 }
@@ -94,6 +94,53 @@ func TestAvatarUploadsAndUpdatesCurrentUser(t *testing.T) {
 	}
 	if !fieldMaskEqual(userClient.req.GetUpdateMask(), []string{"avatar"}) {
 		t.Fatalf("update mask = %+v", userClient.req.GetUpdateMask())
+	}
+}
+
+func TestUploadPostCoverUploadsFile(t *testing.T) {
+	fileClient := &fakeFileClient{}
+	userClient := &fakeAvatarUserClient{}
+	module := NewModule(fileClient, userClient)
+
+	r := gin.New()
+	r.POST("/api/v1/files/upload", func(c *gin.Context) {
+		ctx := gocauth.InjectAuthenticatedUser(c.Request.Context(), &gocauth.AuthenticatedUser{ID: 7, Username: "alice"})
+		c.Request = c.Request.WithContext(ctx)
+		module.upload(c)
+	})
+
+	body := &strings.Builder{}
+	writer := multipart.NewWriter(body)
+	if err := writer.WriteField("scene", "post_cover"); err != nil {
+		t.Fatal(err)
+	}
+	part, err := writer.CreateFormFile("file", "cover.png")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := part.Write([]byte{0x89, 'P', 'N', 'G'}); err != nil {
+		t.Fatal(err)
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/files/upload", strings.NewReader(body.String()))
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, body=%s", rec.Code, rec.Body.String())
+	}
+	if fileClient.req == nil || fileClient.req.GetScene() != filev1.FileScene_FILE_SCENE_POST_COVER {
+		t.Fatalf("unexpected file request: %+v", fileClient.req)
+	}
+	if fileClient.req.GetFilename() != "cover.png" {
+		t.Fatalf("filename = %q, want cover.png", fileClient.req.GetFilename())
+	}
+	if userClient.req != nil {
+		t.Fatalf("user update should not be called: %+v", userClient.req)
 	}
 }
 

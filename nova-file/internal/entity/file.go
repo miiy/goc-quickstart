@@ -7,6 +7,7 @@ const (
 
 	FileSceneUnspecified = 0
 	FileSceneAvatar      = 1
+	FileScenePostCover   = 2
 
 	FileStatusUnspecified = 0
 	FileStatusActive      = 1

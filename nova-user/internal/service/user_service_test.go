@@ -7,10 +7,10 @@ import (
 	pb "github.com/miiy/goc-quickstart/nova-user/gen/go/nova/user/v1"
 	"github.com/miiy/goc-quickstart/nova-user/internal/entity"
 	gocauth "github.com/miiy/goc/auth"
-	"go.uber.org/zap"
+	"github.com/miiy/goc/db/gorm"
+	"github.com/miiy/goc/logger/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"gorm.io/gorm"
 )
 
 // MockUserRepository implements repository.UserRepository for testing

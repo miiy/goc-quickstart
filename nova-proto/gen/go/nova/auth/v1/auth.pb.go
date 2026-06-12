@@ -1379,7 +1379,7 @@ const file_nova_auth_v1_auth_proto_rawDesc = "" +
 	"\tPhoneAuth\x12\x1e.nova.auth.v1.PhoneAuthRequest\x1a\x1f.nova.auth.v1.PhoneAuthResponse\"\"\x82\xd3\xe4\x93\x02\x1c:\x01*\"\x17/api/v1/auth/phone_auth\x12g\n" +
 	"\aMpLogin\x12\x1c.nova.auth.v1.MpLoginRequest\x1a\x1d.nova.auth.v1.MpLoginResponse\"\x1f\x82\xd3\xe4\x93\x02\x19:\x01*\"\x14/api/v1/auth/mplogin\x12|\n" +
 	"\fRefreshToken\x12!.nova.auth.v1.RefreshTokenRequest\x1a\".nova.auth.v1.RefreshTokenResponse\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/api/v1/auth/token/refresh\x12}\n" +
-	"\x0eChangePassword\x12#.nova.auth.v1.ChangePasswordRequest\x1a$.nova.auth.v1.ChangePasswordResponse\" \x82\xd3\xe4\x93\x02\x1a:\x01*\"\x15/api/v1/auth/password\x12c\n" +
+	"\x0eChangePassword\x12#.nova.auth.v1.ChangePasswordRequest\x1a$.nova.auth.v1.ChangePasswordResponse\" \x82\xd3\xe4\x93\x02\x1a:\x01*\x1a\x15/api/v1/auth/password\x12c\n" +
 	"\x06Logout\x12\x1b.nova.auth.v1.LogoutRequest\x1a\x1c.nova.auth.v1.LogoutResponse\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/api/v1/auth/logoutB\x9b\x03\x92A\xe2\x01\x12\x98\x01\n" +
 	"\bAuth API\"H\n" +
 	"\fnova project\x12&https://github.com/miiy/goc-quickstart\x1a\x10none@example.com*=\n" +

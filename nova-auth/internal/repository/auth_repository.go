@@ -6,8 +6,8 @@ import (
 
 	"github.com/miiy/goc-quickstart/nova-auth/internal/entity"
 	"github.com/miiy/goc/auth"
+	"github.com/miiy/goc/db/gorm"
 	"github.com/miiy/goc/redis"
-	"gorm.io/gorm"
 )
 
 type AuthRepository interface {

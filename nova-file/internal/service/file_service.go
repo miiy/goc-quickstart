@@ -18,17 +18,19 @@ import (
 	"github.com/miiy/goc-quickstart/nova-file/internal/entity"
 	"github.com/miiy/goc-quickstart/nova-file/internal/repository"
 	gocauth "github.com/miiy/goc/auth"
-	"go.uber.org/zap"
+	"github.com/miiy/goc/logger/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
-	defaultStorageRoot     = "./storage/uploads"
-	defaultPublicURL       = "/uploads"
-	defaultMaxAvatarSize   = 2 << 20
-	avatarObjectKeyPattern = "avatars/%04d/%02d/%s.%s"
+	defaultStorageRoot        = "./storage/uploads"
+	defaultPublicURL          = "/uploads"
+	defaultMaxAvatarSize      = 2 << 20
+	defaultMaxPostCoverSize   = 5 << 20
+	avatarObjectKeyPattern    = "avatars/%04d/%02d/%s.%s"
+	postCoverObjectKeyPattern = "post-covers/%04d/%02d/%s.%s"
 )
 
 var (
@@ -52,22 +54,23 @@ func NewFileServiceServer(logger *zap.Logger, repo repository.FileRepository, st
 	}
 }
 
-func (s *FileService) CreateFile(ctx context.Context, req *pb.CreateFileRequest) (*pb.CreateFileResponse, error) {
+func (s *FileService) UploadFile(ctx context.Context, req *pb.UploadFileRequest) (*pb.UploadFileResponse, error) {
 	user, err := authenticatedUser(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if req.GetScene() != pb.FileScene_FILE_SCENE_AVATAR {
-		return nil, status.Error(codes.InvalidArgument, ErrInvalidArgument.Error())
-	}
 	if len(req.GetContent()) == 0 {
 		return nil, status.Error(codes.InvalidArgument, ErrInvalidArgument.Error())
 	}
-	if int64(len(req.GetContent())) > s.storage.MaxAvatarSize {
+	uploadScene, err := s.uploadSceneFor(req.GetScene())
+	if err != nil {
+		return nil, err
+	}
+	if int64(len(req.GetContent())) > uploadScene.maxSize {
 		return nil, status.Error(codes.ResourceExhausted, ErrFileTooLarge.Error())
 	}
 
-	mimeType, ext, err := normalizeAvatarMime(req.GetMimeType(), req.GetContent())
+	mimeType, ext, err := normalizeImageMime(req.GetMimeType(), req.GetContent())
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +82,7 @@ func (s *FileService) CreateFile(ctx context.Context, req *pb.CreateFileRequest)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	objectKey := fmt.Sprintf(avatarObjectKeyPattern, now.Year(), int(now.Month()), randomName, ext)
+	objectKey := fmt.Sprintf(uploadScene.objectKeyPattern, now.Year(), int(now.Month()), randomName, ext)
 	filePath, err := safeStoragePath(s.storage.Root, objectKey)
 	if err != nil {
 		s.logger.Error("safeStoragePath", zap.Error(err))
@@ -98,7 +101,7 @@ func (s *FileService) CreateFile(ctx context.Context, req *pb.CreateFileRequest)
 	file := &entity.File{
 		OwnerID:   user.ID,
 		OwnerType: entity.OwnerTypeUser,
-		Scene:     entity.FileSceneAvatar,
+		Scene:     int64(req.GetScene()),
 		ObjectKey: objectKey,
 		URL:       publicURL(s.storage.PublicURL, objectKey),
 		MimeType:  mimeType,
@@ -113,7 +116,7 @@ func (s *FileService) CreateFile(ctx context.Context, req *pb.CreateFileRequest)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &pb.CreateFileResponse{File: entityToProto(file)}, nil
+	return &pb.UploadFileResponse{File: entityToProto(file)}, nil
 }
 
 func authenticatedUser(ctx context.Context) (*gocauth.AuthenticatedUser, error) {
@@ -139,10 +142,35 @@ func normalizeStorage(storage config.Storage) config.Storage {
 	if storage.MaxAvatarSize <= 0 {
 		storage.MaxAvatarSize = defaultMaxAvatarSize
 	}
+	if storage.MaxPostCoverSize <= 0 {
+		storage.MaxPostCoverSize = defaultMaxPostCoverSize
+	}
 	return storage
 }
 
-func normalizeAvatarMime(raw string, content []byte) (string, string, error) {
+type uploadScene struct {
+	maxSize          int64
+	objectKeyPattern string
+}
+
+func (s *FileService) uploadSceneFor(scene pb.FileScene) (uploadScene, error) {
+	switch scene {
+	case pb.FileScene_FILE_SCENE_AVATAR:
+		return uploadScene{
+			maxSize:          s.storage.MaxAvatarSize,
+			objectKeyPattern: avatarObjectKeyPattern,
+		}, nil
+	case pb.FileScene_FILE_SCENE_POST_COVER:
+		return uploadScene{
+			maxSize:          s.storage.MaxPostCoverSize,
+			objectKeyPattern: postCoverObjectKeyPattern,
+		}, nil
+	default:
+		return uploadScene{}, status.Error(codes.InvalidArgument, ErrInvalidArgument.Error())
+	}
+}
+
+func normalizeImageMime(raw string, content []byte) (string, string, error) {
 	mimeType := detectedMime(content)
 	declared := strings.ToLower(strings.TrimSpace(strings.Split(raw, ";")[0]))
 	if declared != "" && declared != "application/octet-stream" && declared != mimeType {

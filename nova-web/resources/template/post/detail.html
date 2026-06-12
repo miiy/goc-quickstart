@@ -9,6 +9,9 @@
             <div class="card">
                 <div class="card-body">
                     <article>
+                        {{ if .Post.CoverURL }}
+                        <img src="{{ .Post.CoverURL }}" alt="" class="img-fluid rounded mb-3">
+                        {{ end }}
                         <h1 class="card-title h3">{{ .Post.Title }}</h1>
                         <div class="small text-body-secondary mb-3">
                             {{ if .Post.AuthorName }}{{ .Post.AuthorName }} · {{ end }}{{ formatTime .Post.CreatedAt }}

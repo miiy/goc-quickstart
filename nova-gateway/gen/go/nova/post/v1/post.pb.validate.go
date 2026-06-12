@@ -157,6 +157,8 @@ func (m *Post) validate(all bool) error {
 
 	// no validation rules for AuthorName
 
+	// no validation rules for CoverUrl
+
 	if len(errors) > 0 {
 		return PostMultiError(errors)
 	}

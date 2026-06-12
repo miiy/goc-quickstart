@@ -17,6 +17,7 @@ type PostResponse struct {
 	Id         int64    `json:"id,string"`
 	AuthorId   int64    `json:"author_id,string"`
 	Title      string   `json:"title"`
+	CoverURL   string   `json:"cover_url"`
 	Content    string   `json:"content"`
 	Tags       []string `json:"tags"`
 	CategoryId int64    `json:"category_id,string"`
@@ -43,6 +44,7 @@ type UpdatePostRequest struct {
 
 type PostInput struct {
 	Title    string `json:"title"`
+	CoverURL string `json:"cover_url,omitempty"`
 	Content  string `json:"content"`
 	AuthorId int64  `json:"author_id"`
 }
@@ -109,11 +111,12 @@ func (c *PostClient) GetPost(ctx context.Context, id int64) (*PostResponse, erro
 	return wrapper.Post, nil
 }
 
-func (c *PostClient) CreatePost(ctx context.Context, title, content string, authorId int64) (*PostResponse, error) {
+func (c *PostClient) CreatePost(ctx context.Context, title, content string, authorId int64, coverURL string) (*PostResponse, error) {
 	url := fmt.Sprintf("%s/api/v1/posts", c.baseURL)
 	reqBody := CreatePostRequest{
 		Post: PostInput{
 			Title:    title,
+			CoverURL: coverURL,
 			Content:  content,
 			AuthorId: authorId,
 		},
@@ -155,7 +158,7 @@ func (c *PostClient) CreatePost(ctx context.Context, title, content string, auth
 	return wrapper.Post, nil
 }
 
-func (c *PostClient) UpdatePost(ctx context.Context, id int64, title, content string) (*PostResponse, error) {
+func (c *PostClient) UpdatePost(ctx context.Context, id int64, title, content string, coverURL *string) (*PostResponse, error) {
 	url := fmt.Sprintf("%s/api/v1/posts/%d", c.baseURL, id)
 	reqBody := UpdatePostRequest{
 		Post: PostInput{
@@ -163,6 +166,10 @@ func (c *PostClient) UpdatePost(ctx context.Context, id int64, title, content st
 			Content: content,
 		},
 		UpdateMask: "title,content",
+	}
+	if coverURL != nil {
+		reqBody.Post.CoverURL = *coverURL
+		reqBody.UpdateMask += ",cover_url"
 	}
 
 	bodyBytes, err := json.Marshal(reqBody)

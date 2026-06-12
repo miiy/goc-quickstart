@@ -374,6 +374,9 @@
         "authorName": {
           "type": "string",
           "description": "Populated by the API gateway from nova-user for web responses."
+        },
+        "coverUrl": {
+          "type": "string"
         }
       },
       "description": "Post describes an article published by a user."

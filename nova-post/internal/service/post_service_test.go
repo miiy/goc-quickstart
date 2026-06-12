@@ -8,11 +8,11 @@ import (
 	"github.com/miiy/goc-quickstart/nova-post/internal/entity"
 	"github.com/miiy/goc-quickstart/nova-post/internal/repository"
 	gocauth "github.com/miiy/goc/auth"
-	"go.uber.org/zap"
+	"github.com/miiy/goc/db/gorm"
+	"github.com/miiy/goc/logger/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
-	"gorm.io/gorm"
 )
 
 // MockPostRepository implements repository.PostRepository for testing
@@ -50,11 +50,31 @@ func (m *MockPostRepository) Update(ctx context.Context, id int64, post *entity.
 	if m.err != nil {
 		return 0, m.err
 	}
-	if _, ok := m.posts[id]; !ok {
+	existing, ok := m.posts[id]
+	if !ok {
 		return 0, nil
 	}
-	post.ID = id
-	m.posts[id] = post
+	if len(columns) == 0 {
+		post.ID = id
+		m.posts[id] = post
+		return 1, nil
+	}
+	for _, column := range columns {
+		switch column {
+		case "title":
+			existing.Title = post.Title
+		case "cover_url":
+			existing.CoverUrl = post.CoverUrl
+		case "content":
+			existing.Content = post.Content
+		case "status":
+			existing.Status = post.Status
+		case "tags":
+			existing.Tags = post.Tags
+		case "category_id":
+			existing.CategoryId = post.CategoryId
+		}
+	}
 	return 1, nil
 }
 
@@ -174,6 +194,7 @@ func TestPostService_CreatePost(t *testing.T) {
 				Post: &pb.Post{
 					AuthorId:   999,
 					Title:      "New Post",
+					CoverUrl:   "http://cdn.test/cover.png",
 					Content:    "New Content",
 					Status:     pb.PostStatus_POST_STATUS_DRAFT,
 					CategoryId: 1,
@@ -244,6 +265,9 @@ func TestPostService_CreatePost(t *testing.T) {
 				if resp.Post.AuthorId != tt.wantAuthorID {
 					t.Errorf("expected author id %d, got %d", tt.wantAuthorID, resp.Post.AuthorId)
 				}
+				if resp.Post.CoverUrl != tt.req.Post.CoverUrl {
+					t.Errorf("expected cover url %s, got %s", tt.req.Post.CoverUrl, resp.Post.CoverUrl)
+				}
 			}
 		})
 	}
@@ -257,6 +281,7 @@ func TestPostService_UpdatePost(t *testing.T) {
 	repo.posts[1] = &entity.Post{
 		AuthorId:   1,
 		Title:      "Test Post",
+		CoverUrl:   "http://cdn.test/old.png",
 		Content:    "Test Content",
 		Status:     1,
 		CategoryId: 1,
@@ -279,8 +304,10 @@ func TestPostService_UpdatePost(t *testing.T) {
 				Post: &pb.Post{
 					AuthorId: 999,
 					Title:    "Updated Title",
+					CoverUrl: "http://cdn.test/new.png",
 					Content:  "Updated Content",
 				},
+				UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"title", "content", "cover_url"}},
 			},
 			wantErr: false,
 		},
@@ -366,6 +393,9 @@ func TestPostService_UpdatePost(t *testing.T) {
 				}
 				if resp.Post.AuthorId != 1 {
 					t.Errorf("expected author id to remain 1, got %d", resp.Post.AuthorId)
+				}
+				if resp.Post.CoverUrl != "http://cdn.test/new.png" {
+					t.Errorf("expected cover url to update, got %s", resp.Post.CoverUrl)
 				}
 			}
 		})

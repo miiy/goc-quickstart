@@ -90,6 +90,7 @@ type Post struct {
 	DeletedAt  *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=deleted_at,json=deletedAt,proto3" json:"deleted_at,omitempty"`
 	// Populated by the API gateway from nova-user for web responses.
 	AuthorName    string `protobuf:"bytes,11,opt,name=author_name,json=authorName,proto3" json:"author_name,omitempty"`
+	CoverUrl      string `protobuf:"bytes,12,opt,name=cover_url,json=coverUrl,proto3" json:"cover_url,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -197,6 +198,13 @@ func (x *Post) GetDeletedAt() *timestamppb.Timestamp {
 func (x *Post) GetAuthorName() string {
 	if x != nil {
 		return x.AuthorName
+	}
+	return ""
+}
+
+func (x *Post) GetCoverUrl() string {
+	if x != nil {
+		return x.CoverUrl
 	}
 	return ""
 }
@@ -727,7 +735,7 @@ var File_nova_post_v1_post_proto protoreflect.FileDescriptor
 
 const file_nova_post_v1_post_proto_rawDesc = "" +
 	"\n" +
-	"\x17nova/post/v1/post.proto\x12\fnova.post.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a google/protobuf/field_mask.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\"\x9c\x03\n" +
+	"\x17nova/post/v1/post.proto\x12\fnova.post.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a google/protobuf/field_mask.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\"\xb9\x03\n" +
 	"\x04Post\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1b\n" +
 	"\tauthor_id\x18\x02 \x01(\x03R\bauthorId\x12\x14\n" +
@@ -745,7 +753,8 @@ const file_nova_post_v1_post_proto_rawDesc = "" +
 	"deleted_at\x18\n" +
 	" \x01(\v2\x1a.google.protobuf.TimestampR\tdeletedAt\x12\x1f\n" +
 	"\vauthor_name\x18\v \x01(\tR\n" +
-	"authorName\"%\n" +
+	"authorName\x12\x1b\n" +
+	"\tcover_url\x18\f \x01(\tR\bcoverUrl\"%\n" +
 	"\x0eGetPostRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x03B\x03\xe0A\x02R\x02id\"9\n" +
 	"\x0fGetPostResponse\x12&\n" +

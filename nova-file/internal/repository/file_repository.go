@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/miiy/goc-quickstart/nova-file/internal/entity"
-	"gorm.io/gorm"
+	"github.com/miiy/goc/db/gorm"
 )
 
 type FileRepository interface {

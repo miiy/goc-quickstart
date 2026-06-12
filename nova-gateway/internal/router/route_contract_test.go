@@ -9,9 +9,9 @@ import (
 	postv1 "github.com/miiy/goc-quickstart/nova-gateway/gen/go/nova/post/v1"
 	userv1 "github.com/miiy/goc-quickstart/nova-gateway/gen/go/nova/user/v1"
 	authsvc "github.com/miiy/goc-quickstart/nova-gateway/internal/service/auth"
+	filesvc "github.com/miiy/goc-quickstart/nova-gateway/internal/service/file"
 	"github.com/miiy/goc-quickstart/nova-gateway/internal/service/health"
 	postsvc "github.com/miiy/goc-quickstart/nova-gateway/internal/service/post"
-	filesvc "github.com/miiy/goc-quickstart/nova-gateway/internal/service/file"
 	usersvc "github.com/miiy/goc-quickstart/nova-gateway/internal/service/user"
 	"github.com/miiy/goc/gin"
 	"google.golang.org/genproto/googleapis/api/annotations"
@@ -36,8 +36,8 @@ func TestGinRoutesMatchProtoHTTPAnnotations(t *testing.T) {
 	}
 
 	for r := range got {
-		// Avatar upload is a multipart endpoint assembled by the gateway, not a proto JSON route.
-		if r.path == "/healthz" || r.path == "/api/v1/files/upload/avatar" {
+		// File uploads are multipart endpoints assembled by the gateway, not proto JSON routes.
+		if r.path == "/healthz" || r.path == "/api/v1/files/upload" || r.path == "/api/v1/files/upload/avatar" {
 			continue
 		}
 		if _, ok := want[r]; !ok {

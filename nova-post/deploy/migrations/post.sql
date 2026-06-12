@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS `posts`
     `id`           bigint unsigned NOT NULL AUTO_INCREMENT,
     `author_id`    bigint unsigned NOT NULL DEFAULT 0,
     `title`        varchar(255)    NOT NULL DEFAULT '',
+    `cover_url`    varchar(1024)   NOT NULL DEFAULT '',
     `content`      text            NOT NULL,
     `status`       tinyint(1)      NOT NULL DEFAULT 0 COMMENT 'status:0 unspecified, 1 draft, 2 published',
     `tags`         varchar(255)    NOT NULL DEFAULT '' COMMENT 'json array',

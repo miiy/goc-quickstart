@@ -14,6 +14,7 @@ type Post struct {
 	gorm.Model
 	AuthorId   int64
 	Title      string
+	CoverUrl   string
 	Content    string
 	Status     int64
 	Tags       string

@@ -183,7 +183,7 @@ func (c *AuthClient) ChangePassword(ctx context.Context, oldPassword, newPasswor
 		return err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(bodyBytes))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, url, bytes.NewReader(bodyBytes))
 	if err != nil {
 		return err
 	}

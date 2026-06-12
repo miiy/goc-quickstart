@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package nova.file.v1;
 
+import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/timestamp.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
@@ -35,6 +36,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 enum FileScene {
   FILE_SCENE_UNSPECIFIED = 0;
   FILE_SCENE_AVATAR = 1;
+  FILE_SCENE_POST_COVER = 2;
 }
 
 // FileStatus describes the lifecycle state of a stored file.
@@ -62,21 +64,26 @@ message File {
   google.protobuf.Timestamp deleted_at = 14;
 }
 
-// CreateFileRequest carries file content and metadata for storage.
-message CreateFileRequest {
+// UploadFileRequest carries file content and metadata for storage.
+message UploadFileRequest {
   FileScene scene = 1 [(google.api.field_behavior) = REQUIRED];
   string filename = 2;
   string mime_type = 3 [(google.api.field_behavior) = REQUIRED];
   bytes content = 4 [(google.api.field_behavior) = REQUIRED];
 }
 
-// CreateFileResponse returns the stored file record.
-message CreateFileResponse {
+// UploadFileResponse returns the stored file record.
+message UploadFileResponse {
   File file = 1;
 }
 
 // FileService stores files and returns file records.
 service FileService {
-  // CreateFile stores file content through the internal gRPC API.
-  rpc CreateFile(CreateFileRequest) returns (CreateFileResponse);
+  // UploadFile stores file content through the internal gRPC API.
+  rpc UploadFile(UploadFileRequest) returns (UploadFileResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/files/upload"
+      body: "*"
+    };
+  };
 }

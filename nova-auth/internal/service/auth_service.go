@@ -15,12 +15,12 @@ import (
 	"github.com/miiy/goc-quickstart/nova-auth/internal/repository"
 	"github.com/miiy/goc/auth"
 	"github.com/miiy/goc/contrib/wechat/miniprogram"
-	"go.uber.org/zap"
+	"github.com/miiy/goc/db/gorm"
+	"github.com/miiy/goc/logger/zap"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"gorm.io/gorm"
 )
 
 type AuthService struct {

@@ -18,7 +18,7 @@ func (m *Module) get(c *gin.Context) {
 		return
 	}
 
-	resp, err := m.client.GetPost(c.Request.Context(), &postv1.GetPostRequest{Id: id})
+	resp, err := m.postClient.GetPost(c.Request.Context(), &postv1.GetPostRequest{Id: id})
 	if err != nil {
 		transport.WriteError(c, err)
 		return
@@ -36,7 +36,7 @@ func (m *Module) create(c *gin.Context) {
 		return
 	}
 
-	resp, err := m.client.CreatePost(c.Request.Context(), &req)
+	resp, err := m.postClient.CreatePost(c.Request.Context(), &req)
 	if err != nil {
 		transport.WriteError(c, err)
 		return
@@ -60,7 +60,7 @@ func (m *Module) update(c *gin.Context) {
 	}
 	req.Id = id
 
-	resp, err := m.client.UpdatePost(c.Request.Context(), &req)
+	resp, err := m.postClient.UpdatePost(c.Request.Context(), &req)
 	if err != nil {
 		transport.WriteError(c, err)
 		return
@@ -78,7 +78,7 @@ func (m *Module) delete(c *gin.Context) {
 		return
 	}
 
-	resp, err := m.client.DeletePost(c.Request.Context(), &postv1.DeletePostRequest{Id: id})
+	resp, err := m.postClient.DeletePost(c.Request.Context(), &postv1.DeletePostRequest{Id: id})
 	if err != nil {
 		transport.WriteError(c, err)
 		return
@@ -104,7 +104,7 @@ func (m *Module) list(c *gin.Context) {
 		return
 	}
 
-	resp, err := m.client.ListPosts(c.Request.Context(), &postv1.ListPostsRequest{
+	resp, err := m.postClient.ListPosts(c.Request.Context(), &postv1.ListPostsRequest{
 		AuthorId:   authorID,
 		CategoryId: categoryID,
 		Tag:        transport.QueryValue(c, "tag", ""),

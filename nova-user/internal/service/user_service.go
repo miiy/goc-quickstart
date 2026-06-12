@@ -8,11 +8,11 @@ import (
 	"github.com/miiy/goc-quickstart/nova-user/internal/entity"
 	"github.com/miiy/goc-quickstart/nova-user/internal/repository"
 	gocauth "github.com/miiy/goc/auth"
-	"go.uber.org/zap"
+	"github.com/miiy/goc/db/gorm"
+	"github.com/miiy/goc/logger/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"gorm.io/gorm"
 )
 
 type UserService struct {

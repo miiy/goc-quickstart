@@ -10,12 +10,21 @@
                     {{if .Error}}
                     <div class="alert alert-danger" role="alert">{{.Error}}</div>
                     {{end}}
-                    <form method="POST" action="/posts/{{ .Post.Id }}">
+                    <form method="POST" action="/posts/{{ .Post.Id }}" enctype="multipart/form-data">
                         <input type="hidden" name="_csrf" value="{{ .CSRFToken }}">
                         <input type="hidden" name="_method" value="PUT">
                         <div class="mb-3">
                             <label for="title" class="form-label">Title</label>
                             <input type="text" class="form-control" id="title" name="title" value="{{ .Post.Title }}" required>
+                        </div>
+                        {{ if .Post.CoverURL }}
+                        <div class="mb-3">
+                            <img src="{{ .Post.CoverURL }}" alt="" class="img-fluid rounded">
+                        </div>
+                        {{ end }}
+                        <div class="mb-3">
+                            <label for="cover" class="form-label">Cover image</label>
+                            <input type="file" class="form-control" id="cover" name="cover" accept="image/png,image/jpeg,image/webp">
                         </div>
                         <div class="mb-3">
                             <label for="content" class="form-label">Content</label>

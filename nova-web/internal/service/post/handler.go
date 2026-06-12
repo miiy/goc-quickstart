@@ -1,6 +1,8 @@
 package post
 
 import (
+	"errors"
+	"mime/multipart"
 	"net/http"
 	"strconv"
 
@@ -40,7 +42,7 @@ func indexHandler(c *gin.Context) {
 	page, _ := strconv.ParseInt(c.DefaultQuery("page", "1"), 10, 32)
 	pageSize, _ := strconv.ParseInt(c.DefaultQuery("page_size", "10"), 10, 32)
 
-	resp, err := postModule.client.ListPosts(c.Request.Context(), int32(page), int32(pageSize))
+	resp, err := postModule.postClient.ListPosts(c.Request.Context(), int32(page), int32(pageSize))
 	if err != nil {
 		template.InternalError(c)
 		return
@@ -56,7 +58,7 @@ func pagesHandler(c *gin.Context) {
 	}
 	pageSize := int32(10)
 
-	resp, err := postModule.client.ListPosts(c.Request.Context(), int32(page), pageSize)
+	resp, err := postModule.postClient.ListPosts(c.Request.Context(), int32(page), pageSize)
 	if err != nil {
 		template.InternalError(c)
 		return
@@ -86,7 +88,7 @@ func newPostListViewData(c *gin.Context, resp *client.PostListResponse, page, pa
 func showHandler(c *gin.Context) {
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 
-	p, err := postModule.client.GetPost(c.Request.Context(), id)
+	p, err := postModule.postClient.GetPost(c.Request.Context(), id)
 	if err != nil {
 		template.NotFound(c)
 		return
@@ -118,12 +120,21 @@ func storeHandler(c *gin.Context) {
 		return
 	}
 
-	_, err := postModule.client.CreatePost(c.Request.Context(), title, content, authorID)
+	coverURL, err := uploadPostCoverIfPresent(c)
 	if err != nil {
 		if handleAuthError(c, err) {
 			return
 		}
 		renderCreateFormError(c, title, content, err)
+		return
+	}
+
+	_, err = postModule.postClient.CreatePost(c.Request.Context(), title, content, authorID, coverURL)
+	if err != nil {
+		if handleAuthError(c, err) {
+			return
+		}
+		renderCreateFormErrorWithCover(c, title, content, coverURL, err)
 		return
 	}
 
@@ -133,7 +144,7 @@ func storeHandler(c *gin.Context) {
 func editHandler(c *gin.Context) {
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 
-	p, err := postModule.client.GetPost(c.Request.Context(), id)
+	p, err := postModule.postClient.GetPost(c.Request.Context(), id)
 	if err != nil {
 		template.NotFound(c)
 		return
@@ -154,7 +165,7 @@ func updateHandler(c *gin.Context) {
 	title := c.PostForm("title")
 	content := c.PostForm("content")
 
-	p, err := postModule.client.GetPost(c.Request.Context(), id)
+	p, err := postModule.postClient.GetPost(c.Request.Context(), id)
 	if err != nil {
 		template.NotFound(c)
 		return
@@ -164,13 +175,32 @@ func updateHandler(c *gin.Context) {
 		return
 	}
 
-	_, err = postModule.client.UpdatePost(c.Request.Context(), id, title, content)
+	coverURL, err := uploadPostCoverIfPresent(c)
 	if err != nil {
 		if handleAuthError(c, err) {
 			return
 		}
 		p.Title = title
 		p.Content = content
+		renderEditFormError(c, p, err)
+		return
+	}
+
+	var coverURLPtr *string
+	if coverURL != "" {
+		coverURLPtr = &coverURL
+	}
+
+	_, err = postModule.postClient.UpdatePost(c.Request.Context(), id, title, content, coverURLPtr)
+	if err != nil {
+		if handleAuthError(c, err) {
+			return
+		}
+		p.Title = title
+		p.Content = content
+		if coverURLPtr != nil {
+			p.CoverURL = *coverURLPtr
+		}
 		renderEditFormError(c, p, err)
 		return
 	}
@@ -192,7 +222,7 @@ func postHandler(c *gin.Context) {
 func destroyHandler(c *gin.Context) {
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 
-	p, err := postModule.client.GetPost(c.Request.Context(), id)
+	p, err := postModule.postClient.GetPost(c.Request.Context(), id)
 	if err != nil {
 		template.NotFound(c)
 		return
@@ -202,7 +232,7 @@ func destroyHandler(c *gin.Context) {
 		return
 	}
 
-	err = postModule.client.DeletePost(c.Request.Context(), id)
+	err = postModule.postClient.DeletePost(c.Request.Context(), id)
 	if err != nil {
 		if handleAuthError(c, err) {
 			return
@@ -232,11 +262,16 @@ func handleAuthError(c *gin.Context, err error) bool {
 }
 
 func renderCreateFormError(c *gin.Context, title, content string, err error) {
+	renderCreateFormErrorWithCover(c, title, content, "", err)
+}
+
+func renderCreateFormErrorWithCover(c *gin.Context, title, content, coverURL string, err error) {
 	c.HTML(postFormErrorStatus(err), "post/create", PostFormData{
 		ViewData: template.NewFormViewData(c),
 		Post: &client.PostResponse{
-			Title:   title,
-			Content: content,
+			Title:    title,
+			CoverURL: coverURL,
+			Content:  content,
 		},
 		Error: err.Error(),
 	})
@@ -248,6 +283,38 @@ func renderEditFormError(c *gin.Context, post *client.PostResponse, err error) {
 		Post:     post,
 		Error:    err.Error(),
 	})
+}
+
+func uploadPostCoverIfPresent(c *gin.Context) (string, error) {
+	file, header, err := c.Request.FormFile("cover")
+	if err != nil {
+		if errors.Is(err, http.ErrMissingFile) {
+			return "", nil
+		}
+		if errors.Is(err, multipart.ErrMessageTooLarge) {
+			return "", &client.HTTPError{StatusCode: http.StatusRequestEntityTooLarge, Message: "cover image is too large"}
+		}
+		return "", err
+	}
+	defer file.Close()
+	if header == nil || header.Filename == "" {
+		return "", nil
+	}
+	if postModule.fileClient == nil {
+		return "", &client.HTTPError{StatusCode: http.StatusBadGateway, Message: "file service not configured"}
+	}
+
+	resp, err := postModule.fileClient.UploadPostCover(c.Request.Context(), header.Filename, file)
+	if err != nil {
+		return "", err
+	}
+	if resp == nil {
+		return "", &client.HTTPError{StatusCode: http.StatusBadGateway, Message: "empty file url"}
+	}
+	if resp.URL == "" {
+		return "", &client.HTTPError{StatusCode: http.StatusBadGateway, Message: "empty file url"}
+	}
+	return resp.URL, nil
 }
 
 func postFormErrorStatus(err error) int {

@@ -13,7 +13,7 @@ func (m *Module) get(c *gin.Context) {
 		return
 	}
 
-	resp, err := m.client.GetUser(c.Request.Context(), &userv1.GetUserRequest{Id: id})
+	resp, err := m.userClient.GetUser(c.Request.Context(), &userv1.GetUserRequest{Id: id})
 	if err != nil {
 		transport.WriteError(c, err)
 		return
@@ -27,7 +27,7 @@ func (m *Module) batchGet(c *gin.Context) {
 		return
 	}
 
-	resp, err := m.client.BatchGetUsers(c.Request.Context(), &userv1.BatchGetUsersRequest{Ids: ids})
+	resp, err := m.userClient.BatchGetUsers(c.Request.Context(), &userv1.BatchGetUsersRequest{Ids: ids})
 	if err != nil {
 		transport.WriteError(c, err)
 		return
@@ -47,7 +47,7 @@ func (m *Module) update(c *gin.Context) {
 	}
 	req.Id = id
 
-	resp, err := m.client.UpdateUser(c.Request.Context(), &req)
+	resp, err := m.userClient.UpdateUser(c.Request.Context(), &req)
 	if err != nil {
 		transport.WriteError(c, err)
 		return
@@ -65,7 +65,7 @@ func (m *Module) list(c *gin.Context) {
 		return
 	}
 
-	resp, err := m.client.ListUsers(c.Request.Context(), &userv1.ListUsersRequest{
+	resp, err := m.userClient.ListUsers(c.Request.Context(), &userv1.ListUsersRequest{
 		Page:     page,
 		PageSize: pageSize,
 	})

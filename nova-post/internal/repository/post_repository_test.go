@@ -2,13 +2,14 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"regexp"
 	"testing"
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
+	"github.com/miiy/goc/db/gorm"
+	"github.com/miiy/goc/db/gorm/mysql"
 )
 
 func newMockDB(t *testing.T) (*gorm.DB, sqlmock.Sqlmock) {
@@ -21,15 +22,18 @@ func newMockDB(t *testing.T) (*gorm.DB, sqlmock.Sqlmock) {
 	t.Cleanup(func() {
 		_ = db.Close()
 	})
-	gormDB, err := gorm.Open(mysql.Dialector{Config: &mysql.Config{
-		DriverName:                "mysql",
-		Conn:                      db,
-		SkipInitializeWithVersion: true,
-	}}, &gorm.Config{})
+	gormDB, err := openMockGormDB(db)
 	if err != nil {
 		t.Fatal(err)
 	}
 	return gormDB, mock
+}
+
+func openMockGormDB(db *sql.DB) (*gorm.DB, error) {
+	return gorm.Open(mysql.New(mysql.Config{
+		Conn:                      db,
+		SkipInitializeWithVersion: true,
+	}), &gorm.Config{})
 }
 
 func TestPostRepositoryListBindsTagFilter(t *testing.T) {

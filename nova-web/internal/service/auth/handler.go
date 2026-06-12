@@ -34,7 +34,7 @@ func Register(c *gin.Context) {
 	password := c.PostForm("password")
 	passwordConfirmation := c.PostForm("password_confirmation")
 
-	_, err := authModule.client.Register(c.Request.Context(), email, username, password, passwordConfirmation)
+	_, err := authModule.authClient.Register(c.Request.Context(), email, username, password, passwordConfirmation)
 	if err != nil {
 		c.HTML(http.StatusBadRequest, "auth/register", AuthFormView{
 			ViewData: template.NewFormViewData(c),
@@ -71,7 +71,7 @@ func Login(c *gin.Context) {
 	username := c.PostForm("username")
 	password := c.PostForm("password")
 
-	resp, err := authModule.client.Login(c.Request.Context(), username, password)
+	resp, err := authModule.authClient.Login(c.Request.Context(), username, password)
 	if err != nil {
 		c.HTML(http.StatusBadRequest, "auth/login", AuthFormView{
 			ViewData: template.NewFormViewData(c),
@@ -108,7 +108,7 @@ func Logout(c *gin.Context) {
 	session := sessions.Default(c)
 	accessToken, _ := session.Get(SessionKeyAccessToken).(string)
 	if accessToken != "" {
-		_ = authModule.client.Logout(c.Request.Context(), accessToken)
+		_ = authModule.authClient.Logout(c.Request.Context(), accessToken)
 	}
 	clearSession(c)
 

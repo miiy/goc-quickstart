@@ -19,6 +19,7 @@ server:
   grpc:
     addr: 0.0.0.0:50052
     tls:
+      enabled: false
       certFile:
       keyFile:
       caFile:

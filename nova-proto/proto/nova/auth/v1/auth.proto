@@ -254,7 +254,7 @@ service AuthService {
   // ChangePassword updates the password for the authenticated user.
   rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse) {
     option (google.api.http) = {
-      post: "/api/v1/auth/password"
+      put: "/api/v1/auth/password"
       body: "*"
     };
   }

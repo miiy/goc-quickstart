@@ -19,6 +19,7 @@ server:
   grpc:
     addr: 0.0.0.0:50054
     tls:
+      enabled: false
       certFile:
       keyFile:
       caFile:
@@ -38,3 +39,4 @@ storage:
   root: ./storage/uploads
   publicUrl: http://127.0.0.1:8080/uploads
   maxAvatarSize: 2097152
+  maxPostCoverSize: 5242880

@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/miiy/goc-quickstart/nova-post/internal/entity"
+	"github.com/miiy/goc/db/gorm"
 	"github.com/miiy/goc/db/gorm/model"
-	paginate "github.com/miiy/goc/db/gorm/paginate"
-	"gorm.io/gorm"
+	"github.com/miiy/goc/db/gorm/paginate"
 )
 
 type PostRepository interface {

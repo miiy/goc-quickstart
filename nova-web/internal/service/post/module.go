@@ -6,16 +6,18 @@ import (
 )
 
 type PostModule struct {
-	logger logger.Logger
-	client *client.PostClient
+	logger     logger.Logger
+	postClient *client.PostClient
+	fileClient *client.FileClient
 }
 
 var postModule *PostModule
 
-func NewModule(logger logger.Logger, postClient *client.PostClient) *PostModule {
+func NewModule(logger logger.Logger, postClient *client.PostClient, fileClient *client.FileClient) *PostModule {
 	postModule = &PostModule{
-		logger: logger,
-		client: postClient,
+		logger:     logger,
+		postClient: postClient,
+		fileClient: fileClient,
 	}
 	return postModule
 }

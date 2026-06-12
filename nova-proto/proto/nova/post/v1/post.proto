@@ -54,6 +54,7 @@ message Post {
   google.protobuf.Timestamp deleted_at = 10;
   // Populated by the API gateway from nova-user for web responses.
   string author_name = 11;
+  string cover_url = 12;
 }
 
 // GetPostRequest identifies a post by id.

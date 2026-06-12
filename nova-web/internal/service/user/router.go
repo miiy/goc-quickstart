@@ -8,7 +8,7 @@ func Router(r *gin.Engine) {
 		g.GET("/profile", Profile)
 		g.POST("/profile", UpdateProfile)
 		g.POST("/avatar", UploadAvatar)
-		g.POST("/password", ChangePassword)
+		g.PUT("/password", ChangePassword)
 	}
 }
 

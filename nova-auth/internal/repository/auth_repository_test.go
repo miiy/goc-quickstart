@@ -2,13 +2,14 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"regexp"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/miiy/goc-quickstart/nova-auth/internal/entity"
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
+	"github.com/miiy/goc/db/gorm"
+	"github.com/miiy/goc/db/gorm/mysql"
 )
 
 func newMockDb() (*gorm.DB, sqlmock.Sqlmock, error) {
@@ -16,11 +17,18 @@ func newMockDb() (*gorm.DB, sqlmock.Sqlmock, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	gormDB, err := gorm.Open(mysql.Dialector{Config: &mysql.Config{DriverName: "mysql", Conn: db, SkipInitializeWithVersion: true}}, &gorm.Config{})
+	gormDB, err := openMockGormDB(db)
 	if err != nil {
 		return nil, nil, err
 	}
 	return gormDB, mock, err
+}
+
+func openMockGormDB(db *sql.DB) (*gorm.DB, error) {
+	return gorm.Open(mysql.New(mysql.Config{
+		Conn:                      db,
+		SkipInitializeWithVersion: true,
+	}), &gorm.Config{})
 }
 
 func TestMysqlAuthRepository_Create(t *testing.T) {

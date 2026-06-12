@@ -12,11 +12,11 @@ import (
 	"github.com/miiy/goc-quickstart/nova-auth/internal/entity"
 	"github.com/miiy/goc/auth"
 	"github.com/miiy/goc/contrib/wechat/miniprogram"
-	"go.uber.org/zap"
+	"github.com/miiy/goc/db/gorm"
+	"github.com/miiy/goc/logger/zap"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"gorm.io/gorm"
 )
 
 // MockAuthRepository implements repository.AuthRepository for testing

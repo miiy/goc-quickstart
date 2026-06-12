@@ -30,6 +30,7 @@ type FileScene int32
 const (
 	FileScene_FILE_SCENE_UNSPECIFIED FileScene = 0
 	FileScene_FILE_SCENE_AVATAR      FileScene = 1
+	FileScene_FILE_SCENE_POST_COVER  FileScene = 2
 )
 
 // Enum value maps for FileScene.
@@ -37,10 +38,12 @@ var (
 	FileScene_name = map[int32]string{
 		0: "FILE_SCENE_UNSPECIFIED",
 		1: "FILE_SCENE_AVATAR",
+		2: "FILE_SCENE_POST_COVER",
 	}
 	FileScene_value = map[string]int32{
 		"FILE_SCENE_UNSPECIFIED": 0,
 		"FILE_SCENE_AVATAR":      1,
+		"FILE_SCENE_POST_COVER":  2,
 	}
 )
 
@@ -270,8 +273,8 @@ func (x *File) GetDeletedAt() *timestamppb.Timestamp {
 	return nil
 }
 
-// CreateFileRequest carries file content and metadata for storage.
-type CreateFileRequest struct {
+// UploadFileRequest carries file content and metadata for storage.
+type UploadFileRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Scene         FileScene              `protobuf:"varint,1,opt,name=scene,proto3,enum=nova.file.v1.FileScene" json:"scene,omitempty"`
 	Filename      string                 `protobuf:"bytes,2,opt,name=filename,proto3" json:"filename,omitempty"`
@@ -281,20 +284,20 @@ type CreateFileRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *CreateFileRequest) Reset() {
-	*x = CreateFileRequest{}
+func (x *UploadFileRequest) Reset() {
+	*x = UploadFileRequest{}
 	mi := &file_nova_file_v1_file_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CreateFileRequest) String() string {
+func (x *UploadFileRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CreateFileRequest) ProtoMessage() {}
+func (*UploadFileRequest) ProtoMessage() {}
 
-func (x *CreateFileRequest) ProtoReflect() protoreflect.Message {
+func (x *UploadFileRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_nova_file_v1_file_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -306,61 +309,61 @@ func (x *CreateFileRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CreateFileRequest.ProtoReflect.Descriptor instead.
-func (*CreateFileRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use UploadFileRequest.ProtoReflect.Descriptor instead.
+func (*UploadFileRequest) Descriptor() ([]byte, []int) {
 	return file_nova_file_v1_file_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *CreateFileRequest) GetScene() FileScene {
+func (x *UploadFileRequest) GetScene() FileScene {
 	if x != nil {
 		return x.Scene
 	}
 	return FileScene_FILE_SCENE_UNSPECIFIED
 }
 
-func (x *CreateFileRequest) GetFilename() string {
+func (x *UploadFileRequest) GetFilename() string {
 	if x != nil {
 		return x.Filename
 	}
 	return ""
 }
 
-func (x *CreateFileRequest) GetMimeType() string {
+func (x *UploadFileRequest) GetMimeType() string {
 	if x != nil {
 		return x.MimeType
 	}
 	return ""
 }
 
-func (x *CreateFileRequest) GetContent() []byte {
+func (x *UploadFileRequest) GetContent() []byte {
 	if x != nil {
 		return x.Content
 	}
 	return nil
 }
 
-// CreateFileResponse returns the stored file record.
-type CreateFileResponse struct {
+// UploadFileResponse returns the stored file record.
+type UploadFileResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	File          *File                  `protobuf:"bytes,1,opt,name=file,proto3" json:"file,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *CreateFileResponse) Reset() {
-	*x = CreateFileResponse{}
+func (x *UploadFileResponse) Reset() {
+	*x = UploadFileResponse{}
 	mi := &file_nova_file_v1_file_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CreateFileResponse) String() string {
+func (x *UploadFileResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CreateFileResponse) ProtoMessage() {}
+func (*UploadFileResponse) ProtoMessage() {}
 
-func (x *CreateFileResponse) ProtoReflect() protoreflect.Message {
+func (x *UploadFileResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_nova_file_v1_file_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -372,12 +375,12 @@ func (x *CreateFileResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CreateFileResponse.ProtoReflect.Descriptor instead.
-func (*CreateFileResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use UploadFileResponse.ProtoReflect.Descriptor instead.
+func (*UploadFileResponse) Descriptor() ([]byte, []int) {
 	return file_nova_file_v1_file_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *CreateFileResponse) GetFile() *File {
+func (x *UploadFileResponse) GetFile() *File {
 	if x != nil {
 		return x.File
 	}
@@ -388,7 +391,7 @@ var File_nova_file_v1_file_proto protoreflect.FileDescriptor
 
 const file_nova_file_v1_file_proto_rawDesc = "" +
 	"\n" +
-	"\x17nova/file/v1/file.proto\x12\fnova.file.v1\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\"\xff\x03\n" +
+	"\x17nova/file/v1/file.proto\x12\fnova.file.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\"\xff\x03\n" +
 	"\x04File\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x19\n" +
 	"\bowner_id\x18\x02 \x01(\x03R\aownerId\x12\x1d\n" +
@@ -411,24 +414,25 @@ const file_nova_file_v1_file_proto_rawDesc = "" +
 	"updated_at\x18\r \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x129\n" +
 	"\n" +
 	"deleted_at\x18\x0e \x01(\v2\x1a.google.protobuf.TimestampR\tdeletedAt\"\xa4\x01\n" +
-	"\x11CreateFileRequest\x122\n" +
+	"\x11UploadFileRequest\x122\n" +
 	"\x05scene\x18\x01 \x01(\x0e2\x17.nova.file.v1.FileSceneB\x03\xe0A\x02R\x05scene\x12\x1a\n" +
 	"\bfilename\x18\x02 \x01(\tR\bfilename\x12 \n" +
 	"\tmime_type\x18\x03 \x01(\tB\x03\xe0A\x02R\bmimeType\x12\x1d\n" +
 	"\acontent\x18\x04 \x01(\fB\x03\xe0A\x02R\acontent\"<\n" +
-	"\x12CreateFileResponse\x12&\n" +
-	"\x04file\x18\x01 \x01(\v2\x12.nova.file.v1.FileR\x04file*>\n" +
+	"\x12UploadFileResponse\x12&\n" +
+	"\x04file\x18\x01 \x01(\v2\x12.nova.file.v1.FileR\x04file*Y\n" +
 	"\tFileScene\x12\x1a\n" +
 	"\x16FILE_SCENE_UNSPECIFIED\x10\x00\x12\x15\n" +
-	"\x11FILE_SCENE_AVATAR\x10\x01*Z\n" +
+	"\x11FILE_SCENE_AVATAR\x10\x01\x12\x19\n" +
+	"\x15FILE_SCENE_POST_COVER\x10\x02*Z\n" +
 	"\n" +
 	"FileStatus\x12\x1b\n" +
 	"\x17FILE_STATUS_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12FILE_STATUS_ACTIVE\x10\x01\x12\x17\n" +
-	"\x13FILE_STATUS_DELETED\x10\x022^\n" +
-	"\vFileService\x12O\n" +
+	"\x13FILE_STATUS_DELETED\x10\x022\x7f\n" +
+	"\vFileService\x12p\n" +
 	"\n" +
-	"CreateFile\x12\x1f.nova.file.v1.CreateFileRequest\x1a .nova.file.v1.CreateFileResponseB\x9b\x03\x92A\xe2\x01\x12\x98\x01\n" +
+	"UploadFile\x12\x1f.nova.file.v1.UploadFileRequest\x1a .nova.file.v1.UploadFileResponse\"\x1f\x82\xd3\xe4\x93\x02\x19:\x01*\"\x14/api/v1/files/uploadB\x9b\x03\x92A\xe2\x01\x12\x98\x01\n" +
 	"\bFile API\"H\n" +
 	"\fnova project\x12&https://github.com/miiy/goc-quickstart\x1a\x10none@example.com*=\n" +
 	"\vMIT License\x12.https://github.com/miiy/goc-quickstart/LICENSE2\x031.0*\x03\x01\x02\x04r@\n" +
@@ -453,8 +457,8 @@ var file_nova_file_v1_file_proto_goTypes = []any{
 	(FileScene)(0),                // 0: nova.file.v1.FileScene
 	(FileStatus)(0),               // 1: nova.file.v1.FileStatus
 	(*File)(nil),                  // 2: nova.file.v1.File
-	(*CreateFileRequest)(nil),     // 3: nova.file.v1.CreateFileRequest
-	(*CreateFileResponse)(nil),    // 4: nova.file.v1.CreateFileResponse
+	(*UploadFileRequest)(nil),     // 3: nova.file.v1.UploadFileRequest
+	(*UploadFileResponse)(nil),    // 4: nova.file.v1.UploadFileResponse
 	(*timestamppb.Timestamp)(nil), // 5: google.protobuf.Timestamp
 }
 var file_nova_file_v1_file_proto_depIdxs = []int32{
@@ -463,10 +467,10 @@ var file_nova_file_v1_file_proto_depIdxs = []int32{
 	5, // 2: nova.file.v1.File.created_at:type_name -> google.protobuf.Timestamp
 	5, // 3: nova.file.v1.File.updated_at:type_name -> google.protobuf.Timestamp
 	5, // 4: nova.file.v1.File.deleted_at:type_name -> google.protobuf.Timestamp
-	0, // 5: nova.file.v1.CreateFileRequest.scene:type_name -> nova.file.v1.FileScene
-	2, // 6: nova.file.v1.CreateFileResponse.file:type_name -> nova.file.v1.File
-	3, // 7: nova.file.v1.FileService.CreateFile:input_type -> nova.file.v1.CreateFileRequest
-	4, // 8: nova.file.v1.FileService.CreateFile:output_type -> nova.file.v1.CreateFileResponse
+	0, // 5: nova.file.v1.UploadFileRequest.scene:type_name -> nova.file.v1.FileScene
+	2, // 6: nova.file.v1.UploadFileResponse.file:type_name -> nova.file.v1.File
+	3, // 7: nova.file.v1.FileService.UploadFile:input_type -> nova.file.v1.UploadFileRequest
+	4, // 8: nova.file.v1.FileService.UploadFile:output_type -> nova.file.v1.UploadFileResponse
 	8, // [8:9] is the sub-list for method output_type
 	7, // [7:8] is the sub-list for method input_type
 	7, // [7:7] is the sub-list for extension type_name
