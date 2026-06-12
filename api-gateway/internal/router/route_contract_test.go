@@ -11,6 +11,7 @@ import (
 	authsvc "github.com/miiy/goc-quickstart/api-gateway/internal/service/auth"
 	"github.com/miiy/goc-quickstart/api-gateway/internal/service/health"
 	postsvc "github.com/miiy/goc-quickstart/api-gateway/internal/service/post"
+	uploadsvc "github.com/miiy/goc-quickstart/api-gateway/internal/service/upload"
 	usersvc "github.com/miiy/goc-quickstart/api-gateway/internal/service/user"
 	"github.com/miiy/goc/gin"
 	"google.golang.org/genproto/googleapis/api/annotations"
@@ -35,7 +36,8 @@ func TestGinRoutesMatchProtoHTTPAnnotations(t *testing.T) {
 	}
 
 	for r := range got {
-		if r.path == "/healthz" {
+		// Avatar upload is a multipart endpoint assembled by the gateway, not a proto JSON route.
+		if r.path == "/healthz" || r.path == "/api/v1/uploads/avatar" {
 			continue
 		}
 		if _, ok := want[r]; !ok {
@@ -53,7 +55,7 @@ func ginRoutesForTest() map[route]struct{} {
 	authModule.RegisterPublicRouter(r)
 
 	public := r.Group("/api/v1")
-	postModule := postsvc.NewModule(nil)
+	postModule := postsvc.NewModule(nil, nil)
 	postModule.RegisterPublicRouter(public)
 
 	protected := r.Group("/api/v1")
@@ -63,6 +65,7 @@ func ginRoutesForTest() map[route]struct{} {
 
 	authModule.RegisterProtectedRouter(protected)
 	postModule.RegisterProtectedRouter(protected)
+	uploadsvc.NewModule(nil, nil).RegisterRouter(protected)
 	usersvc.NewModule(nil).RegisterRouter(protected)
 
 	routes := make(map[route]struct{})

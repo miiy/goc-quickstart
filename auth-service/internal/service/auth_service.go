@@ -56,7 +56,7 @@ func NewAuthServiceServer(logger *zap.Logger, authRepo repository.AuthRepository
 	}
 }
 
-func (s *AuthService) GetAuthenticatedUser(ctx context.Context, req *pb.GetAuthenticatedUserRequest) (*pb.User, error) {
+func (s *AuthService) GetAuthenticatedUser(ctx context.Context, req *pb.GetAuthenticatedUserRequest) (*pb.GetAuthenticatedUserResponse, error) {
 	username := strings.TrimSpace(req.Username)
 	if username == "" {
 		return nil, status.Error(codes.InvalidArgument, ErrInvalidArgument.Error())
@@ -71,9 +71,11 @@ func (s *AuthService) GetAuthenticatedUser(ctx context.Context, req *pb.GetAuthe
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &pb.User{
-		Id:       user.ID,
-		Username: user.Username,
+	return &pb.GetAuthenticatedUserResponse{
+		User: &pb.User{
+			Id:       user.ID,
+			Username: user.Username,
+		},
 	}, nil
 }
 
@@ -125,6 +127,7 @@ func (s *AuthService) Register(ctx context.Context, req *pb.RegisterRequest) (*p
 	user := entity.User{
 		Username:          req.Username,
 		Password:          string(hashPasswd),
+		Nickname:          defaultNickname(req.Username),
 		Email:             req.Email,
 		EmailVerifiedTime: nil,
 		Phone:             "",
@@ -146,28 +149,38 @@ func (s *AuthService) Register(ctx context.Context, req *pb.RegisterRequest) (*p
 	}, nil
 }
 
-func (s *AuthService) UsernameCheck(ctx context.Context, req *pb.FieldCheckRequest) (*pb.FieldCheckResponse, error) {
-	return s.userExist(ctx, entity.UserColumnUsername, req.Value)
+func (s *AuthService) UsernameCheck(ctx context.Context, req *pb.UsernameCheckRequest) (*pb.UsernameCheckResponse, error) {
+	exist, err := s.userExist(ctx, entity.UserColumnUsername, req.Value)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.UsernameCheckResponse{Exist: exist}, nil
 }
 
-func (s *AuthService) EmailCheck(ctx context.Context, req *pb.FieldCheckRequest) (*pb.FieldCheckResponse, error) {
-	return s.userExist(ctx, entity.UserColumnEmail, req.Value)
+func (s *AuthService) EmailCheck(ctx context.Context, req *pb.EmailCheckRequest) (*pb.EmailCheckResponse, error) {
+	exist, err := s.userExist(ctx, entity.UserColumnEmail, req.Value)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.EmailCheckResponse{Exist: exist}, nil
 }
 
-func (s *AuthService) PhoneCheck(ctx context.Context, req *pb.FieldCheckRequest) (*pb.FieldCheckResponse, error) {
-	return s.userExist(ctx, entity.UserColumnPhone, req.Value)
+func (s *AuthService) PhoneCheck(ctx context.Context, req *pb.PhoneCheckRequest) (*pb.PhoneCheckResponse, error) {
+	exist, err := s.userExist(ctx, entity.UserColumnPhone, req.Value)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.PhoneCheckResponse{Exist: exist}, nil
 }
 
-func (s *AuthService) userExist(ctx context.Context, field, value string) (*pb.FieldCheckResponse, error) {
+func (s *AuthService) userExist(ctx context.Context, field, value string) (bool, error) {
 	exist, err := s.authRepo.UserExist(ctx, field, value)
 	if err != nil {
 		s.logger.Error("authRepo.UserExist", zap.Error(err))
-		return nil, status.Error(codes.Internal, err.Error())
+		return false, status.Error(codes.Internal, err.Error())
 	}
 
-	return &pb.FieldCheckResponse{
-		Exist: exist,
-	}, nil
+	return exist, nil
 }
 
 func loginValidate(req *pb.LoginRequest) error {
@@ -235,7 +248,7 @@ func mpLoginValidate(req *pb.MpLoginRequest) error {
 	return nil
 }
 
-func (s *AuthService) MpLogin(ctx context.Context, req *pb.MpLoginRequest) (*pb.LoginResponse, error) {
+func (s *AuthService) MpLogin(ctx context.Context, req *pb.MpLoginRequest) (*pb.MpLoginResponse, error) {
 	if err := mpLoginValidate(req); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -256,9 +269,15 @@ func (s *AuthService) MpLogin(ctx context.Context, req *pb.MpLoginRequest) (*pb.
 	}
 	// if not found, create user
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
+		username, err := randUserName()
+		if err != nil {
+			s.logger.Error("randUserName", zap.Error(err))
+			return nil, status.Error(codes.Internal, err.Error())
+		}
 		user = &entity.User{
-			Username:          randUserName(),
+			Username:          username,
 			Password:          "",
+			Nickname:          defaultNickname(username),
 			Email:             "",
 			EmailVerifiedTime: nil,
 			Phone:             "",
@@ -294,7 +313,7 @@ func (s *AuthService) MpLogin(ctx context.Context, req *pb.MpLoginRequest) (*pb.
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &pb.LoginResponse{
+	return &pb.MpLoginResponse{
 		TokenType:   "Bearer",
 		AccessToken: token,
 		ExpiresAt:   timestamppb.New(expiresTime),
@@ -355,9 +374,15 @@ func (s *AuthService) PhoneAuth(ctx context.Context, req *pb.PhoneAuthRequest) (
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	if errors.Is(err, gorm.ErrRecordNotFound) {
+		username, err := randUserName()
+		if err != nil {
+			s.logger.Error("randUserName", zap.Error(err))
+			return nil, status.Error(codes.Internal, err.Error())
+		}
 		user = &entity.User{
-			Username:          randUserName(),
+			Username:          username,
 			Password:          "",
+			Nickname:          defaultNickname(username),
 			Email:             "",
 			EmailVerifiedTime: nil,
 			Phone:             req.Phone,
@@ -455,6 +480,67 @@ func (s *AuthService) RefreshToken(ctx context.Context, request *pb.RefreshToken
 	}, nil
 }
 
+func changePasswordValidate(req *pb.ChangePasswordRequest) error {
+	req.OldPassword = strings.TrimSpace(req.OldPassword)
+	req.NewPassword = strings.TrimSpace(req.NewPassword)
+	req.NewPasswordConfirmation = strings.TrimSpace(req.NewPasswordConfirmation)
+
+	if req.OldPassword == "" || req.NewPassword == "" || req.NewPasswordConfirmation == "" {
+		return ErrInvalidArgument
+	}
+	if req.NewPassword != req.NewPasswordConfirmation {
+		return ErrPasswordsDiffer
+	}
+	return nil
+}
+
+func (s *AuthService) ChangePassword(ctx context.Context, req *pb.ChangePasswordRequest) (*pb.ChangePasswordResponse, error) {
+	if err := changePasswordValidate(req); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	authUser, err := auth.ExtractAuthenticatedUser(ctx)
+	if err != nil || authUser.ID <= 0 {
+		if err == nil {
+			err = errors.New("invalid authenticated user")
+		}
+		return nil, status.Error(codes.Unauthenticated, err.Error())
+	}
+
+	user, err := s.authRepo.First(ctx, uint64(authUser.ID), "id", "password", "status")
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, status.Error(codes.NotFound, ErrUserNotFound.Error())
+		}
+		s.logger.Error("authRepo.First", zap.Error(err))
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	if user.Status != entity.UserStatusActive {
+		return nil, status.Error(codes.NotFound, ErrUserNotFound.Error())
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.OldPassword)); err != nil {
+		return nil, status.Error(codes.InvalidArgument, ErrWrongPassword.Error())
+	}
+
+	hashPasswd, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		s.logger.Error("bcrypt.GenerateFromPassword", zap.Error(err))
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	rowsAffected, err := s.authRepo.Update(ctx, uint64(authUser.ID), &entity.User{Password: string(hashPasswd)}, "password")
+	if err != nil {
+		s.logger.Error("authRepo.Update", zap.Error(err))
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	if rowsAffected == 0 {
+		return nil, status.Error(codes.NotFound, ErrUserNotFound.Error())
+	}
+
+	return &pb.ChangePasswordResponse{}, nil
+}
+
 // Logout
 // 1. delete token
 func (s *AuthService) Logout(ctx context.Context, req *pb.LogoutRequest) (*pb.LogoutResponse, error) {
@@ -500,6 +586,14 @@ func newTokenID() (string, error) {
 	return hex.EncodeToString(buf[:]), nil
 }
 
-func randUserName() string {
-	return fmt.Sprintf("用户_%d", time.Now().Unix())
+func randUserName() (string, error) {
+	var buf [8]byte
+	if _, err := cryptorand.Read(buf[:]); err != nil {
+		return "", err
+	}
+	return "user_" + hex.EncodeToString(buf[:]), nil
+}
+
+func defaultNickname(username string) string {
+	return strings.TrimSpace(username)
 }

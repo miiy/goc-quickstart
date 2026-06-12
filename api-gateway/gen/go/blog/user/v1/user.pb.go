@@ -4,9 +4,10 @@
 // 	protoc        (unknown)
 // source: blog/user/v1/user.proto
 
-package apiv1
+package userv1
 
 import (
+	_ "github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2/options"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -24,6 +25,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// UserStatus describes the lifecycle state of a user account.
 type UserStatus int32
 
 const (
@@ -73,6 +75,7 @@ func (UserStatus) EnumDescriptor() ([]byte, []int) {
 	return file_blog_user_v1_user_proto_rawDescGZIP(), []int{0}
 }
 
+// User describes the public profile and account state for a user.
 type User struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
 	Id                int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -82,7 +85,7 @@ type User struct {
 	Email             string                 `protobuf:"bytes,5,opt,name=email,proto3" json:"email,omitempty"`
 	EmailVerifiedTime *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=email_verified_time,json=emailVerifiedTime,proto3" json:"email_verified_time,omitempty"`
 	Phone             string                 `protobuf:"bytes,7,opt,name=phone,proto3" json:"phone,omitempty"`
-	Status            UserStatus             `protobuf:"varint,8,opt,name=status,proto3,enum=goc.blog.user.api.v1.UserStatus" json:"status,omitempty"`
+	Status            UserStatus             `protobuf:"varint,8,opt,name=status,proto3,enum=blog.user.v1.UserStatus" json:"status,omitempty"`
 	CreatedAt         *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt         *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	DeletedAt         *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=deleted_at,json=deletedAt,proto3" json:"deleted_at,omitempty"`
@@ -197,6 +200,7 @@ func (x *User) GetDeletedAt() *timestamppb.Timestamp {
 	return nil
 }
 
+// GetUserRequest identifies a user by id.
 type GetUserRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -241,6 +245,142 @@ func (x *GetUserRequest) GetId() int64 {
 	return 0
 }
 
+// GetUserResponse returns a single user.
+type GetUserResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	User          *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUserResponse) Reset() {
+	*x = GetUserResponse{}
+	mi := &file_blog_user_v1_user_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUserResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUserResponse) ProtoMessage() {}
+
+func (x *GetUserResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_blog_user_v1_user_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUserResponse.ProtoReflect.Descriptor instead.
+func (*GetUserResponse) Descriptor() ([]byte, []int) {
+	return file_blog_user_v1_user_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *GetUserResponse) GetUser() *User {
+	if x != nil {
+		return x.User
+	}
+	return nil
+}
+
+// BatchGetUsersRequest identifies multiple users by id.
+type BatchGetUsersRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Ids           []int64                `protobuf:"varint,1,rep,packed,name=ids,proto3" json:"ids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BatchGetUsersRequest) Reset() {
+	*x = BatchGetUsersRequest{}
+	mi := &file_blog_user_v1_user_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BatchGetUsersRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BatchGetUsersRequest) ProtoMessage() {}
+
+func (x *BatchGetUsersRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_blog_user_v1_user_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BatchGetUsersRequest.ProtoReflect.Descriptor instead.
+func (*BatchGetUsersRequest) Descriptor() ([]byte, []int) {
+	return file_blog_user_v1_user_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *BatchGetUsersRequest) GetIds() []int64 {
+	if x != nil {
+		return x.Ids
+	}
+	return nil
+}
+
+// BatchGetUsersResponse returns users matched by ids.
+type BatchGetUsersResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Users         []*User                `protobuf:"bytes,1,rep,name=users,proto3" json:"users,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BatchGetUsersResponse) Reset() {
+	*x = BatchGetUsersResponse{}
+	mi := &file_blog_user_v1_user_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BatchGetUsersResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BatchGetUsersResponse) ProtoMessage() {}
+
+func (x *BatchGetUsersResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_blog_user_v1_user_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BatchGetUsersResponse.ProtoReflect.Descriptor instead.
+func (*BatchGetUsersResponse) Descriptor() ([]byte, []int) {
+	return file_blog_user_v1_user_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *BatchGetUsersResponse) GetUsers() []*User {
+	if x != nil {
+		return x.Users
+	}
+	return nil
+}
+
+// UpdateUserRequest carries profile fields to update for a user.
 type UpdateUserRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -252,7 +392,7 @@ type UpdateUserRequest struct {
 
 func (x *UpdateUserRequest) Reset() {
 	*x = UpdateUserRequest{}
-	mi := &file_blog_user_v1_user_proto_msgTypes[2]
+	mi := &file_blog_user_v1_user_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -264,7 +404,7 @@ func (x *UpdateUserRequest) String() string {
 func (*UpdateUserRequest) ProtoMessage() {}
 
 func (x *UpdateUserRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_blog_user_v1_user_proto_msgTypes[2]
+	mi := &file_blog_user_v1_user_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -277,7 +417,7 @@ func (x *UpdateUserRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateUserRequest.ProtoReflect.Descriptor instead.
 func (*UpdateUserRequest) Descriptor() ([]byte, []int) {
-	return file_blog_user_v1_user_proto_rawDescGZIP(), []int{2}
+	return file_blog_user_v1_user_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *UpdateUserRequest) GetId() int64 {
@@ -301,6 +441,52 @@ func (x *UpdateUserRequest) GetUpdateMask() *fieldmaskpb.FieldMask {
 	return nil
 }
 
+// UpdateUserResponse returns the updated user.
+type UpdateUserResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	User          *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateUserResponse) Reset() {
+	*x = UpdateUserResponse{}
+	mi := &file_blog_user_v1_user_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateUserResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateUserResponse) ProtoMessage() {}
+
+func (x *UpdateUserResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_blog_user_v1_user_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateUserResponse.ProtoReflect.Descriptor instead.
+func (*UpdateUserResponse) Descriptor() ([]byte, []int) {
+	return file_blog_user_v1_user_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *UpdateUserResponse) GetUser() *User {
+	if x != nil {
+		return x.User
+	}
+	return nil
+}
+
+// ListUsersRequest carries pagination options for listing users.
 type ListUsersRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Page          int32                  `protobuf:"varint,1,opt,name=page,proto3" json:"page,omitempty"`
@@ -311,7 +497,7 @@ type ListUsersRequest struct {
 
 func (x *ListUsersRequest) Reset() {
 	*x = ListUsersRequest{}
-	mi := &file_blog_user_v1_user_proto_msgTypes[3]
+	mi := &file_blog_user_v1_user_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -323,7 +509,7 @@ func (x *ListUsersRequest) String() string {
 func (*ListUsersRequest) ProtoMessage() {}
 
 func (x *ListUsersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_blog_user_v1_user_proto_msgTypes[3]
+	mi := &file_blog_user_v1_user_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -336,7 +522,7 @@ func (x *ListUsersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListUsersRequest.ProtoReflect.Descriptor instead.
 func (*ListUsersRequest) Descriptor() ([]byte, []int) {
-	return file_blog_user_v1_user_proto_rawDescGZIP(), []int{3}
+	return file_blog_user_v1_user_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ListUsersRequest) GetPage() int32 {
@@ -353,6 +539,7 @@ func (x *ListUsersRequest) GetPageSize() int32 {
 	return 0
 }
 
+// ListUsersResponse returns a paginated list of users.
 type ListUsersResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Total         int64                  `protobuf:"varint,1,opt,name=total,proto3" json:"total,omitempty"`
@@ -366,7 +553,7 @@ type ListUsersResponse struct {
 
 func (x *ListUsersResponse) Reset() {
 	*x = ListUsersResponse{}
-	mi := &file_blog_user_v1_user_proto_msgTypes[4]
+	mi := &file_blog_user_v1_user_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -378,7 +565,7 @@ func (x *ListUsersResponse) String() string {
 func (*ListUsersResponse) ProtoMessage() {}
 
 func (x *ListUsersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_blog_user_v1_user_proto_msgTypes[4]
+	mi := &file_blog_user_v1_user_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -391,7 +578,7 @@ func (x *ListUsersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListUsersResponse.ProtoReflect.Descriptor instead.
 func (*ListUsersResponse) Descriptor() ([]byte, []int) {
-	return file_blog_user_v1_user_proto_rawDescGZIP(), []int{4}
+	return file_blog_user_v1_user_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ListUsersResponse) GetTotal() int64 {
@@ -433,7 +620,7 @@ var File_blog_user_v1_user_proto protoreflect.FileDescriptor
 
 const file_blog_user_v1_user_proto_rawDesc = "" +
 	"\n" +
-	"\x17blog/user/v1/user.proto\x12\x14goc.blog.user.api.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/api/annotations.proto\x1a google/protobuf/field_mask.proto\x1a\x1fgoogle/api/field_behavior.proto\"\xc9\x03\n" +
+	"\x17blog/user/v1/user.proto\x12\fblog.user.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a google/protobuf/field_mask.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\"\xc1\x03\n" +
 	"\x04User\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12\x1a\n" +
@@ -441,8 +628,8 @@ const file_blog_user_v1_user_proto_rawDesc = "" +
 	"\x06avatar\x18\x04 \x01(\tR\x06avatar\x12\x14\n" +
 	"\x05email\x18\x05 \x01(\tR\x05email\x12J\n" +
 	"\x13email_verified_time\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\x11emailVerifiedTime\x12\x14\n" +
-	"\x05phone\x18\a \x01(\tR\x05phone\x128\n" +
-	"\x06status\x18\b \x01(\x0e2 .goc.blog.user.api.v1.UserStatusR\x06status\x129\n" +
+	"\x05phone\x18\a \x01(\tR\x05phone\x120\n" +
+	"\x06status\x18\b \x01(\x0e2\x18.blog.user.v1.UserStatusR\x06status\x129\n" +
 	"\n" +
 	"created_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
@@ -451,33 +638,46 @@ const file_blog_user_v1_user_proto_rawDesc = "" +
 	"\n" +
 	"deleted_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\tdeletedAt\"%\n" +
 	"\x0eGetUserRequest\x12\x13\n" +
-	"\x02id\x18\x01 \x01(\x03B\x03\xe0A\x02R\x02id\"\x9a\x01\n" +
+	"\x02id\x18\x01 \x01(\x03B\x03\xe0A\x02R\x02id\"9\n" +
+	"\x0fGetUserResponse\x12&\n" +
+	"\x04user\x18\x01 \x01(\v2\x12.blog.user.v1.UserR\x04user\"-\n" +
+	"\x14BatchGetUsersRequest\x12\x15\n" +
+	"\x03ids\x18\x01 \x03(\x03B\x03\xe0A\x02R\x03ids\"A\n" +
+	"\x15BatchGetUsersResponse\x12(\n" +
+	"\x05users\x18\x01 \x03(\v2\x12.blog.user.v1.UserR\x05users\"\x92\x01\n" +
 	"\x11UpdateUserRequest\x12\x13\n" +
-	"\x02id\x18\x01 \x01(\x03B\x03\xe0A\x02R\x02id\x123\n" +
-	"\x04user\x18\x02 \x01(\v2\x1a.goc.blog.user.api.v1.UserB\x03\xe0A\x02R\x04user\x12;\n" +
+	"\x02id\x18\x01 \x01(\x03B\x03\xe0A\x02R\x02id\x12+\n" +
+	"\x04user\x18\x02 \x01(\v2\x12.blog.user.v1.UserB\x03\xe0A\x02R\x04user\x12;\n" +
 	"\vupdate_mask\x18\x03 \x01(\v2\x1a.google.protobuf.FieldMaskR\n" +
-	"updateMask\"C\n" +
+	"updateMask\"<\n" +
+	"\x12UpdateUserResponse\x12&\n" +
+	"\x04user\x18\x01 \x01(\v2\x12.blog.user.v1.UserR\x04user\"C\n" +
 	"\x10ListUsersRequest\x12\x12\n" +
 	"\x04page\x18\x01 \x01(\x05R\x04page\x12\x1b\n" +
-	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\"\xbc\x01\n" +
+	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\"\xb4\x01\n" +
 	"\x11ListUsersResponse\x12\x14\n" +
 	"\x05total\x18\x01 \x01(\x03R\x05total\x12\x1f\n" +
 	"\vtotal_pages\x18\x02 \x01(\x05R\n" +
 	"totalPages\x12\x1b\n" +
 	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\x12!\n" +
-	"\fcurrent_page\x18\x04 \x01(\x05R\vcurrentPage\x120\n" +
-	"\x05users\x18\x05 \x03(\v2\x1a.goc.blog.user.api.v1.UserR\x05users*Z\n" +
+	"\fcurrent_page\x18\x04 \x01(\x05R\vcurrentPage\x12(\n" +
+	"\x05users\x18\x05 \x03(\v2\x12.blog.user.v1.UserR\x05users*Z\n" +
 	"\n" +
 	"UserStatus\x12\x1b\n" +
 	"\x17USER_STATUS_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12USER_STATUS_ACTIVE\x10\x01\x12\x17\n" +
-	"\x13USER_STATUS_DISABLE\x10\x022\xdd\x02\n" +
-	"\vUserService\x12g\n" +
-	"\aGetUser\x12$.goc.blog.user.api.v1.GetUserRequest\x1a\x1a.goc.blog.user.api.v1.User\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/api/v1/users/{id}\x12p\n" +
+	"\x13USER_STATUS_DISABLE\x10\x022\xbd\x03\n" +
+	"\vUserService\x12b\n" +
+	"\aGetUser\x12\x1c.blog.user.v1.GetUserRequest\x1a\x1d.blog.user.v1.GetUserResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/api/v1/users/{id}\x12u\n" +
+	"\rBatchGetUsers\x12\".blog.user.v1.BatchGetUsersRequest\x1a#.blog.user.v1.BatchGetUsersResponse\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/api/v1/users/batch\x12n\n" +
 	"\n" +
-	"UpdateUser\x12'.goc.blog.user.api.v1.UpdateUserRequest\x1a\x1a.goc.blog.user.api.v1.User\"\x1d\x82\xd3\xe4\x93\x02\x17:\x01*\x1a\x12/api/v1/users/{id}\x12s\n" +
-	"\tListUsers\x12&.goc.blog.user.api.v1.ListUsersRequest\x1a'.goc.blog.user.api.v1.ListUsersResponse\"\x15\x82\xd3\xe4\x93\x02\x0f\x12\r/api/v1/usersB\xd9\x01\n" +
-	"\x18com.goc.blog.user.api.v1B\tUserProtoP\x01Z=github.com/miiy/goc-quickstart/apis/gen/go/blog/user/v1;apiv1\xa2\x02\x04GBUA\xaa\x02\x14Goc.Blog.User.Api.V1\xca\x02\x14Goc\\Blog\\User\\Api\\V1\xe2\x02 Goc\\Blog\\User\\Api\\V1\\GPBMetadata\xea\x02\x18Goc::Blog::User::Api::V1b\x06proto3"
+	"UpdateUser\x12\x1f.blog.user.v1.UpdateUserRequest\x1a .blog.user.v1.UpdateUserResponse\"\x1d\x82\xd3\xe4\x93\x02\x17:\x01*\x1a\x12/api/v1/users/{id}\x12c\n" +
+	"\tListUsers\x12\x1e.blog.user.v1.ListUsersRequest\x1a\x1f.blog.user.v1.ListUsersResponse\"\x15\x82\xd3\xe4\x93\x02\x0f\x12\r/api/v1/usersB\x95\x03\x92A\xe2\x01\x12\x98\x01\n" +
+	"\bUser API\"H\n" +
+	"\fblog project\x12&https://github.com/miiy/goc-quickstart\x1a\x10none@example.com*=\n" +
+	"\vMIT License\x12.https://github.com/miiy/goc-quickstart/LICENSE2\x031.0*\x03\x01\x02\x04r@\n" +
+	"\x0eMore about goc\x12.https://github.com/grpc-ecosystem/grpc-gateway\n" +
+	"\x10com.blog.user.v1B\tUserProtoP\x01Z>github.com/miiy/goc-quickstart/apis/gen/go/blog/user/v1;userv1\xa2\x02\x03BUX\xaa\x02\fBlog.User.V1\xca\x02\fBlog\\User\\V1\xe2\x02\x18Blog\\User\\V1\\GPBMetadata\xea\x02\x0eBlog::User::V1b\x06proto3"
 
 var (
 	file_blog_user_v1_user_proto_rawDescOnce sync.Once
@@ -492,37 +692,46 @@ func file_blog_user_v1_user_proto_rawDescGZIP() []byte {
 }
 
 var file_blog_user_v1_user_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_blog_user_v1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_blog_user_v1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_blog_user_v1_user_proto_goTypes = []any{
-	(UserStatus)(0),               // 0: goc.blog.user.api.v1.UserStatus
-	(*User)(nil),                  // 1: goc.blog.user.api.v1.User
-	(*GetUserRequest)(nil),        // 2: goc.blog.user.api.v1.GetUserRequest
-	(*UpdateUserRequest)(nil),     // 3: goc.blog.user.api.v1.UpdateUserRequest
-	(*ListUsersRequest)(nil),      // 4: goc.blog.user.api.v1.ListUsersRequest
-	(*ListUsersResponse)(nil),     // 5: goc.blog.user.api.v1.ListUsersResponse
-	(*timestamppb.Timestamp)(nil), // 6: google.protobuf.Timestamp
-	(*fieldmaskpb.FieldMask)(nil), // 7: google.protobuf.FieldMask
+	(UserStatus)(0),               // 0: blog.user.v1.UserStatus
+	(*User)(nil),                  // 1: blog.user.v1.User
+	(*GetUserRequest)(nil),        // 2: blog.user.v1.GetUserRequest
+	(*GetUserResponse)(nil),       // 3: blog.user.v1.GetUserResponse
+	(*BatchGetUsersRequest)(nil),  // 4: blog.user.v1.BatchGetUsersRequest
+	(*BatchGetUsersResponse)(nil), // 5: blog.user.v1.BatchGetUsersResponse
+	(*UpdateUserRequest)(nil),     // 6: blog.user.v1.UpdateUserRequest
+	(*UpdateUserResponse)(nil),    // 7: blog.user.v1.UpdateUserResponse
+	(*ListUsersRequest)(nil),      // 8: blog.user.v1.ListUsersRequest
+	(*ListUsersResponse)(nil),     // 9: blog.user.v1.ListUsersResponse
+	(*timestamppb.Timestamp)(nil), // 10: google.protobuf.Timestamp
+	(*fieldmaskpb.FieldMask)(nil), // 11: google.protobuf.FieldMask
 }
 var file_blog_user_v1_user_proto_depIdxs = []int32{
-	6,  // 0: goc.blog.user.api.v1.User.email_verified_time:type_name -> google.protobuf.Timestamp
-	0,  // 1: goc.blog.user.api.v1.User.status:type_name -> goc.blog.user.api.v1.UserStatus
-	6,  // 2: goc.blog.user.api.v1.User.created_at:type_name -> google.protobuf.Timestamp
-	6,  // 3: goc.blog.user.api.v1.User.updated_at:type_name -> google.protobuf.Timestamp
-	6,  // 4: goc.blog.user.api.v1.User.deleted_at:type_name -> google.protobuf.Timestamp
-	1,  // 5: goc.blog.user.api.v1.UpdateUserRequest.user:type_name -> goc.blog.user.api.v1.User
-	7,  // 6: goc.blog.user.api.v1.UpdateUserRequest.update_mask:type_name -> google.protobuf.FieldMask
-	1,  // 7: goc.blog.user.api.v1.ListUsersResponse.users:type_name -> goc.blog.user.api.v1.User
-	2,  // 8: goc.blog.user.api.v1.UserService.GetUser:input_type -> goc.blog.user.api.v1.GetUserRequest
-	3,  // 9: goc.blog.user.api.v1.UserService.UpdateUser:input_type -> goc.blog.user.api.v1.UpdateUserRequest
-	4,  // 10: goc.blog.user.api.v1.UserService.ListUsers:input_type -> goc.blog.user.api.v1.ListUsersRequest
-	1,  // 11: goc.blog.user.api.v1.UserService.GetUser:output_type -> goc.blog.user.api.v1.User
-	1,  // 12: goc.blog.user.api.v1.UserService.UpdateUser:output_type -> goc.blog.user.api.v1.User
-	5,  // 13: goc.blog.user.api.v1.UserService.ListUsers:output_type -> goc.blog.user.api.v1.ListUsersResponse
-	11, // [11:14] is the sub-list for method output_type
-	8,  // [8:11] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	10, // 0: blog.user.v1.User.email_verified_time:type_name -> google.protobuf.Timestamp
+	0,  // 1: blog.user.v1.User.status:type_name -> blog.user.v1.UserStatus
+	10, // 2: blog.user.v1.User.created_at:type_name -> google.protobuf.Timestamp
+	10, // 3: blog.user.v1.User.updated_at:type_name -> google.protobuf.Timestamp
+	10, // 4: blog.user.v1.User.deleted_at:type_name -> google.protobuf.Timestamp
+	1,  // 5: blog.user.v1.GetUserResponse.user:type_name -> blog.user.v1.User
+	1,  // 6: blog.user.v1.BatchGetUsersResponse.users:type_name -> blog.user.v1.User
+	1,  // 7: blog.user.v1.UpdateUserRequest.user:type_name -> blog.user.v1.User
+	11, // 8: blog.user.v1.UpdateUserRequest.update_mask:type_name -> google.protobuf.FieldMask
+	1,  // 9: blog.user.v1.UpdateUserResponse.user:type_name -> blog.user.v1.User
+	1,  // 10: blog.user.v1.ListUsersResponse.users:type_name -> blog.user.v1.User
+	2,  // 11: blog.user.v1.UserService.GetUser:input_type -> blog.user.v1.GetUserRequest
+	4,  // 12: blog.user.v1.UserService.BatchGetUsers:input_type -> blog.user.v1.BatchGetUsersRequest
+	6,  // 13: blog.user.v1.UserService.UpdateUser:input_type -> blog.user.v1.UpdateUserRequest
+	8,  // 14: blog.user.v1.UserService.ListUsers:input_type -> blog.user.v1.ListUsersRequest
+	3,  // 15: blog.user.v1.UserService.GetUser:output_type -> blog.user.v1.GetUserResponse
+	5,  // 16: blog.user.v1.UserService.BatchGetUsers:output_type -> blog.user.v1.BatchGetUsersResponse
+	7,  // 17: blog.user.v1.UserService.UpdateUser:output_type -> blog.user.v1.UpdateUserResponse
+	9,  // 18: blog.user.v1.UserService.ListUsers:output_type -> blog.user.v1.ListUsersResponse
+	15, // [15:19] is the sub-list for method output_type
+	11, // [11:15] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_blog_user_v1_user_proto_init() }
@@ -536,7 +745,7 @@ func file_blog_user_v1_user_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_blog_user_v1_user_proto_rawDesc), len(file_blog_user_v1_user_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   5,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

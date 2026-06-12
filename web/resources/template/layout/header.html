@@ -21,6 +21,9 @@
                         <a class="nav-link" href="/login">登录</a>
                     </li>
                     {{else}}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/user/profile">{{ if .CurrentUser }}{{ .CurrentUser.Username }}{{ else }}用户中心{{ end }}</a>
+                    </li>
                     <li class="nav-item d-flex align-items-center">
                         <form method="POST" action="/auth/logout" class="m-0">
                             <input type="hidden" name="_csrf" value="{{ .CSRFToken }}">

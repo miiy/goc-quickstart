@@ -16,5 +16,6 @@ func (m *Module) RegisterPublicRouter(r *gin.Engine) {
 
 func (m *Module) RegisterProtectedRouter(r gin.IRouter) {
 	r.POST("/auth/token/refresh", m.refreshToken)
+	r.POST("/auth/password", m.changePassword)
 	r.POST("/auth/logout", m.logout)
 }

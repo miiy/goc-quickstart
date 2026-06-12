@@ -66,7 +66,7 @@ func mpLogin(c pb.AuthServiceClient) {
 	log.Println("MpLogin:", resp)
 }
 
-func callMpLogin(client pb.AuthServiceClient, req *pb.MpLoginRequest) (*pb.LoginResponse, error) {
+func callMpLogin(client pb.AuthServiceClient, req *pb.MpLoginRequest) (*pb.MpLoginResponse, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 	defer cancel()
 	return client.MpLogin(ctx, req)

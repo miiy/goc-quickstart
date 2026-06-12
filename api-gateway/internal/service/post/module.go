@@ -1,11 +1,18 @@
 package post
 
-import postv1 "github.com/miiy/goc-quickstart/api-gateway/gen/go/blog/post/v1"
+import (
+	postv1 "github.com/miiy/goc-quickstart/api-gateway/gen/go/blog/post/v1"
+	userv1 "github.com/miiy/goc-quickstart/api-gateway/gen/go/blog/user/v1"
+)
 
 type Module struct {
-	client postv1.PostServiceClient
+	client     postv1.PostServiceClient
+	userClient authorUserClient
 }
 
-func NewModule(client postv1.PostServiceClient) *Module {
-	return &Module{client: client}
+func NewModule(client postv1.PostServiceClient, userClient userv1.UserServiceClient) *Module {
+	return &Module{
+		client:     client,
+		userClient: userClient,
+	}
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/miiy/goc-quickstart/web/internal/router"
 	"github.com/miiy/goc-quickstart/web/internal/service/auth"
 	"github.com/miiy/goc-quickstart/web/internal/service/post"
+	"github.com/miiy/goc-quickstart/web/internal/service/user"
 	"github.com/miiy/goc/gin"
 	ginzap "github.com/miiy/goc/gin/middleware/zap"
 	httpserver "github.com/miiy/goc/http/server"
@@ -29,6 +30,7 @@ func main() {
 
 	cfg := app.Config()
 	auth.NewModule(app.Logger(), clients.Auth, app.SessionStore(), cfg.Session.Name)
+	user.NewModule(app.Logger(), clients.Auth, clients.User, app.SessionStore(), cfg.Session.Name)
 
 	log.Printf("Starting server on %s", cfg.Server.HTTP.Addr)
 	server := httpserver.New(
@@ -37,7 +39,7 @@ func main() {
 	)
 	server.Use(ginzap.Ginzap(app.Logger().ZapLogger()), ginzap.RecoveryWithZap(app.Logger().ZapLogger(), true))
 	server.RegisterRouter(func(r *gin.Engine) {
-		router.Router(r, app.SessionStore(), cfg.Session.Name)
+		router.Router(r, app.SessionStore(), cfg.Session.Name, cfg.App.Timezone)
 	})
 	server.Run()
 }

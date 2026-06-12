@@ -169,3 +169,40 @@ func (c *AuthClient) Logout(ctx context.Context, accessToken string) error {
 
 	return nil
 }
+
+func (c *AuthClient) ChangePassword(ctx context.Context, oldPassword, newPassword, newPasswordConfirmation string) error {
+	url := fmt.Sprintf("%s/api/v1/auth/password", c.baseURL)
+	reqBody := map[string]string{
+		"old_password":              oldPassword,
+		"new_password":              newPassword,
+		"new_password_confirmation": newPasswordConfirmation,
+	}
+
+	bodyBytes, err := json.Marshal(reqBody)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(bodyBytes))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return parseError(resp.StatusCode, respBody)
+	}
+
+	return nil
+}

@@ -10,6 +10,7 @@ import (
 
 type UserRepository interface {
 	First(ctx context.Context, id int64, columns ...string) (*entity.User, error)
+	FindByIDs(ctx context.Context, ids []int64, columns ...string) ([]*entity.User, error)
 	List(ctx context.Context, page, pageSize int64, columns ...string) ([]*entity.User, int64, error)
 	Create(ctx context.Context, user *entity.User) error
 	Update(ctx context.Context, id int64, user *entity.User, columns ...string) (int64, error)
@@ -31,6 +32,24 @@ func (r *userRepository) First(ctx context.Context, id int64, columns ...string)
 		return nil, err
 	}
 	return &user, nil
+}
+
+func (r *userRepository) FindByIDs(ctx context.Context, ids []int64, columns ...string) ([]*entity.User, error) {
+	if len(ids) == 0 {
+		return []*entity.User{}, nil
+	}
+
+	db := r.db.WithContext(ctx)
+	if len(columns) > 0 {
+		db = db.Select(columns)
+	}
+
+	var users []*entity.User
+	err := db.Where("id IN ?", ids).Find(&users).Error
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
 }
 
 func (r *userRepository) List(ctx context.Context, page, pageSize int64, columns ...string) ([]*entity.User, int64, error) {

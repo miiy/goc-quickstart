@@ -22,7 +22,7 @@ func (m *Module) register(c *gin.Context) {
 }
 
 func (m *Module) usernameCheck(c *gin.Context) {
-	var req authv1.FieldCheckRequest
+	var req authv1.UsernameCheckRequest
 	if !transport.BindProto(c, &req) {
 		return
 	}
@@ -35,7 +35,7 @@ func (m *Module) usernameCheck(c *gin.Context) {
 }
 
 func (m *Module) emailCheck(c *gin.Context) {
-	var req authv1.FieldCheckRequest
+	var req authv1.EmailCheckRequest
 	if !transport.BindProto(c, &req) {
 		return
 	}
@@ -48,7 +48,7 @@ func (m *Module) emailCheck(c *gin.Context) {
 }
 
 func (m *Module) phoneCheck(c *gin.Context) {
-	var req authv1.FieldCheckRequest
+	var req authv1.PhoneCheckRequest
 	if !transport.BindProto(c, &req) {
 		return
 	}
@@ -121,6 +121,19 @@ func (m *Module) refreshToken(c *gin.Context) {
 		req.AccessToken = bearerAccessToken(c)
 	}
 	resp, err := m.client.RefreshToken(c.Request.Context(), &req)
+	if err != nil {
+		transport.WriteError(c, err)
+		return
+	}
+	transport.WriteProto(c, resp)
+}
+
+func (m *Module) changePassword(c *gin.Context) {
+	var req authv1.ChangePasswordRequest
+	if !transport.BindProto(c, &req) {
+		return
+	}
+	resp, err := m.client.ChangePassword(c.Request.Context(), &req)
 	if err != nil {
 		transport.WriteError(c, err)
 		return

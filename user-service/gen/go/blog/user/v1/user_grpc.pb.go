@@ -4,7 +4,7 @@
 // - protoc             (unknown)
 // source: blog/user/v1/user.proto
 
-package apiv1
+package userv1
 
 import (
 	context "context"
@@ -19,17 +19,25 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	UserService_GetUser_FullMethodName    = "/goc.blog.user.api.v1.UserService/GetUser"
-	UserService_UpdateUser_FullMethodName = "/goc.blog.user.api.v1.UserService/UpdateUser"
-	UserService_ListUsers_FullMethodName  = "/goc.blog.user.api.v1.UserService/ListUsers"
+	UserService_GetUser_FullMethodName       = "/blog.user.v1.UserService/GetUser"
+	UserService_BatchGetUsers_FullMethodName = "/blog.user.v1.UserService/BatchGetUsers"
+	UserService_UpdateUser_FullMethodName    = "/blog.user.v1.UserService/UpdateUser"
+	UserService_ListUsers_FullMethodName     = "/blog.user.v1.UserService/ListUsers"
 )
 
 // UserServiceClient is the client API for UserService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// UserService manages user profiles and lookup operations.
 type UserServiceClient interface {
-	GetUser(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*User, error)
-	UpdateUser(ctx context.Context, in *UpdateUserRequest, opts ...grpc.CallOption) (*User, error)
+	// GetUser returns a single user by id.
+	GetUser(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*GetUserResponse, error)
+	// BatchGetUsers returns multiple users by ids.
+	BatchGetUsers(ctx context.Context, in *BatchGetUsersRequest, opts ...grpc.CallOption) (*BatchGetUsersResponse, error)
+	// UpdateUser updates mutable profile fields for a user.
+	UpdateUser(ctx context.Context, in *UpdateUserRequest, opts ...grpc.CallOption) (*UpdateUserResponse, error)
+	// ListUsers returns a paginated list of users.
 	ListUsers(ctx context.Context, in *ListUsersRequest, opts ...grpc.CallOption) (*ListUsersResponse, error)
 }
 
@@ -41,9 +49,9 @@ func NewUserServiceClient(cc grpc.ClientConnInterface) UserServiceClient {
 	return &userServiceClient{cc}
 }
 
-func (c *userServiceClient) GetUser(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*User, error) {
+func (c *userServiceClient) GetUser(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*GetUserResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(User)
+	out := new(GetUserResponse)
 	err := c.cc.Invoke(ctx, UserService_GetUser_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -51,9 +59,19 @@ func (c *userServiceClient) GetUser(ctx context.Context, in *GetUserRequest, opt
 	return out, nil
 }
 
-func (c *userServiceClient) UpdateUser(ctx context.Context, in *UpdateUserRequest, opts ...grpc.CallOption) (*User, error) {
+func (c *userServiceClient) BatchGetUsers(ctx context.Context, in *BatchGetUsersRequest, opts ...grpc.CallOption) (*BatchGetUsersResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(User)
+	out := new(BatchGetUsersResponse)
+	err := c.cc.Invoke(ctx, UserService_BatchGetUsers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) UpdateUser(ctx context.Context, in *UpdateUserRequest, opts ...grpc.CallOption) (*UpdateUserResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateUserResponse)
 	err := c.cc.Invoke(ctx, UserService_UpdateUser_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -74,9 +92,16 @@ func (c *userServiceClient) ListUsers(ctx context.Context, in *ListUsersRequest,
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility.
+//
+// UserService manages user profiles and lookup operations.
 type UserServiceServer interface {
-	GetUser(context.Context, *GetUserRequest) (*User, error)
-	UpdateUser(context.Context, *UpdateUserRequest) (*User, error)
+	// GetUser returns a single user by id.
+	GetUser(context.Context, *GetUserRequest) (*GetUserResponse, error)
+	// BatchGetUsers returns multiple users by ids.
+	BatchGetUsers(context.Context, *BatchGetUsersRequest) (*BatchGetUsersResponse, error)
+	// UpdateUser updates mutable profile fields for a user.
+	UpdateUser(context.Context, *UpdateUserRequest) (*UpdateUserResponse, error)
+	// ListUsers returns a paginated list of users.
 	ListUsers(context.Context, *ListUsersRequest) (*ListUsersResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
@@ -88,10 +113,13 @@ type UserServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedUserServiceServer struct{}
 
-func (UnimplementedUserServiceServer) GetUser(context.Context, *GetUserRequest) (*User, error) {
+func (UnimplementedUserServiceServer) GetUser(context.Context, *GetUserRequest) (*GetUserResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetUser not implemented")
 }
-func (UnimplementedUserServiceServer) UpdateUser(context.Context, *UpdateUserRequest) (*User, error) {
+func (UnimplementedUserServiceServer) BatchGetUsers(context.Context, *BatchGetUsersRequest) (*BatchGetUsersResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method BatchGetUsers not implemented")
+}
+func (UnimplementedUserServiceServer) UpdateUser(context.Context, *UpdateUserRequest) (*UpdateUserResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateUser not implemented")
 }
 func (UnimplementedUserServiceServer) ListUsers(context.Context, *ListUsersRequest) (*ListUsersResponse, error) {
@@ -136,6 +164,24 @@ func _UserService_GetUser_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_BatchGetUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BatchGetUsersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).BatchGetUsers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_BatchGetUsers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).BatchGetUsers(ctx, req.(*BatchGetUsersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _UserService_UpdateUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateUserRequest)
 	if err := dec(in); err != nil {
@@ -176,12 +222,16 @@ func _UserService_ListUsers_Handler(srv interface{}, ctx context.Context, dec fu
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var UserService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "goc.blog.user.api.v1.UserService",
+	ServiceName: "blog.user.v1.UserService",
 	HandlerType: (*UserServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "GetUser",
 			Handler:    _UserService_GetUser_Handler,
+		},
+		{
+			MethodName: "BatchGetUsers",
+			Handler:    _UserService_BatchGetUsers_Handler,
 		},
 		{
 			MethodName: "UpdateUser",

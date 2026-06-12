@@ -1,10 +1,15 @@
 package post
 
 import (
+	"context"
+	"strings"
+
 	postv1 "github.com/miiy/goc-quickstart/api-gateway/gen/go/blog/post/v1"
+	userv1 "github.com/miiy/goc-quickstart/api-gateway/gen/go/blog/user/v1"
 	"github.com/miiy/goc-quickstart/api-gateway/internal/transport"
 
 	"github.com/miiy/goc/gin"
+	"google.golang.org/grpc"
 )
 
 func (m *Module) get(c *gin.Context) {
@@ -15,6 +20,10 @@ func (m *Module) get(c *gin.Context) {
 
 	resp, err := m.client.GetPost(c.Request.Context(), &postv1.GetPostRequest{Id: id})
 	if err != nil {
+		transport.WriteError(c, err)
+		return
+	}
+	if err := m.enrichPostAuthors(c.Request.Context(), resp.Post); err != nil {
 		transport.WriteError(c, err)
 		return
 	}
@@ -29,6 +38,10 @@ func (m *Module) create(c *gin.Context) {
 
 	resp, err := m.client.CreatePost(c.Request.Context(), &req)
 	if err != nil {
+		transport.WriteError(c, err)
+		return
+	}
+	if err := m.enrichPostAuthors(c.Request.Context(), resp.Post); err != nil {
 		transport.WriteError(c, err)
 		return
 	}
@@ -49,6 +62,10 @@ func (m *Module) update(c *gin.Context) {
 
 	resp, err := m.client.UpdatePost(c.Request.Context(), &req)
 	if err != nil {
+		transport.WriteError(c, err)
+		return
+	}
+	if err := m.enrichPostAuthors(c.Request.Context(), resp.Post); err != nil {
 		transport.WriteError(c, err)
 		return
 	}
@@ -98,5 +115,62 @@ func (m *Module) list(c *gin.Context) {
 		transport.WriteError(c, err)
 		return
 	}
+	if err := m.enrichPostAuthors(c.Request.Context(), resp.Posts...); err != nil {
+		transport.WriteError(c, err)
+		return
+	}
 	transport.WriteProto(c, resp)
 }
+
+func (m *Module) enrichPostAuthors(ctx context.Context, posts ...*postv1.Post) error {
+	ids := uniqueAuthorIDs(posts)
+	if len(ids) == 0 || m.userClient == nil {
+		return nil
+	}
+
+	resp, err := m.userClient.BatchGetUsers(ctx, &userv1.BatchGetUsersRequest{Ids: ids})
+	if err != nil {
+		return err
+	}
+
+	names := make(map[int64]string, len(resp.GetUsers()))
+	for _, user := range resp.GetUsers() {
+		name := strings.TrimSpace(user.GetNickname())
+		if name == "" {
+			name = strings.TrimSpace(user.GetUsername())
+		}
+		if name != "" {
+			names[user.GetId()] = name
+		}
+	}
+	for _, post := range posts {
+		if post == nil {
+			continue
+		}
+		post.AuthorName = names[post.GetAuthorId()]
+	}
+	return nil
+}
+
+func uniqueAuthorIDs(posts []*postv1.Post) []int64 {
+	seen := make(map[int64]struct{}, len(posts))
+	ids := make([]int64, 0, len(posts))
+	for _, post := range posts {
+		if post == nil || post.GetAuthorId() <= 0 {
+			continue
+		}
+		id := post.GetAuthorId()
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		ids = append(ids, id)
+	}
+	return ids
+}
+
+type authorUserClient interface {
+	BatchGetUsers(ctx context.Context, in *userv1.BatchGetUsersRequest, opts ...grpc.CallOption) (*userv1.BatchGetUsersResponse, error)
+}
+
+var _ authorUserClient = userv1.UserServiceClient(nil)

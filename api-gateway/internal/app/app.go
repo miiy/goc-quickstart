@@ -7,6 +7,7 @@ import (
 
 	authv1 "github.com/miiy/goc-quickstart/api-gateway/gen/go/blog/auth/v1"
 	postv1 "github.com/miiy/goc-quickstart/api-gateway/gen/go/blog/post/v1"
+	uploadv1 "github.com/miiy/goc-quickstart/api-gateway/gen/go/blog/upload/v1"
 	userv1 "github.com/miiy/goc-quickstart/api-gateway/gen/go/blog/user/v1"
 	"github.com/miiy/goc-quickstart/api-gateway/internal/config"
 	"github.com/miiy/goc/auth"
@@ -20,9 +21,10 @@ type App struct {
 	config  *config.Config
 	jwtAuth *auth.JWTAuth
 
-	authClient authv1.AuthServiceClient
-	postClient postv1.PostServiceClient
-	userClient userv1.UserServiceClient
+	authClient   authv1.AuthServiceClient
+	postClient   postv1.PostServiceClient
+	uploadClient uploadv1.UploadServiceClient
+	userClient   userv1.UserServiceClient
 
 	conns []*grpc.ClientConn
 }
@@ -57,16 +59,23 @@ func NewApp(cfg *config.Config) (_ *App, err error) {
 	}
 	conns = append(conns, userConn)
 
+	uploadConn, err := dialService(cfg, "upload", creds)
+	if err != nil {
+		return nil, err
+	}
+	conns = append(conns, uploadConn)
+
 	return &App{
 		config: cfg,
 		jwtAuth: auth.NewJWTAuth(&auth.Options{
 			Secret: cfg.JWT.Secret,
 			Issuer: cfg.JWT.Issuer,
 		}),
-		authClient: authv1.NewAuthServiceClient(authConn),
-		postClient: postv1.NewPostServiceClient(postConn),
-		userClient: userv1.NewUserServiceClient(userConn),
-		conns:      conns,
+		authClient:   authv1.NewAuthServiceClient(authConn),
+		postClient:   postv1.NewPostServiceClient(postConn),
+		uploadClient: uploadv1.NewUploadServiceClient(uploadConn),
+		userClient:   userv1.NewUserServiceClient(userConn),
+		conns:        conns,
 	}, nil
 }
 
@@ -88,6 +97,10 @@ func (a *App) PostClient() postv1.PostServiceClient {
 
 func (a *App) UserClient() userv1.UserServiceClient {
 	return a.userClient
+}
+
+func (a *App) UploadClient() uploadv1.UploadServiceClient {
+	return a.uploadClient
 }
 
 func (a *App) Close() error {

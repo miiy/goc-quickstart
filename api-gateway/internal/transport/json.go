@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/miiy/goc/gin"
 	"google.golang.org/grpc/codes"
@@ -102,6 +103,30 @@ func Int64Query(c *gin.Context, snakeName string, camelName string) (int64, bool
 		return 0, false
 	}
 	return value, true
+}
+
+func Int64SliceQuery(c *gin.Context, name string) ([]int64, bool) {
+	rawValues := c.QueryArray(name)
+	if len(rawValues) == 0 {
+		return nil, true
+	}
+
+	values := make([]int64, 0, len(rawValues))
+	for _, raw := range rawValues {
+		for _, part := range strings.Split(raw, ",") {
+			part = strings.TrimSpace(part)
+			if part == "" {
+				continue
+			}
+			value, err := strconv.ParseInt(part, 10, 64)
+			if err != nil {
+				WriteError(c, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", name, err))
+				return nil, false
+			}
+			values = append(values, value)
+		}
+	}
+	return values, true
 }
 
 func Int32Query(c *gin.Context, snakeName string, camelName string) (int32, bool) {

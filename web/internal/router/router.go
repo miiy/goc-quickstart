@@ -10,6 +10,7 @@ import (
 	"github.com/miiy/goc-quickstart/web/internal/service/home"
 	"github.com/miiy/goc-quickstart/web/internal/service/page"
 	"github.com/miiy/goc-quickstart/web/internal/service/post"
+	"github.com/miiy/goc-quickstart/web/internal/service/user"
 	"github.com/miiy/goc-quickstart/web/internal/template"
 	"github.com/miiy/goc-quickstart/web/resources/static"
 	resourceTemplate "github.com/miiy/goc-quickstart/web/resources/template"
@@ -21,7 +22,7 @@ import (
 	pkgTemplate "github.com/miiy/goc/gin/template"
 )
 
-func Router(r *gin.Engine, store sessions.Store, sessionName string) {
+func Router(r *gin.Engine, store sessions.Store, sessionName string, timezone string) {
 	// assets
 	r.StaticFS("/static", http.FS(static.FS))
 
@@ -41,6 +42,7 @@ func Router(r *gin.Engine, store sessions.Store, sessionName string) {
 		user, ok := gocauthmid.SessionUser(session.Get(gocauthmid.SessionKeyAuthUser))
 		c.Set("isLoggedIn", ok)
 		if ok {
+			c.Set("currentUser", user)
 			c.Request = c.Request.WithContext(gocauth.InjectAuthenticatedUser(c.Request.Context(), user))
 		}
 
@@ -57,10 +59,12 @@ func Router(r *gin.Engine, store sessions.Store, sessionName string) {
 		return config.GetConfig(key)
 	})
 	t.AddFunc("alertType", template.FlashLevelClass)
+	t.AddFunc("formatTime", template.NewFormatTimeFunc(timezone))
 	t.AddTemplate(resourceTemplate.FS, about.Templates())
 	t.AddTemplate(resourceTemplate.FS, home.Templates())
 	t.AddTemplate(resourceTemplate.FS, post.Templates())
 	t.AddTemplate(resourceTemplate.FS, auth.Templates())
+	t.AddTemplate(resourceTemplate.FS, user.Templates())
 	t.AddTemplate(resourceTemplate.FS, page.Templates())
 
 	r.HTMLRender = t.Render
@@ -74,4 +78,5 @@ func Router(r *gin.Engine, store sessions.Store, sessionName string) {
 	home.Router(r)
 	post.Router(r)
 	auth.Router(r)
+	user.Router(r)
 }

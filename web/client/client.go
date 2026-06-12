@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -16,14 +17,40 @@ type errorResponse struct {
 	} `json:"error"`
 }
 
+// HTTPError preserves the upstream HTTP status so handlers can react to 401/403.
+type HTTPError struct {
+	StatusCode int
+	Message    string
+	Body       string
+}
+
+func (e *HTTPError) Error() string {
+	if e.Message != "" {
+		return e.Message
+	}
+	return fmt.Sprintf("status: %d, body: %s", e.StatusCode, e.Body)
+}
+
+func IsStatus(err error, statusCode int) bool {
+	var httpErr *HTTPError
+	return errors.As(err, &httpErr) && httpErr.StatusCode == statusCode
+}
+
 // parseError extracts the error message from gateway response.
 // Falls back to raw status+body if parsing fails.
 func parseError(statusCode int, body []byte) error {
 	var errResp errorResponse
 	if err := json.Unmarshal(body, &errResp); err == nil && errResp.Error.Message != "" {
-		return fmt.Errorf("%s", errResp.Error.Message)
+		return &HTTPError{
+			StatusCode: statusCode,
+			Message:    errResp.Error.Message,
+			Body:       string(body),
+		}
 	}
-	return fmt.Errorf("status: %d, body: %s", statusCode, string(body))
+	return &HTTPError{
+		StatusCode: statusCode,
+		Body:       string(body),
+	}
 }
 
 // HTTPClient wraps the HTTP calls to gateway
@@ -63,6 +90,7 @@ func (c *HTTPClient) Do(req *http.Request) (*http.Response, error) {
 type Clients struct {
 	Post *PostClient
 	Auth *AuthClient
+	User *UserClient
 }
 
 func NewClients(gatewayAddr string) (*Clients, func(), error) {
@@ -74,5 +102,6 @@ func NewClients(gatewayAddr string) (*Clients, func(), error) {
 	return &Clients{
 		Post: &PostClient{HTTPClient: httpClient},
 		Auth: &AuthClient{HTTPClient: httpClient},
+		User: &UserClient{HTTPClient: httpClient},
 	}, func() {}, nil
 }

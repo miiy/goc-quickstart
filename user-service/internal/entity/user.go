@@ -15,8 +15,8 @@ type User struct {
 	gorm.Model
 	Username          string
 	Password          string
-	Nickname          string // TODO: add to DB migration
-	Avatar            string // TODO: add to DB migration
+	Nickname          string
+	Avatar            string
 	Email             string
 	EmailVerifiedTime *db.JSONTime
 	Phone             string

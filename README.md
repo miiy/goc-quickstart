@@ -134,7 +134,17 @@ cd web && go run cmd/server/main.go
 
 ## 配置说明
 
-各服务配置文件位于 `{service}/configs/default.yaml`：
+各服务从项目根部的 `config.yaml` 读取配置，并提供 `config.yaml.example` 作为模板。实际运行前可复制模板：
+
+```bash
+cp auth-service/config.yaml.example auth-service/config.yaml
+cp user-service/config.yaml.example user-service/config.yaml
+cp post-service/config.yaml.example post-service/config.yaml
+cp api-gateway/config.yaml.example api-gateway/config.yaml
+cp web/config.yaml.example web/config.yaml
+```
+
+`config.yaml` 作为本地运行配置被忽略，按本机环境调整即可。mTLS 证书和私钥可继续放在各服务的 `configs/x509/` 目录，该目录整体忽略，不提交证书材料。
 
 ```yaml
 app:

@@ -3,6 +3,8 @@ CREATE TABLE IF NOT EXISTS `users`
     `id`                bigint unsigned NOT NULL AUTO_INCREMENT,
     `username`          varchar(255)    NOT NULL DEFAULT '',
     `password`          varchar(255)    NOT NULL DEFAULT '',
+    `nickname`          varchar(255)    NOT NULL DEFAULT '',
+    `avatar`            varchar(255)    NOT NULL DEFAULT '',
     `email`             varchar(255)    NOT NULL DEFAULT '',
     `email_verified_time` timestamp        NULL     DEFAULT NULL,
     `phone`             varchar(255)    NOT NULL DEFAULT '',

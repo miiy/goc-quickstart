@@ -17,9 +17,12 @@ type fakeAuthenticatedUserClient struct {
 	gotUsername string
 }
 
-func (f *fakeAuthenticatedUserClient) GetAuthenticatedUser(ctx context.Context, req *authv1.GetAuthenticatedUserRequest, opts ...grpc.CallOption) (*authv1.User, error) {
+func (f *fakeAuthenticatedUserClient) GetAuthenticatedUser(ctx context.Context, req *authv1.GetAuthenticatedUserRequest, opts ...grpc.CallOption) (*authv1.GetAuthenticatedUserResponse, error) {
 	f.gotUsername = req.Username
-	return f.user, f.err
+	if f.err != nil || f.user == nil {
+		return nil, f.err
+	}
+	return &authv1.GetAuthenticatedUserResponse{User: f.user}, nil
 }
 
 func TestAuthUserResolverReturnsAuthenticatedUser(t *testing.T) {

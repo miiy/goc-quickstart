@@ -46,17 +46,18 @@ start_service() {
 rm -f "$PID_FILE"
 
 # gRPC microservices
-start_service "auth-service"   "auth-service"   "go run ./cmd/server/main.go -c ./configs/default.yaml"
-start_service "user-service"   "user-service"   "go run ./cmd/server/main.go -c ./configs/default.yaml"
-start_service "post-service"   "post-service"   "go run ./cmd/server/main.go -c ./configs/default.yaml"
+start_service "auth-service"   "auth-service"   "go run ./cmd/server/main.go -c ./config.yaml"
+start_service "user-service"   "user-service"   "go run ./cmd/server/main.go -c ./config.yaml"
+start_service "post-service"   "post-service"   "go run ./cmd/server/main.go -c ./config.yaml"
+start_service "upload-service" "upload-service" "go run ./cmd/server/main.go -c ./config.yaml"
 
 sleep 2
 
 # HTTP gateway
-start_service "api-gateway"    "api-gateway"    "go run ./cmd/server/main.go -c ./configs/default.yaml"
+start_service "api-gateway"    "api-gateway"    "go run ./cmd/server/main.go -c ./config.yaml"
 
 # Web frontend
-start_service "web"            "web"            "go run ./cmd/server/main.go -c ./configs/default.yaml"
+start_service "web"            "web"            "go run ./cmd/server/main.go -c ./config.yaml"
 
 echo ""
 echo "All services started. Logs: $LOG_DIR/"

@@ -1,110 +1,116 @@
-.PHONY: proto build test clean docker-up docker-down help
+SERVICES := auth-service user-service post-service upload-service api-gateway web apidoc-server
+WIRE_SERVICES := auth-service user-service post-service upload-service
+GOLANGCI_LINT ?= golangci-lint
+DOCKER_COMPOSE ?= docker-compose
 
-# Variables
-SERVICES := auth-service user-service post-service api-gateway web
-GO := go
-BUF := buf
-WIRE := wire
+.DEFAULT_GOAL := help
 
-# Default target
+.PHONY: help proto proto-deps proto-generate proto-copy proto-clean wire build test lint fmt clean \
+	docker-up docker-down docker-build dev-auth dev-auth-client dev-user dev-post dev-upload dev-gateway \
+	dev-web dev-apidoc
+
 help:
-	@echo "Usage: make [target]"
+	@echo "Usage: make <target>"
 	@echo ""
 	@echo "Targets:"
-	@echo "  proto       Generate proto files"
-	@echo "  wire        Generate wire dependencies"
-	@echo "  build       Build all services"
-	@echo "  test        Run all tests"
-	@echo "  clean       Clean build artifacts"
-	@echo "  docker-up   Start services with docker-compose"
-	@echo "  docker-down Stop docker-compose services"
-	@echo "  lint        Run linter"
-	@echo "  fmt         Format code"
+	@echo "  proto          Update buf deps, clean, generate, and copy generated files"
+	@echo "  proto-deps     Update buf dependencies"
+	@echo "  proto-generate Generate proto and OpenAPI files under apis/gen"
+	@echo "  proto-copy     Copy generated files from apis/gen to services"
+	@echo "  proto-clean    Remove generated proto/OpenAPI files"
+	@echo "  wire           Generate Wire code for DI-based services"
+	@echo "  build          Build all Go projects"
+	@echo "  test           Run tests for all Go projects"
+	@echo "  lint           Run buf lint and golangci-lint"
+	@echo "  fmt            Format all Go projects"
+	@echo "  clean          Clean build artifacts"
+	@echo "  docker-up      Start docker-compose services"
+	@echo "  docker-down    Stop docker-compose services"
+	@echo "  docker-build   Build docker-compose images"
+	@echo "  dev-*          Run a single project locally"
 
-# Generate proto files
 proto:
-	@echo ">>> Generating proto files..."
-	cd apis && $(BUF) dep update && $(BUF) generate proto
-	@echo ">>> Copying generated files to services..."
-	cp -r apis/gen/go/blog/auth/v1/* auth-service/gen/go/blog/auth/v1/
-	cp -r apis/gen/go/blog/post/v1/* post-service/gen/go/blog/post/v1/
-	cp -r apis/gen/go/blog/user/v1/* user-service/gen/go/blog/user/v1/
-	cp -r apis/gen/go/blog/* api-gateway/gen/go/blog/
-	@echo ">>> Proto generation complete"
+	$(MAKE) -C apis proto
 
-# Generate wire dependencies
+proto-deps:
+	$(MAKE) -C apis deps
+
+proto-generate:
+	$(MAKE) -C apis generate
+
+proto-copy:
+	$(MAKE) -C apis copy
+
+proto-clean:
+	$(MAKE) -C apis clean-all
+
 wire:
-	@echo ">>> Generating wire dependencies..."
-	for service in auth-service post-service user-service; do \
-		echo "  -> $$service"; \
-		cd $$service && $(WIRE) ./internal/di/ && cd ..; \
+	@set -e; for service in $(WIRE_SERVICES); do \
+		echo ">>> wire: $$service"; \
+		$(MAKE) -C $$service wire; \
 	done
-	@echo ">>> Wire generation complete"
 
-# Build all services
 build:
-	@echo ">>> Building all services..."
-	for service in $(SERVICES); do \
-		echo "  -> $$service"; \
-		cd $$service && $(GO) build -o bin/server ./cmd/... && cd ..; \
+	@set -e; for service in $(SERVICES); do \
+		echo ">>> build: $$service"; \
+		$(MAKE) -C $$service build; \
 	done
-	@echo ">>> Build complete"
 
-# Run tests
 test:
-	@echo ">>> Running tests..."
-	for service in $(SERVICES); do \
-		echo "  -> $$service"; \
-		cd $$service && $(GO) test -v ./... && cd ..; \
+	@set -e; for service in $(SERVICES); do \
+		echo ">>> test: $$service"; \
+		$(MAKE) -C $$service test; \
 	done
 
-# Clean build artifacts
+lint:
+	$(MAKE) -C apis lint
+	@set -e; for service in $(SERVICES); do \
+		echo ">>> lint: $$service"; \
+		(cd $$service && $(GOLANGCI_LINT) run ./...); \
+	done
+
+fmt:
+	@set -e; for service in $(SERVICES); do \
+		echo ">>> fmt: $$service"; \
+		$(MAKE) -C $$service fmt; \
+	done
+
 clean:
-	@echo ">>> Cleaning build artifacts..."
-	for service in $(SERVICES); do \
-		rm -rf $$service/bin/; \
+	@set -e; for service in $(SERVICES); do \
+		echo ">>> clean: $$service"; \
+		$(MAKE) -C $$service clean; \
 	done
-	rm -rf apis/gen/
-	@echo ">>> Clean complete"
+	$(MAKE) -C apis clean
 
-# Docker commands
 docker-up:
-	@echo ">>> Starting services with docker-compose..."
-	docker-compose up -d
+	$(DOCKER_COMPOSE) up -d
 
 docker-down:
-	@echo ">>> Stopping docker-compose services..."
-	docker-compose down
+	$(DOCKER_COMPOSE) down
 
 docker-build:
-	@echo ">>> Building docker images..."
-	docker-compose build
+	$(DOCKER_COMPOSE) build
 
-# Lint
-lint:
-	@echo ">>> Running linter..."
-	golangci-lint run ./...
-
-# Format code
-fmt:
-	@echo ">>> Formatting code..."
-	for service in $(SERVICES); do \
-		cd $$service && $(GO) fmt ./... && cd ..; \
-	done
-	@echo ">>> Format complete"
-
-# Development
 dev-auth:
-	cd auth-service && $(GO) run cmd/server/main.go
+	$(MAKE) -C auth-service run
+
+dev-auth-client:
+	$(MAKE) -C auth-service run-client
 
 dev-user:
-	cd user-service && $(GO) run cmd/server/main.go
+	$(MAKE) -C user-service run
 
 dev-post:
-	cd post-service && $(GO) run cmd/server/main.go
+	$(MAKE) -C post-service run
+
+dev-upload:
+	$(MAKE) -C upload-service run
 
 dev-gateway:
-	cd api-gateway && $(GO) run cmd/main.go
+	$(MAKE) -C api-gateway run
 
 dev-web:
-	cd web && $(GO) run cmd/server/main.go
+	$(MAKE) -C web run
+
+dev-apidoc:
+	$(MAKE) -C apidoc-server run

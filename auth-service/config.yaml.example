@@ -31,6 +31,7 @@ grpcClient:
     caFile:
 jwt:
   secret: 123456
+  issuer: goc
   expiresIn: 7200
 snowflake:
   node: 1

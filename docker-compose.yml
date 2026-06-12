@@ -2,7 +2,7 @@ services:
   # Infrastructure
   mysql:
     image: mysql:8.0
-    container_name: blog-mysql
+    container_name: mysql
     environment:
       MYSQL_ROOT_PASSWORD: 123456
       MYSQL_DATABASE: goc
@@ -21,7 +21,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: blog-redis
+    container_name: redis
     ports:
       - "6379:6379"
     volumes:
@@ -39,13 +39,13 @@ services:
     build:
       context: ./auth-service
       dockerfile: Dockerfile
-    container_name: blog-auth-service
+    container_name: auth-service
     ports:
       - "50051:50051"
     environment:
-      - APP_ENV=production
+      - APP_ENV=docker
     volumes:
-      - ./auth-service/configs:/app/configs:ro
+      - ./auth-service/config.yaml:/app/config.yaml:ro
     depends_on:
       mysql:
         condition: service_healthy
@@ -58,13 +58,13 @@ services:
     build:
       context: ./user-service
       dockerfile: Dockerfile
-    container_name: blog-user-service
+    container_name: user-service
     ports:
       - "50053:50053"
     environment:
-      - APP_ENV=production
+      - APP_ENV=docker
     volumes:
-      - ./user-service/configs:/app/configs:ro
+      - ./user-service/config.yaml:/app/config.yaml:ro
     depends_on:
       mysql:
         condition: service_healthy
@@ -77,13 +77,33 @@ services:
     build:
       context: ./post-service
       dockerfile: Dockerfile
-    container_name: blog-post-service
+    container_name: post-service
     ports:
       - "50052:50052"
     environment:
-      - APP_ENV=production
+      - APP_ENV=docker
     volumes:
-      - ./post-service/configs:/app/configs:ro
+      - ./post-service/config.yaml:/app/config.yaml:ro
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - blog-network
+
+  upload-service:
+    build:
+      context: ./upload-service
+      dockerfile: Dockerfile
+    container_name: upload-service
+    ports:
+      - "50054:50054"
+    environment:
+      - APP_ENV=docker
+    volumes:
+      - ./upload-service/config.yaml:/app/config.yaml:ro
+      - ./upload-service/storage:/app/storage
     depends_on:
       mysql:
         condition: service_healthy
@@ -97,17 +117,19 @@ services:
     build:
       context: ./api-gateway
       dockerfile: Dockerfile
-    container_name: blog-api-gateway
+    container_name: api-gateway
     ports:
       - "8080:8080"
     environment:
-      - APP_ENV=production
+      - APP_ENV=docker
     volumes:
-      - ./api-gateway/configs:/app/configs:ro
+      - ./api-gateway/config.yaml:/app/config.yaml:ro
+      - ./upload-service/storage/uploads:/upload-service/storage/uploads:ro
     depends_on:
       - auth-service
       - user-service
       - post-service
+      - upload-service
     networks:
       - blog-network
 
@@ -116,13 +138,13 @@ services:
     build:
       context: ./web
       dockerfile: Dockerfile
-    container_name: blog-web
+    container_name: web
     ports:
       - "8081:8081"
     environment:
-      - APP_ENV=production
+      - APP_ENV=docker
     volumes:
-      - ./web/configs:/app/configs:ro
+      - ./web/config.yaml:/app/config.yaml:ro
     depends_on:
       - api-gateway
     networks:

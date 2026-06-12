@@ -1,13 +1,27 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "blog/user/v1/user.proto",
-    "version": "version not set"
+    "title": "User API",
+    "version": "1.0",
+    "contact": {
+      "name": "blog project",
+      "url": "https://github.com/miiy/goc-quickstart",
+      "email": "none@example.com"
+    },
+    "license": {
+      "name": "MIT License",
+      "url": "https://github.com/miiy/goc-quickstart/LICENSE"
+    }
   },
   "tags": [
     {
       "name": "UserService"
     }
+  ],
+  "schemes": [
+    "http",
+    "https",
+    "wss"
   ],
   "consumes": [
     "application/json"
@@ -18,6 +32,7 @@
   "paths": {
     "/api/v1/users": {
       "get": {
+        "summary": "ListUsers returns a paginated list of users.",
         "operationId": "UserService_ListUsers",
         "responses": {
           "200": {
@@ -54,14 +69,51 @@
         ]
       }
     },
+    "/api/v1/users/batch": {
+      "get": {
+        "summary": "BatchGetUsers returns multiple users by ids.",
+        "operationId": "UserService_BatchGetUsers",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1BatchGetUsersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ids",
+            "in": "query",
+            "required": true,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "int64"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "UserService"
+        ]
+      }
+    },
     "/api/v1/users/{id}": {
       "get": {
+        "summary": "GetUser returns a single user by id.",
         "operationId": "UserService_GetUser",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1User"
+              "$ref": "#/definitions/v1GetUserResponse"
             }
           },
           "default": {
@@ -85,12 +137,13 @@
         ]
       },
       "put": {
+        "summary": "UpdateUser updates mutable profile fields for a user.",
         "operationId": "UserService_UpdateUser",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1User"
+              "$ref": "#/definitions/v1UpdateUserResponse"
             }
           },
           "default": {
@@ -134,6 +187,7 @@
           "type": "string"
         }
       },
+      "description": "UpdateUserRequest carries profile fields to update for a user.",
       "required": [
         "user"
       ]
@@ -166,6 +220,28 @@
         }
       }
     },
+    "v1BatchGetUsersResponse": {
+      "type": "object",
+      "properties": {
+        "users": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1User"
+          }
+        }
+      },
+      "description": "BatchGetUsersResponse returns users matched by ids."
+    },
+    "v1GetUserResponse": {
+      "type": "object",
+      "properties": {
+        "user": {
+          "$ref": "#/definitions/v1User"
+        }
+      },
+      "description": "GetUserResponse returns a single user."
+    },
     "v1ListUsersResponse": {
       "type": "object",
       "properties": {
@@ -192,7 +268,17 @@
             "$ref": "#/definitions/v1User"
           }
         }
-      }
+      },
+      "description": "ListUsersResponse returns a paginated list of users."
+    },
+    "v1UpdateUserResponse": {
+      "type": "object",
+      "properties": {
+        "user": {
+          "$ref": "#/definitions/v1User"
+        }
+      },
+      "description": "UpdateUserResponse returns the updated user."
     },
     "v1User": {
       "type": "object",
@@ -235,7 +321,8 @@
           "type": "string",
           "format": "date-time"
         }
-      }
+      },
+      "description": "User describes the public profile and account state for a user."
     },
     "v1UserStatus": {
       "type": "string",
@@ -244,7 +331,12 @@
         "USER_STATUS_ACTIVE",
         "USER_STATUS_DISABLE"
       ],
-      "default": "USER_STATUS_UNSPECIFIED"
+      "default": "USER_STATUS_UNSPECIFIED",
+      "description": "UserStatus describes the lifecycle state of a user account."
     }
+  },
+  "externalDocs": {
+    "description": "More about goc",
+    "url": "https://github.com/grpc-ecosystem/grpc-gateway"
   }
 }

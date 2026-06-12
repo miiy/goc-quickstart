@@ -78,6 +78,19 @@ func (m *MockUserRepository) First(ctx context.Context, id int64, columns ...str
 	return nil, gorm.ErrRecordNotFound
 }
 
+func (m *MockUserRepository) FindByIDs(ctx context.Context, ids []int64, columns ...string) ([]*entity.User, error) {
+	if m.err != nil {
+		return nil, m.err
+	}
+	users := make([]*entity.User, 0, len(ids))
+	for _, id := range ids {
+		if user, ok := m.users[id]; ok {
+			users = append(users, user)
+		}
+	}
+	return users, nil
+}
+
 func (m *MockUserRepository) List(ctx context.Context, page, pageSize int64, columns ...string) ([]*entity.User, int64, error) {
 	if m.err != nil {
 		return nil, 0, m.err
@@ -173,6 +186,37 @@ func TestUserService_GetUser(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestUserService_BatchGetUsers(t *testing.T) {
+	logger := zap.NewNop()
+	repo := NewMockUserRepository()
+	repo.users[1] = testUser(1)
+	repo.users[2] = &entity.User{Username: "bob", Status: 1}
+	repo.users[2].ID = 2
+
+	service := NewUserServiceServer(logger, repo).(*UserService)
+
+	resp, err := service.BatchGetUsers(context.Background(), &pb.BatchGetUsersRequest{
+		Ids: []int64{1, 2, 1, 0, -1},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(resp.Users) != 2 {
+		t.Fatalf("expected 2 users, got %d", len(resp.Users))
+	}
+	if resp.Users[0].Id != 1 || resp.Users[0].Nickname != "Test User" {
+		t.Fatalf("unexpected first user: %+v", resp.Users[0])
+	}
+	if resp.Users[1].Id != 2 || resp.Users[1].Username != "bob" {
+		t.Fatalf("unexpected second user: %+v", resp.Users[1])
+	}
+
+	_, err = service.BatchGetUsers(context.Background(), &pb.BatchGetUsersRequest{Ids: []int64{0, -1}})
+	if status.Code(err) != codes.InvalidArgument {
+		t.Fatalf("expected invalid argument, got %v", err)
 	}
 }
 

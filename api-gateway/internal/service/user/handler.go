@@ -21,6 +21,20 @@ func (m *Module) get(c *gin.Context) {
 	transport.WriteProto(c, resp)
 }
 
+func (m *Module) batchGet(c *gin.Context) {
+	ids, ok := transport.Int64SliceQuery(c, "ids")
+	if !ok {
+		return
+	}
+
+	resp, err := m.client.BatchGetUsers(c.Request.Context(), &userv1.BatchGetUsersRequest{Ids: ids})
+	if err != nil {
+		transport.WriteError(c, err)
+		return
+	}
+	transport.WriteProto(c, resp)
+}
+
 func (m *Module) update(c *gin.Context) {
 	id, ok := transport.Int64Param(c, "id")
 	if !ok {

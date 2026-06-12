@@ -2,7 +2,9 @@ package service
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -45,10 +47,30 @@ func (m *MockAuthRepository) Update(ctx context.Context, id uint64, user *entity
 	if m.err != nil {
 		return 0, m.err
 	}
-	if _, ok := m.users[int64(id)]; !ok {
+	existing, ok := m.users[int64(id)]
+	if !ok {
 		return 0, nil
 	}
-	m.users[int64(id)] = user
+	if len(columns) == 0 {
+		m.users[int64(id)] = user
+		return 1, nil
+	}
+	for _, column := range columns {
+		switch column {
+		case "password":
+			existing.Password = user.Password
+		case "nickname":
+			existing.Nickname = user.Nickname
+		case "avatar":
+			existing.Avatar = user.Avatar
+		case "email":
+			existing.Email = user.Email
+		case "phone":
+			existing.Phone = user.Phone
+		case "status":
+			existing.Status = user.Status
+		}
+	}
 	return 1, nil
 }
 
@@ -311,7 +333,7 @@ func TestAuthService_GetAuthenticatedUser(t *testing.T) {
 			if err != nil {
 				t.Fatalf("expected no error, got %v", err)
 			}
-			if resp.Id != tt.want.Id || resp.Username != tt.want.Username {
+			if resp.GetUser().GetId() != tt.want.Id || resp.GetUser().GetUsername() != tt.want.Username {
 				t.Fatalf("unexpected user: %+v", resp)
 			}
 		})
@@ -391,6 +413,13 @@ func TestAuthService_Register(t *testing.T) {
 				}
 				if resp.User.Username != tt.req.Username {
 					t.Errorf("expected username %s, got %s", tt.req.Username, resp.User.Username)
+				}
+				user := authRepo.users[resp.User.Id]
+				if user == nil {
+					t.Fatalf("expected stored user %d", resp.User.Id)
+				}
+				if user.Nickname != user.Username {
+					t.Fatalf("expected nickname %q, got %q", user.Username, user.Nickname)
 				}
 			}
 		})
@@ -496,6 +525,83 @@ func TestAuthService_Login(t *testing.T) {
 	}
 }
 
+func TestAuthService_ChangePassword(t *testing.T) {
+	tests := []struct {
+		name    string
+		req     *pb.ChangePasswordRequest
+		wantErr bool
+		errCode codes.Code
+	}{
+		{
+			name: "successful change",
+			req: &pb.ChangePasswordRequest{
+				OldPassword:             "password123",
+				NewPassword:             "new-password",
+				NewPasswordConfirmation: "new-password",
+			},
+		},
+		{
+			name: "wrong old password",
+			req: &pb.ChangePasswordRequest{
+				OldPassword:             "wrong-password",
+				NewPassword:             "new-password",
+				NewPasswordConfirmation: "new-password",
+			},
+			wantErr: true,
+			errCode: codes.InvalidArgument,
+		},
+		{
+			name: "new password confirmation mismatch",
+			req: &pb.ChangePasswordRequest{
+				OldPassword:             "password123",
+				NewPassword:             "new-password",
+				NewPasswordConfirmation: "other-password",
+			},
+			wantErr: true,
+			errCode: codes.InvalidArgument,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			logger := zap.NewNop()
+			authRepo := NewMockAuthRepository()
+			tokenRepo := NewMockTokenRepository()
+			jwtAuth := auth.NewJWTAuth(&auth.Options{Secret: "test-secret", ExpiresIn: 3600})
+			mp := &miniprogram.MiniProgram{}
+
+			hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
+			authRepo.users[1] = &entity.User{
+				Username: "testuser",
+				Password: string(hashedPassword),
+				Status:   entity.UserStatusActive,
+			}
+			service := NewAuthServiceServer(logger, authRepo, tokenRepo, jwtAuth, mp).(*AuthService)
+			ctx := auth.InjectAuthenticatedUser(context.Background(), &auth.AuthenticatedUser{
+				ID:       1,
+				Username: "testuser",
+			})
+
+			_, err := service.ChangePassword(ctx, tt.req)
+			if tt.wantErr {
+				if err == nil {
+					t.Fatal("expected error, got nil")
+				}
+				if code := status.Code(err); code != tt.errCode {
+					t.Fatalf("expected error code %v, got %v", tt.errCode, code)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
+			if err := bcrypt.CompareHashAndPassword([]byte(authRepo.users[1].Password), []byte(tt.req.NewPassword)); err != nil {
+				t.Fatal("expected stored password to match new password")
+			}
+		})
+	}
+}
+
 func TestAuthService_UserExist(t *testing.T) {
 	logger := zap.NewNop()
 	authRepo := NewMockAuthRepository()
@@ -547,23 +653,29 @@ func TestAuthService_UserExist(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var resp *pb.FieldCheckResponse
+			var exist bool
 			var err error
 
 			switch tt.method {
 			case "UsernameCheck":
-				resp, err = service.UsernameCheck(context.Background(), &pb.FieldCheckRequest{Value: tt.value})
+				resp, checkErr := service.UsernameCheck(context.Background(), &pb.UsernameCheckRequest{Value: tt.value})
+				err = checkErr
+				exist = resp.GetExist()
 			case "EmailCheck":
-				resp, err = service.EmailCheck(context.Background(), &pb.FieldCheckRequest{Value: tt.value})
+				resp, checkErr := service.EmailCheck(context.Background(), &pb.EmailCheckRequest{Value: tt.value})
+				err = checkErr
+				exist = resp.GetExist()
 			case "PhoneCheck":
-				resp, err = service.PhoneCheck(context.Background(), &pb.FieldCheckRequest{Value: tt.value})
+				resp, checkErr := service.PhoneCheck(context.Background(), &pb.PhoneCheckRequest{Value: tt.value})
+				err = checkErr
+				exist = resp.GetExist()
 			}
 
 			if err != nil {
 				t.Errorf("unexpected error: %v", err)
 			}
-			if resp.Exist != tt.wantExist {
-				t.Errorf("expected exist=%v, got %v", tt.wantExist, resp.Exist)
+			if exist != tt.wantExist {
+				t.Errorf("expected exist=%v, got %v", tt.wantExist, exist)
 			}
 		})
 	}
@@ -861,6 +973,13 @@ func TestAuthService_PhoneAuth(t *testing.T) {
 				if resp.User == nil || resp.User.Id <= 0 || resp.User.Username == "" {
 					t.Fatalf("expected user with id and username, got %+v", resp.User)
 				}
+				user := authRepo.users[resp.User.Id]
+				if user == nil {
+					t.Fatalf("expected stored user %d", resp.User.Id)
+				}
+				if user.Nickname != user.Username {
+					t.Fatalf("expected nickname %q, got %q", user.Username, user.Nickname)
+				}
 			}
 		})
 	}
@@ -917,5 +1036,21 @@ func TestAuthService_StoreTokenRejectsExpiredToken(t *testing.T) {
 	err := service.storeToken(context.Background(), "expired-token", time.Now().Add(-time.Second))
 	if err == nil {
 		t.Fatal("expected expired token error")
+	}
+}
+
+func TestRandUserName(t *testing.T) {
+	username, err := randUserName()
+	if err != nil {
+		t.Fatalf("randUserName() error = %v", err)
+	}
+	if !strings.HasPrefix(username, "user_") {
+		t.Fatalf("expected user_ prefix, got %q", username)
+	}
+	if len(username) != len("user_")+16 {
+		t.Fatalf("expected 16 hex chars suffix, got %q", username)
+	}
+	if _, err := hex.DecodeString(strings.TrimPrefix(username, "user_")); err != nil {
+		t.Fatalf("expected hex suffix, got %q: %v", username, err)
 	}
 }

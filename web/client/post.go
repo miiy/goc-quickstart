@@ -21,6 +21,7 @@ type PostResponse struct {
 	Tags       []string `json:"tags"`
 	CategoryId int64    `json:"category_id,string"`
 	CreatedAt  string   `json:"created_at"`
+	AuthorName string   `json:"author_name"`
 }
 
 type PostListResponse struct {

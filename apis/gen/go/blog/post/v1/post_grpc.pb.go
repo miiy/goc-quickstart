@@ -4,7 +4,7 @@
 // - protoc             (unknown)
 // source: blog/post/v1/post.proto
 
-package apiv1
+package postv1
 
 import (
 	context "context"
@@ -19,21 +19,28 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	PostService_GetPost_FullMethodName    = "/goc.blog.post.api.v1.PostService/GetPost"
-	PostService_CreatePost_FullMethodName = "/goc.blog.post.api.v1.PostService/CreatePost"
-	PostService_UpdatePost_FullMethodName = "/goc.blog.post.api.v1.PostService/UpdatePost"
-	PostService_DeletePost_FullMethodName = "/goc.blog.post.api.v1.PostService/DeletePost"
-	PostService_ListPosts_FullMethodName  = "/goc.blog.post.api.v1.PostService/ListPosts"
+	PostService_GetPost_FullMethodName    = "/blog.post.v1.PostService/GetPost"
+	PostService_CreatePost_FullMethodName = "/blog.post.v1.PostService/CreatePost"
+	PostService_UpdatePost_FullMethodName = "/blog.post.v1.PostService/UpdatePost"
+	PostService_DeletePost_FullMethodName = "/blog.post.v1.PostService/DeletePost"
+	PostService_ListPosts_FullMethodName  = "/blog.post.v1.PostService/ListPosts"
 )
 
 // PostServiceClient is the client API for PostService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// PostService manages article publishing and post queries.
 type PostServiceClient interface {
+	// GetPost returns a single post by id.
 	GetPost(ctx context.Context, in *GetPostRequest, opts ...grpc.CallOption) (*GetPostResponse, error)
+	// CreatePost creates a new post.
 	CreatePost(ctx context.Context, in *CreatePostRequest, opts ...grpc.CallOption) (*CreatePostResponse, error)
+	// UpdatePost updates mutable fields for a post.
 	UpdatePost(ctx context.Context, in *UpdatePostRequest, opts ...grpc.CallOption) (*UpdatePostResponse, error)
+	// DeletePost deletes a post by id.
 	DeletePost(ctx context.Context, in *DeletePostRequest, opts ...grpc.CallOption) (*DeletePostResponse, error)
+	// ListPosts returns posts matched by filters and pagination.
 	ListPosts(ctx context.Context, in *ListPostsRequest, opts ...grpc.CallOption) (*ListPostsResponse, error)
 }
 
@@ -98,11 +105,18 @@ func (c *postServiceClient) ListPosts(ctx context.Context, in *ListPostsRequest,
 // PostServiceServer is the server API for PostService service.
 // All implementations must embed UnimplementedPostServiceServer
 // for forward compatibility.
+//
+// PostService manages article publishing and post queries.
 type PostServiceServer interface {
+	// GetPost returns a single post by id.
 	GetPost(context.Context, *GetPostRequest) (*GetPostResponse, error)
+	// CreatePost creates a new post.
 	CreatePost(context.Context, *CreatePostRequest) (*CreatePostResponse, error)
+	// UpdatePost updates mutable fields for a post.
 	UpdatePost(context.Context, *UpdatePostRequest) (*UpdatePostResponse, error)
+	// DeletePost deletes a post by id.
 	DeletePost(context.Context, *DeletePostRequest) (*DeletePostResponse, error)
+	// ListPosts returns posts matched by filters and pagination.
 	ListPosts(context.Context, *ListPostsRequest) (*ListPostsResponse, error)
 	mustEmbedUnimplementedPostServiceServer()
 }
@@ -244,7 +258,7 @@ func _PostService_ListPosts_Handler(srv interface{}, ctx context.Context, dec fu
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var PostService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "goc.blog.post.api.v1.PostService",
+	ServiceName: "blog.post.v1.PostService",
 	HandlerType: (*PostServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

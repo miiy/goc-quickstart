@@ -8,8 +8,10 @@ services:
     endpoint: 127.0.0.1:50052
   user:
     endpoint: 127.0.0.1:50053
-  file:
+  upload:
     endpoint: 127.0.0.1:50054
+uploads:
+  root: ../upload-service/storage/uploads
 jwt:
   secret: 123456
   issuer: goc

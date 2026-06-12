@@ -4,7 +4,7 @@
 // - protoc             (unknown)
 // source: blog/auth/v1/auth.proto
 
-package apiv1
+package authv1
 
 import (
 	context "context"
@@ -19,39 +19,49 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AuthService_GetAuthenticatedUser_FullMethodName = "/goc.blog.auth.api.v1.AuthService/GetAuthenticatedUser"
-	AuthService_Register_FullMethodName             = "/goc.blog.auth.api.v1.AuthService/Register"
-	AuthService_UsernameCheck_FullMethodName        = "/goc.blog.auth.api.v1.AuthService/UsernameCheck"
-	AuthService_EmailCheck_FullMethodName           = "/goc.blog.auth.api.v1.AuthService/EmailCheck"
-	AuthService_PhoneCheck_FullMethodName           = "/goc.blog.auth.api.v1.AuthService/PhoneCheck"
-	AuthService_Login_FullMethodName                = "/goc.blog.auth.api.v1.AuthService/Login"
-	AuthService_SendSmsCode_FullMethodName          = "/goc.blog.auth.api.v1.AuthService/SendSmsCode"
-	AuthService_PhoneAuth_FullMethodName            = "/goc.blog.auth.api.v1.AuthService/PhoneAuth"
-	AuthService_MpLogin_FullMethodName              = "/goc.blog.auth.api.v1.AuthService/MpLogin"
-	AuthService_RefreshToken_FullMethodName         = "/goc.blog.auth.api.v1.AuthService/RefreshToken"
-	AuthService_Logout_FullMethodName               = "/goc.blog.auth.api.v1.AuthService/Logout"
+	AuthService_GetAuthenticatedUser_FullMethodName = "/blog.auth.v1.AuthService/GetAuthenticatedUser"
+	AuthService_Register_FullMethodName             = "/blog.auth.v1.AuthService/Register"
+	AuthService_UsernameCheck_FullMethodName        = "/blog.auth.v1.AuthService/UsernameCheck"
+	AuthService_EmailCheck_FullMethodName           = "/blog.auth.v1.AuthService/EmailCheck"
+	AuthService_PhoneCheck_FullMethodName           = "/blog.auth.v1.AuthService/PhoneCheck"
+	AuthService_Login_FullMethodName                = "/blog.auth.v1.AuthService/Login"
+	AuthService_SendSmsCode_FullMethodName          = "/blog.auth.v1.AuthService/SendSmsCode"
+	AuthService_PhoneAuth_FullMethodName            = "/blog.auth.v1.AuthService/PhoneAuth"
+	AuthService_MpLogin_FullMethodName              = "/blog.auth.v1.AuthService/MpLogin"
+	AuthService_RefreshToken_FullMethodName         = "/blog.auth.v1.AuthService/RefreshToken"
+	AuthService_ChangePassword_FullMethodName       = "/blog.auth.v1.AuthService/ChangePassword"
+	AuthService_Logout_FullMethodName               = "/blog.auth.v1.AuthService/Logout"
 )
 
 // AuthServiceClient is the client API for AuthService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// AuthService manages registration, authentication, and token workflows.
 type AuthServiceClient interface {
-	GetAuthenticatedUser(ctx context.Context, in *GetAuthenticatedUserRequest, opts ...grpc.CallOption) (*User, error)
-	// register
+	// GetAuthenticatedUser returns the user identity for an authenticated request.
+	GetAuthenticatedUser(ctx context.Context, in *GetAuthenticatedUserRequest, opts ...grpc.CallOption) (*GetAuthenticatedUserResponse, error)
+	// Register creates a new user account.
 	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error)
-	// register check
-	UsernameCheck(ctx context.Context, in *FieldCheckRequest, opts ...grpc.CallOption) (*FieldCheckResponse, error)
-	EmailCheck(ctx context.Context, in *FieldCheckRequest, opts ...grpc.CallOption) (*FieldCheckResponse, error)
-	PhoneCheck(ctx context.Context, in *FieldCheckRequest, opts ...grpc.CallOption) (*FieldCheckResponse, error)
-	// login
+	// UsernameCheck reports whether a username is already registered.
+	UsernameCheck(ctx context.Context, in *UsernameCheckRequest, opts ...grpc.CallOption) (*UsernameCheckResponse, error)
+	// EmailCheck reports whether an email address is already registered.
+	EmailCheck(ctx context.Context, in *EmailCheckRequest, opts ...grpc.CallOption) (*EmailCheckResponse, error)
+	// PhoneCheck reports whether a phone number is already registered.
+	PhoneCheck(ctx context.Context, in *PhoneCheckRequest, opts ...grpc.CallOption) (*PhoneCheckResponse, error)
+	// Login authenticates a user with username or email and password.
 	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
-	// phone: send sms code → phone auth
+	// SendSmsCode sends a verification code before phone authentication.
 	SendSmsCode(ctx context.Context, in *SendSmsCodeRequest, opts ...grpc.CallOption) (*SendSmsCodeResponse, error)
+	// PhoneAuth authenticates a user with phone number and SMS code.
 	PhoneAuth(ctx context.Context, in *PhoneAuthRequest, opts ...grpc.CallOption) (*PhoneAuthResponse, error)
-	// wechat login
-	MpLogin(ctx context.Context, in *MpLoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
-	// token
+	// MpLogin authenticates a user with a WeChat Mini Program code.
+	MpLogin(ctx context.Context, in *MpLoginRequest, opts ...grpc.CallOption) (*MpLoginResponse, error)
+	// RefreshToken refreshes an access token.
 	RefreshToken(ctx context.Context, in *RefreshTokenRequest, opts ...grpc.CallOption) (*RefreshTokenResponse, error)
+	// ChangePassword updates the password for the authenticated user.
+	ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*ChangePasswordResponse, error)
+	// Logout revokes the current access token.
 	Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*LogoutResponse, error)
 }
 
@@ -63,9 +73,9 @@ func NewAuthServiceClient(cc grpc.ClientConnInterface) AuthServiceClient {
 	return &authServiceClient{cc}
 }
 
-func (c *authServiceClient) GetAuthenticatedUser(ctx context.Context, in *GetAuthenticatedUserRequest, opts ...grpc.CallOption) (*User, error) {
+func (c *authServiceClient) GetAuthenticatedUser(ctx context.Context, in *GetAuthenticatedUserRequest, opts ...grpc.CallOption) (*GetAuthenticatedUserResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(User)
+	out := new(GetAuthenticatedUserResponse)
 	err := c.cc.Invoke(ctx, AuthService_GetAuthenticatedUser_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -83,9 +93,9 @@ func (c *authServiceClient) Register(ctx context.Context, in *RegisterRequest, o
 	return out, nil
 }
 
-func (c *authServiceClient) UsernameCheck(ctx context.Context, in *FieldCheckRequest, opts ...grpc.CallOption) (*FieldCheckResponse, error) {
+func (c *authServiceClient) UsernameCheck(ctx context.Context, in *UsernameCheckRequest, opts ...grpc.CallOption) (*UsernameCheckResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(FieldCheckResponse)
+	out := new(UsernameCheckResponse)
 	err := c.cc.Invoke(ctx, AuthService_UsernameCheck_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -93,9 +103,9 @@ func (c *authServiceClient) UsernameCheck(ctx context.Context, in *FieldCheckReq
 	return out, nil
 }
 
-func (c *authServiceClient) EmailCheck(ctx context.Context, in *FieldCheckRequest, opts ...grpc.CallOption) (*FieldCheckResponse, error) {
+func (c *authServiceClient) EmailCheck(ctx context.Context, in *EmailCheckRequest, opts ...grpc.CallOption) (*EmailCheckResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(FieldCheckResponse)
+	out := new(EmailCheckResponse)
 	err := c.cc.Invoke(ctx, AuthService_EmailCheck_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -103,9 +113,9 @@ func (c *authServiceClient) EmailCheck(ctx context.Context, in *FieldCheckReques
 	return out, nil
 }
 
-func (c *authServiceClient) PhoneCheck(ctx context.Context, in *FieldCheckRequest, opts ...grpc.CallOption) (*FieldCheckResponse, error) {
+func (c *authServiceClient) PhoneCheck(ctx context.Context, in *PhoneCheckRequest, opts ...grpc.CallOption) (*PhoneCheckResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(FieldCheckResponse)
+	out := new(PhoneCheckResponse)
 	err := c.cc.Invoke(ctx, AuthService_PhoneCheck_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -143,9 +153,9 @@ func (c *authServiceClient) PhoneAuth(ctx context.Context, in *PhoneAuthRequest,
 	return out, nil
 }
 
-func (c *authServiceClient) MpLogin(ctx context.Context, in *MpLoginRequest, opts ...grpc.CallOption) (*LoginResponse, error) {
+func (c *authServiceClient) MpLogin(ctx context.Context, in *MpLoginRequest, opts ...grpc.CallOption) (*MpLoginResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(LoginResponse)
+	out := new(MpLoginResponse)
 	err := c.cc.Invoke(ctx, AuthService_MpLogin_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -157,6 +167,16 @@ func (c *authServiceClient) RefreshToken(ctx context.Context, in *RefreshTokenRe
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RefreshTokenResponse)
 	err := c.cc.Invoke(ctx, AuthService_RefreshToken_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*ChangePasswordResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ChangePasswordResponse)
+	err := c.cc.Invoke(ctx, AuthService_ChangePassword_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -176,23 +196,32 @@ func (c *authServiceClient) Logout(ctx context.Context, in *LogoutRequest, opts 
 // AuthServiceServer is the server API for AuthService service.
 // All implementations must embed UnimplementedAuthServiceServer
 // for forward compatibility.
+//
+// AuthService manages registration, authentication, and token workflows.
 type AuthServiceServer interface {
-	GetAuthenticatedUser(context.Context, *GetAuthenticatedUserRequest) (*User, error)
-	// register
+	// GetAuthenticatedUser returns the user identity for an authenticated request.
+	GetAuthenticatedUser(context.Context, *GetAuthenticatedUserRequest) (*GetAuthenticatedUserResponse, error)
+	// Register creates a new user account.
 	Register(context.Context, *RegisterRequest) (*RegisterResponse, error)
-	// register check
-	UsernameCheck(context.Context, *FieldCheckRequest) (*FieldCheckResponse, error)
-	EmailCheck(context.Context, *FieldCheckRequest) (*FieldCheckResponse, error)
-	PhoneCheck(context.Context, *FieldCheckRequest) (*FieldCheckResponse, error)
-	// login
+	// UsernameCheck reports whether a username is already registered.
+	UsernameCheck(context.Context, *UsernameCheckRequest) (*UsernameCheckResponse, error)
+	// EmailCheck reports whether an email address is already registered.
+	EmailCheck(context.Context, *EmailCheckRequest) (*EmailCheckResponse, error)
+	// PhoneCheck reports whether a phone number is already registered.
+	PhoneCheck(context.Context, *PhoneCheckRequest) (*PhoneCheckResponse, error)
+	// Login authenticates a user with username or email and password.
 	Login(context.Context, *LoginRequest) (*LoginResponse, error)
-	// phone: send sms code → phone auth
+	// SendSmsCode sends a verification code before phone authentication.
 	SendSmsCode(context.Context, *SendSmsCodeRequest) (*SendSmsCodeResponse, error)
+	// PhoneAuth authenticates a user with phone number and SMS code.
 	PhoneAuth(context.Context, *PhoneAuthRequest) (*PhoneAuthResponse, error)
-	// wechat login
-	MpLogin(context.Context, *MpLoginRequest) (*LoginResponse, error)
-	// token
+	// MpLogin authenticates a user with a WeChat Mini Program code.
+	MpLogin(context.Context, *MpLoginRequest) (*MpLoginResponse, error)
+	// RefreshToken refreshes an access token.
 	RefreshToken(context.Context, *RefreshTokenRequest) (*RefreshTokenResponse, error)
+	// ChangePassword updates the password for the authenticated user.
+	ChangePassword(context.Context, *ChangePasswordRequest) (*ChangePasswordResponse, error)
+	// Logout revokes the current access token.
 	Logout(context.Context, *LogoutRequest) (*LogoutResponse, error)
 	mustEmbedUnimplementedAuthServiceServer()
 }
@@ -204,19 +233,19 @@ type AuthServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedAuthServiceServer struct{}
 
-func (UnimplementedAuthServiceServer) GetAuthenticatedUser(context.Context, *GetAuthenticatedUserRequest) (*User, error) {
+func (UnimplementedAuthServiceServer) GetAuthenticatedUser(context.Context, *GetAuthenticatedUserRequest) (*GetAuthenticatedUserResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetAuthenticatedUser not implemented")
 }
 func (UnimplementedAuthServiceServer) Register(context.Context, *RegisterRequest) (*RegisterResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Register not implemented")
 }
-func (UnimplementedAuthServiceServer) UsernameCheck(context.Context, *FieldCheckRequest) (*FieldCheckResponse, error) {
+func (UnimplementedAuthServiceServer) UsernameCheck(context.Context, *UsernameCheckRequest) (*UsernameCheckResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UsernameCheck not implemented")
 }
-func (UnimplementedAuthServiceServer) EmailCheck(context.Context, *FieldCheckRequest) (*FieldCheckResponse, error) {
+func (UnimplementedAuthServiceServer) EmailCheck(context.Context, *EmailCheckRequest) (*EmailCheckResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method EmailCheck not implemented")
 }
-func (UnimplementedAuthServiceServer) PhoneCheck(context.Context, *FieldCheckRequest) (*FieldCheckResponse, error) {
+func (UnimplementedAuthServiceServer) PhoneCheck(context.Context, *PhoneCheckRequest) (*PhoneCheckResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method PhoneCheck not implemented")
 }
 func (UnimplementedAuthServiceServer) Login(context.Context, *LoginRequest) (*LoginResponse, error) {
@@ -228,11 +257,14 @@ func (UnimplementedAuthServiceServer) SendSmsCode(context.Context, *SendSmsCodeR
 func (UnimplementedAuthServiceServer) PhoneAuth(context.Context, *PhoneAuthRequest) (*PhoneAuthResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method PhoneAuth not implemented")
 }
-func (UnimplementedAuthServiceServer) MpLogin(context.Context, *MpLoginRequest) (*LoginResponse, error) {
+func (UnimplementedAuthServiceServer) MpLogin(context.Context, *MpLoginRequest) (*MpLoginResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method MpLogin not implemented")
 }
 func (UnimplementedAuthServiceServer) RefreshToken(context.Context, *RefreshTokenRequest) (*RefreshTokenResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RefreshToken not implemented")
+}
+func (UnimplementedAuthServiceServer) ChangePassword(context.Context, *ChangePasswordRequest) (*ChangePasswordResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ChangePassword not implemented")
 }
 func (UnimplementedAuthServiceServer) Logout(context.Context, *LogoutRequest) (*LogoutResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Logout not implemented")
@@ -295,7 +327,7 @@ func _AuthService_Register_Handler(srv interface{}, ctx context.Context, dec fun
 }
 
 func _AuthService_UsernameCheck_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FieldCheckRequest)
+	in := new(UsernameCheckRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -307,13 +339,13 @@ func _AuthService_UsernameCheck_Handler(srv interface{}, ctx context.Context, de
 		FullMethod: AuthService_UsernameCheck_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).UsernameCheck(ctx, req.(*FieldCheckRequest))
+		return srv.(AuthServiceServer).UsernameCheck(ctx, req.(*UsernameCheckRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _AuthService_EmailCheck_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FieldCheckRequest)
+	in := new(EmailCheckRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -325,13 +357,13 @@ func _AuthService_EmailCheck_Handler(srv interface{}, ctx context.Context, dec f
 		FullMethod: AuthService_EmailCheck_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).EmailCheck(ctx, req.(*FieldCheckRequest))
+		return srv.(AuthServiceServer).EmailCheck(ctx, req.(*EmailCheckRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _AuthService_PhoneCheck_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FieldCheckRequest)
+	in := new(PhoneCheckRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -343,7 +375,7 @@ func _AuthService_PhoneCheck_Handler(srv interface{}, ctx context.Context, dec f
 		FullMethod: AuthService_PhoneCheck_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthServiceServer).PhoneCheck(ctx, req.(*FieldCheckRequest))
+		return srv.(AuthServiceServer).PhoneCheck(ctx, req.(*PhoneCheckRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -438,6 +470,24 @@ func _AuthService_RefreshToken_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_ChangePassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ChangePasswordRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).ChangePassword(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_ChangePassword_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).ChangePassword(ctx, req.(*ChangePasswordRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AuthService_Logout_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(LogoutRequest)
 	if err := dec(in); err != nil {
@@ -460,7 +510,7 @@ func _AuthService_Logout_Handler(srv interface{}, ctx context.Context, dec func(
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var AuthService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "goc.blog.auth.api.v1.AuthService",
+	ServiceName: "blog.auth.v1.AuthService",
 	HandlerType: (*AuthServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -502,6 +552,10 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RefreshToken",
 			Handler:    _AuthService_RefreshToken_Handler,
+		},
+		{
+			MethodName: "ChangePassword",
+			Handler:    _AuthService_ChangePassword_Handler,
 		},
 		{
 			MethodName: "Logout",

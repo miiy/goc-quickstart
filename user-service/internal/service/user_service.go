@@ -34,7 +34,7 @@ func NewUserServiceServer(logger *zap.Logger, repo repository.UserRepository) pb
 	}
 }
 
-func (s *UserService) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.User, error) {
+func (s *UserService) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUserResponse, error) {
 	if req.Id <= 0 {
 		return nil, status.Error(codes.InvalidArgument, ErrInvalidArgument.Error())
 	}
@@ -51,10 +51,31 @@ func (s *UserService) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return entityToProto(user), nil
+	return &pb.GetUserResponse{User: entityToProto(user)}, nil
 }
 
-func (s *UserService) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb.User, error) {
+func (s *UserService) BatchGetUsers(ctx context.Context, req *pb.BatchGetUsersRequest) (*pb.BatchGetUsersResponse, error) {
+	ids := normalizedUserIDs(req.GetIds())
+	if len(ids) == 0 {
+		return nil, status.Error(codes.InvalidArgument, ErrInvalidArgument.Error())
+	}
+
+	users, err := s.repo.FindByIDs(ctx, ids, "id", "username", "nickname", "avatar")
+	if err != nil {
+		s.logger.Error("repo.FindByIDs", zap.Error(err))
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	resp := &pb.BatchGetUsersResponse{
+		Users: make([]*pb.User, 0, len(users)),
+	}
+	for _, user := range users {
+		resp.Users = append(resp.Users, publicUserToProto(user))
+	}
+	return resp, nil
+}
+
+func (s *UserService) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb.UpdateUserResponse, error) {
 	if req.Id <= 0 || req.User == nil {
 		return nil, status.Error(codes.InvalidArgument, ErrInvalidArgument.Error())
 	}
@@ -99,7 +120,7 @@ func (s *UserService) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return entityToProto(updated), nil
+	return &pb.UpdateUserResponse{User: entityToProto(updated)}, nil
 }
 
 func (s *UserService) ListUsers(ctx context.Context, req *pb.ListUsersRequest) (*pb.ListUsersResponse, error) {
@@ -129,6 +150,31 @@ func requireSelf(ctx context.Context, id int64) error {
 		return status.Error(codes.PermissionDenied, ErrPermissionDenied.Error())
 	}
 	return nil
+}
+
+func normalizedUserIDs(ids []int64) []int64 {
+	seen := make(map[int64]struct{}, len(ids))
+	result := make([]int64, 0, len(ids))
+	for _, id := range ids {
+		if id <= 0 {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		result = append(result, id)
+	}
+	return result
+}
+
+func publicUserToProto(u *entity.User) *pb.User {
+	return &pb.User{
+		Id:       u.ID,
+		Username: u.Username,
+		Nickname: u.Nickname,
+		Avatar:   u.Avatar,
+	}
 }
 
 func entityToProto(u *entity.User) *pb.User {

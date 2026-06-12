@@ -7,12 +7,13 @@ OPENAPI_GEN_DIR := gen/openapiv2
 AUTH_DST := $(ROOT_DIR)/auth-service/gen/go/blog/auth/v1
 POST_DST := $(ROOT_DIR)/post-service/gen/go/blog/post/v1
 USER_DST := $(ROOT_DIR)/user-service/gen/go/blog/user/v1
+UPLOAD_DST := $(ROOT_DIR)/upload-service/gen/go/blog/upload/v1
 GATEWAY_DST := $(ROOT_DIR)/api-gateway/gen/go/blog
 APIDOC_DST := $(ROOT_DIR)/apidoc-server/gen/openapiv2
 
 .DEFAULT_GOAL := help
 
-.PHONY: help proto deps generate copy copy-go copy-openapi copy-auth copy-post copy-user \
+.PHONY: help proto deps generate copy copy-go copy-openapi copy-auth copy-post copy-user copy-upload \
 	copy-gateway copy-apidoc lint format clean clean-copies clean-all
 
 help:
@@ -39,7 +40,7 @@ generate:
 
 copy: copy-go copy-openapi
 
-copy-go: copy-auth copy-post copy-user copy-gateway
+copy-go: copy-auth copy-post copy-user copy-upload copy-gateway
 
 copy-openapi: copy-apidoc
 
@@ -57,6 +58,11 @@ copy-user:
 	@rm -rf "$(USER_DST)"
 	@mkdir -p "$(USER_DST)"
 	cp -R "$(GO_GEN_DIR)/blog/user/v1/." "$(USER_DST)/"
+
+copy-upload:
+	@rm -rf "$(UPLOAD_DST)"
+	@mkdir -p "$(UPLOAD_DST)"
+	cp -R "$(GO_GEN_DIR)/blog/upload/v1/." "$(UPLOAD_DST)/"
 
 copy-gateway:
 	@rm -rf "$(GATEWAY_DST)"

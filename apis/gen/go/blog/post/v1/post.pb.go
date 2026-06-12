@@ -4,7 +4,7 @@
 // 	protoc        (unknown)
 // source: blog/post/v1/post.proto
 
-package apiv1
+package postv1
 
 import (
 	_ "github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2/options"
@@ -25,6 +25,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// PostStatus describes the publication state of a post.
 type PostStatus int32
 
 const (
@@ -74,18 +75,21 @@ func (PostStatus) EnumDescriptor() ([]byte, []int) {
 	return file_blog_post_v1_post_proto_rawDescGZIP(), []int{0}
 }
 
+// Post describes an article published by a user.
 type Post struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	AuthorId      int64                  `protobuf:"varint,2,opt,name=author_id,json=authorId,proto3" json:"author_id,omitempty"`
-	Title         string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
-	Content       string                 `protobuf:"bytes,4,opt,name=content,proto3" json:"content,omitempty"`
-	Status        PostStatus             `protobuf:"varint,5,opt,name=status,proto3,enum=goc.blog.post.api.v1.PostStatus" json:"status,omitempty"`
-	Tags          []string               `protobuf:"bytes,6,rep,name=tags,proto3" json:"tags,omitempty"`
-	CategoryId    int64                  `protobuf:"varint,7,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
-	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
-	DeletedAt     *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=deleted_at,json=deletedAt,proto3" json:"deleted_at,omitempty"`
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	Id         int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	AuthorId   int64                  `protobuf:"varint,2,opt,name=author_id,json=authorId,proto3" json:"author_id,omitempty"`
+	Title      string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
+	Content    string                 `protobuf:"bytes,4,opt,name=content,proto3" json:"content,omitempty"`
+	Status     PostStatus             `protobuf:"varint,5,opt,name=status,proto3,enum=blog.post.v1.PostStatus" json:"status,omitempty"`
+	Tags       []string               `protobuf:"bytes,6,rep,name=tags,proto3" json:"tags,omitempty"`
+	CategoryId int64                  `protobuf:"varint,7,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
+	CreatedAt  *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt  *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	DeletedAt  *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=deleted_at,json=deletedAt,proto3" json:"deleted_at,omitempty"`
+	// Populated by the API gateway from user-service for web responses.
+	AuthorName    string `protobuf:"bytes,11,opt,name=author_name,json=authorName,proto3" json:"author_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -190,6 +194,14 @@ func (x *Post) GetDeletedAt() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *Post) GetAuthorName() string {
+	if x != nil {
+		return x.AuthorName
+	}
+	return ""
+}
+
+// GetPostRequest identifies a post by id.
 type GetPostRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -234,6 +246,7 @@ func (x *GetPostRequest) GetId() int64 {
 	return 0
 }
 
+// GetPostResponse returns a single post.
 type GetPostResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Post          *Post                  `protobuf:"bytes,1,opt,name=post,proto3" json:"post,omitempty"`
@@ -278,6 +291,7 @@ func (x *GetPostResponse) GetPost() *Post {
 	return nil
 }
 
+// CreatePostRequest carries the post to create.
 type CreatePostRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Post          *Post                  `protobuf:"bytes,1,opt,name=post,proto3" json:"post,omitempty"`
@@ -322,6 +336,7 @@ func (x *CreatePostRequest) GetPost() *Post {
 	return nil
 }
 
+// CreatePostResponse returns the created post.
 type CreatePostResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Post          *Post                  `protobuf:"bytes,1,opt,name=post,proto3" json:"post,omitempty"`
@@ -366,6 +381,7 @@ func (x *CreatePostResponse) GetPost() *Post {
 	return nil
 }
 
+// UpdatePostRequest carries post fields to update.
 type UpdatePostRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -426,6 +442,7 @@ func (x *UpdatePostRequest) GetUpdateMask() *fieldmaskpb.FieldMask {
 	return nil
 }
 
+// UpdatePostResponse returns the updated post.
 type UpdatePostResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Post          *Post                  `protobuf:"bytes,1,opt,name=post,proto3" json:"post,omitempty"`
@@ -470,6 +487,7 @@ func (x *UpdatePostResponse) GetPost() *Post {
 	return nil
 }
 
+// DeletePostRequest identifies a post to delete.
 type DeletePostRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -514,6 +532,7 @@ func (x *DeletePostRequest) GetId() int64 {
 	return 0
 }
 
+// DeletePostResponse is returned after a post is deleted.
 type DeletePostResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -550,6 +569,7 @@ func (*DeletePostResponse) Descriptor() ([]byte, []int) {
 	return file_blog_post_v1_post_proto_rawDescGZIP(), []int{8}
 }
 
+// ListPostsRequest carries filters and pagination options for posts.
 type ListPostsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	AuthorId      int64                  `protobuf:"varint,1,opt,name=author_id,json=authorId,proto3" json:"author_id,omitempty"`
@@ -626,6 +646,7 @@ func (x *ListPostsRequest) GetPageSize() int32 {
 	return 0
 }
 
+// ListPostsResponse returns a paginated list of posts.
 type ListPostsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Total         int64                  `protobuf:"varint,1,opt,name=total,proto3" json:"total,omitempty"`
@@ -706,13 +727,13 @@ var File_blog_post_v1_post_proto protoreflect.FileDescriptor
 
 const file_blog_post_v1_post_proto_rawDesc = "" +
 	"\n" +
-	"\x17blog/post/v1/post.proto\x12\x14goc.blog.post.api.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/api/annotations.proto\x1a google/protobuf/field_mask.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\"\x83\x03\n" +
+	"\x17blog/post/v1/post.proto\x12\fblog.post.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a google/protobuf/field_mask.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\"\x9c\x03\n" +
 	"\x04Post\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1b\n" +
 	"\tauthor_id\x18\x02 \x01(\x03R\bauthorId\x12\x14\n" +
 	"\x05title\x18\x03 \x01(\tR\x05title\x12\x18\n" +
-	"\acontent\x18\x04 \x01(\tR\acontent\x128\n" +
-	"\x06status\x18\x05 \x01(\x0e2 .goc.blog.post.api.v1.PostStatusR\x06status\x12\x12\n" +
+	"\acontent\x18\x04 \x01(\tR\acontent\x120\n" +
+	"\x06status\x18\x05 \x01(\x0e2\x18.blog.post.v1.PostStatusR\x06status\x12\x12\n" +
 	"\x04tags\x18\x06 \x03(\tR\x04tags\x12\x1f\n" +
 	"\vcategory_id\x18\a \x01(\x03R\n" +
 	"categoryId\x129\n" +
@@ -722,22 +743,24 @@ const file_blog_post_v1_post_proto_rawDesc = "" +
 	"updated_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x129\n" +
 	"\n" +
 	"deleted_at\x18\n" +
-	" \x01(\v2\x1a.google.protobuf.TimestampR\tdeletedAt\"%\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampR\tdeletedAt\x12\x1f\n" +
+	"\vauthor_name\x18\v \x01(\tR\n" +
+	"authorName\"%\n" +
 	"\x0eGetPostRequest\x12\x13\n" +
-	"\x02id\x18\x01 \x01(\x03B\x03\xe0A\x02R\x02id\"A\n" +
-	"\x0fGetPostResponse\x12.\n" +
-	"\x04post\x18\x01 \x01(\v2\x1a.goc.blog.post.api.v1.PostR\x04post\"H\n" +
-	"\x11CreatePostRequest\x123\n" +
-	"\x04post\x18\x01 \x01(\v2\x1a.goc.blog.post.api.v1.PostB\x03\xe0A\x02R\x04post\"D\n" +
-	"\x12CreatePostResponse\x12.\n" +
-	"\x04post\x18\x01 \x01(\v2\x1a.goc.blog.post.api.v1.PostR\x04post\"\x9a\x01\n" +
+	"\x02id\x18\x01 \x01(\x03B\x03\xe0A\x02R\x02id\"9\n" +
+	"\x0fGetPostResponse\x12&\n" +
+	"\x04post\x18\x01 \x01(\v2\x12.blog.post.v1.PostR\x04post\"@\n" +
+	"\x11CreatePostRequest\x12+\n" +
+	"\x04post\x18\x01 \x01(\v2\x12.blog.post.v1.PostB\x03\xe0A\x02R\x04post\"<\n" +
+	"\x12CreatePostResponse\x12&\n" +
+	"\x04post\x18\x01 \x01(\v2\x12.blog.post.v1.PostR\x04post\"\x92\x01\n" +
 	"\x11UpdatePostRequest\x12\x13\n" +
-	"\x02id\x18\x01 \x01(\x03B\x03\xe0A\x02R\x02id\x123\n" +
-	"\x04post\x18\x02 \x01(\v2\x1a.goc.blog.post.api.v1.PostB\x03\xe0A\x02R\x04post\x12;\n" +
+	"\x02id\x18\x01 \x01(\x03B\x03\xe0A\x02R\x02id\x12+\n" +
+	"\x04post\x18\x02 \x01(\v2\x12.blog.post.v1.PostB\x03\xe0A\x02R\x04post\x12;\n" +
 	"\vupdate_mask\x18\x03 \x01(\v2\x1a.google.protobuf.FieldMaskR\n" +
-	"updateMask\"D\n" +
-	"\x12UpdatePostResponse\x12.\n" +
-	"\x04post\x18\x01 \x01(\v2\x1a.goc.blog.post.api.v1.PostR\x04post\"(\n" +
+	"updateMask\"<\n" +
+	"\x12UpdatePostResponse\x12&\n" +
+	"\x04post\x18\x01 \x01(\v2\x12.blog.post.v1.PostR\x04post\"(\n" +
 	"\x11DeletePostRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x03B\x03\xe0A\x02R\x02id\"\x14\n" +
 	"\x12DeletePostResponse\"\x93\x01\n" +
@@ -747,33 +770,33 @@ const file_blog_post_v1_post_proto_rawDesc = "" +
 	"categoryId\x12\x10\n" +
 	"\x03tag\x18\x03 \x01(\tR\x03tag\x12\x12\n" +
 	"\x04page\x18\x04 \x01(\x05R\x04page\x12\x1b\n" +
-	"\tpage_size\x18\x05 \x01(\x05R\bpageSize\"\xbc\x01\n" +
+	"\tpage_size\x18\x05 \x01(\x05R\bpageSize\"\xb4\x01\n" +
 	"\x11ListPostsResponse\x12\x14\n" +
 	"\x05total\x18\x01 \x01(\x03R\x05total\x12\x1f\n" +
 	"\vtotal_pages\x18\x02 \x01(\x05R\n" +
 	"totalPages\x12\x1b\n" +
 	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\x12!\n" +
-	"\fcurrent_page\x18\x04 \x01(\x05R\vcurrentPage\x120\n" +
-	"\x05posts\x18\x05 \x03(\v2\x1a.goc.blog.post.api.v1.PostR\x05posts*[\n" +
+	"\fcurrent_page\x18\x04 \x01(\x05R\vcurrentPage\x12(\n" +
+	"\x05posts\x18\x05 \x03(\v2\x12.blog.post.v1.PostR\x05posts*[\n" +
 	"\n" +
 	"PostStatus\x12\x1b\n" +
 	"\x17POST_STATUS_UNSPECIFIED\x10\x00\x12\x15\n" +
 	"\x11POST_STATUS_DRAFT\x10\x01\x12\x19\n" +
-	"\x15POST_STATUS_PUBLISHED\x10\x022\xee\x04\n" +
-	"\vPostService\x12r\n" +
-	"\aGetPost\x12$.goc.blog.post.api.v1.GetPostRequest\x1a%.goc.blog.post.api.v1.GetPostResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/api/v1/posts/{id}\x12y\n" +
+	"\x15POST_STATUS_PUBLISHED\x10\x022\x9e\x04\n" +
+	"\vPostService\x12b\n" +
+	"\aGetPost\x12\x1c.blog.post.v1.GetPostRequest\x1a\x1d.blog.post.v1.GetPostResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/api/v1/posts/{id}\x12i\n" +
 	"\n" +
-	"CreatePost\x12'.goc.blog.post.api.v1.CreatePostRequest\x1a(.goc.blog.post.api.v1.CreatePostResponse\"\x18\x82\xd3\xe4\x93\x02\x12:\x01*\"\r/api/v1/posts\x12~\n" +
+	"CreatePost\x12\x1f.blog.post.v1.CreatePostRequest\x1a .blog.post.v1.CreatePostResponse\"\x18\x82\xd3\xe4\x93\x02\x12:\x01*\"\r/api/v1/posts\x12n\n" +
 	"\n" +
-	"UpdatePost\x12'.goc.blog.post.api.v1.UpdatePostRequest\x1a(.goc.blog.post.api.v1.UpdatePostResponse\"\x1d\x82\xd3\xe4\x93\x02\x17:\x01*\x1a\x12/api/v1/posts/{id}\x12{\n" +
+	"UpdatePost\x12\x1f.blog.post.v1.UpdatePostRequest\x1a .blog.post.v1.UpdatePostResponse\"\x1d\x82\xd3\xe4\x93\x02\x17:\x01*\x1a\x12/api/v1/posts/{id}\x12k\n" +
 	"\n" +
-	"DeletePost\x12'.goc.blog.post.api.v1.DeletePostRequest\x1a(.goc.blog.post.api.v1.DeletePostResponse\"\x1a\x82\xd3\xe4\x93\x02\x14*\x12/api/v1/posts/{id}\x12s\n" +
-	"\tListPosts\x12&.goc.blog.post.api.v1.ListPostsRequest\x1a'.goc.blog.post.api.v1.ListPostsResponse\"\x15\x82\xd3\xe4\x93\x02\x0f\x12\r/api/v1/postsB\xbf\x03\x92A\xe2\x01\x12\x98\x01\n" +
+	"DeletePost\x12\x1f.blog.post.v1.DeletePostRequest\x1a .blog.post.v1.DeletePostResponse\"\x1a\x82\xd3\xe4\x93\x02\x14*\x12/api/v1/posts/{id}\x12c\n" +
+	"\tListPosts\x12\x1e.blog.post.v1.ListPostsRequest\x1a\x1f.blog.post.v1.ListPostsResponse\"\x15\x82\xd3\xe4\x93\x02\x0f\x12\r/api/v1/postsB\x95\x03\x92A\xe2\x01\x12\x98\x01\n" +
 	"\bBlog API\"H\n" +
 	"\fblog project\x12&https://github.com/miiy/goc-quickstart\x1a\x10none@example.com*=\n" +
 	"\vMIT License\x12.https://github.com/miiy/goc-quickstart/LICENSE2\x031.0*\x03\x01\x02\x04r@\n" +
 	"\x0eMore about goc\x12.https://github.com/grpc-ecosystem/grpc-gateway\n" +
-	"\x18com.goc.blog.post.api.v1B\tPostProtoP\x01Z=github.com/miiy/goc-quickstart/apis/gen/go/blog/post/v1;apiv1\xa2\x02\x04GBPA\xaa\x02\x14Goc.Blog.Post.Api.V1\xca\x02\x14Goc\\Blog\\Post\\Api\\V1\xe2\x02 Goc\\Blog\\Post\\Api\\V1\\GPBMetadata\xea\x02\x18Goc::Blog::Post::Api::V1b\x06proto3"
+	"\x10com.blog.post.v1B\tPostProtoP\x01Z>github.com/miiy/goc-quickstart/apis/gen/go/blog/post/v1;postv1\xa2\x02\x03BPX\xaa\x02\fBlog.Post.V1\xca\x02\fBlog\\Post\\V1\xe2\x02\x18Blog\\Post\\V1\\GPBMetadata\xea\x02\x0eBlog::Post::V1b\x06proto3"
 
 var (
 	file_blog_post_v1_post_proto_rawDescOnce sync.Once
@@ -790,43 +813,43 @@ func file_blog_post_v1_post_proto_rawDescGZIP() []byte {
 var file_blog_post_v1_post_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_blog_post_v1_post_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_blog_post_v1_post_proto_goTypes = []any{
-	(PostStatus)(0),               // 0: goc.blog.post.api.v1.PostStatus
-	(*Post)(nil),                  // 1: goc.blog.post.api.v1.Post
-	(*GetPostRequest)(nil),        // 2: goc.blog.post.api.v1.GetPostRequest
-	(*GetPostResponse)(nil),       // 3: goc.blog.post.api.v1.GetPostResponse
-	(*CreatePostRequest)(nil),     // 4: goc.blog.post.api.v1.CreatePostRequest
-	(*CreatePostResponse)(nil),    // 5: goc.blog.post.api.v1.CreatePostResponse
-	(*UpdatePostRequest)(nil),     // 6: goc.blog.post.api.v1.UpdatePostRequest
-	(*UpdatePostResponse)(nil),    // 7: goc.blog.post.api.v1.UpdatePostResponse
-	(*DeletePostRequest)(nil),     // 8: goc.blog.post.api.v1.DeletePostRequest
-	(*DeletePostResponse)(nil),    // 9: goc.blog.post.api.v1.DeletePostResponse
-	(*ListPostsRequest)(nil),      // 10: goc.blog.post.api.v1.ListPostsRequest
-	(*ListPostsResponse)(nil),     // 11: goc.blog.post.api.v1.ListPostsResponse
+	(PostStatus)(0),               // 0: blog.post.v1.PostStatus
+	(*Post)(nil),                  // 1: blog.post.v1.Post
+	(*GetPostRequest)(nil),        // 2: blog.post.v1.GetPostRequest
+	(*GetPostResponse)(nil),       // 3: blog.post.v1.GetPostResponse
+	(*CreatePostRequest)(nil),     // 4: blog.post.v1.CreatePostRequest
+	(*CreatePostResponse)(nil),    // 5: blog.post.v1.CreatePostResponse
+	(*UpdatePostRequest)(nil),     // 6: blog.post.v1.UpdatePostRequest
+	(*UpdatePostResponse)(nil),    // 7: blog.post.v1.UpdatePostResponse
+	(*DeletePostRequest)(nil),     // 8: blog.post.v1.DeletePostRequest
+	(*DeletePostResponse)(nil),    // 9: blog.post.v1.DeletePostResponse
+	(*ListPostsRequest)(nil),      // 10: blog.post.v1.ListPostsRequest
+	(*ListPostsResponse)(nil),     // 11: blog.post.v1.ListPostsResponse
 	(*timestamppb.Timestamp)(nil), // 12: google.protobuf.Timestamp
 	(*fieldmaskpb.FieldMask)(nil), // 13: google.protobuf.FieldMask
 }
 var file_blog_post_v1_post_proto_depIdxs = []int32{
-	0,  // 0: goc.blog.post.api.v1.Post.status:type_name -> goc.blog.post.api.v1.PostStatus
-	12, // 1: goc.blog.post.api.v1.Post.created_at:type_name -> google.protobuf.Timestamp
-	12, // 2: goc.blog.post.api.v1.Post.updated_at:type_name -> google.protobuf.Timestamp
-	12, // 3: goc.blog.post.api.v1.Post.deleted_at:type_name -> google.protobuf.Timestamp
-	1,  // 4: goc.blog.post.api.v1.GetPostResponse.post:type_name -> goc.blog.post.api.v1.Post
-	1,  // 5: goc.blog.post.api.v1.CreatePostRequest.post:type_name -> goc.blog.post.api.v1.Post
-	1,  // 6: goc.blog.post.api.v1.CreatePostResponse.post:type_name -> goc.blog.post.api.v1.Post
-	1,  // 7: goc.blog.post.api.v1.UpdatePostRequest.post:type_name -> goc.blog.post.api.v1.Post
-	13, // 8: goc.blog.post.api.v1.UpdatePostRequest.update_mask:type_name -> google.protobuf.FieldMask
-	1,  // 9: goc.blog.post.api.v1.UpdatePostResponse.post:type_name -> goc.blog.post.api.v1.Post
-	1,  // 10: goc.blog.post.api.v1.ListPostsResponse.posts:type_name -> goc.blog.post.api.v1.Post
-	2,  // 11: goc.blog.post.api.v1.PostService.GetPost:input_type -> goc.blog.post.api.v1.GetPostRequest
-	4,  // 12: goc.blog.post.api.v1.PostService.CreatePost:input_type -> goc.blog.post.api.v1.CreatePostRequest
-	6,  // 13: goc.blog.post.api.v1.PostService.UpdatePost:input_type -> goc.blog.post.api.v1.UpdatePostRequest
-	8,  // 14: goc.blog.post.api.v1.PostService.DeletePost:input_type -> goc.blog.post.api.v1.DeletePostRequest
-	10, // 15: goc.blog.post.api.v1.PostService.ListPosts:input_type -> goc.blog.post.api.v1.ListPostsRequest
-	3,  // 16: goc.blog.post.api.v1.PostService.GetPost:output_type -> goc.blog.post.api.v1.GetPostResponse
-	5,  // 17: goc.blog.post.api.v1.PostService.CreatePost:output_type -> goc.blog.post.api.v1.CreatePostResponse
-	7,  // 18: goc.blog.post.api.v1.PostService.UpdatePost:output_type -> goc.blog.post.api.v1.UpdatePostResponse
-	9,  // 19: goc.blog.post.api.v1.PostService.DeletePost:output_type -> goc.blog.post.api.v1.DeletePostResponse
-	11, // 20: goc.blog.post.api.v1.PostService.ListPosts:output_type -> goc.blog.post.api.v1.ListPostsResponse
+	0,  // 0: blog.post.v1.Post.status:type_name -> blog.post.v1.PostStatus
+	12, // 1: blog.post.v1.Post.created_at:type_name -> google.protobuf.Timestamp
+	12, // 2: blog.post.v1.Post.updated_at:type_name -> google.protobuf.Timestamp
+	12, // 3: blog.post.v1.Post.deleted_at:type_name -> google.protobuf.Timestamp
+	1,  // 4: blog.post.v1.GetPostResponse.post:type_name -> blog.post.v1.Post
+	1,  // 5: blog.post.v1.CreatePostRequest.post:type_name -> blog.post.v1.Post
+	1,  // 6: blog.post.v1.CreatePostResponse.post:type_name -> blog.post.v1.Post
+	1,  // 7: blog.post.v1.UpdatePostRequest.post:type_name -> blog.post.v1.Post
+	13, // 8: blog.post.v1.UpdatePostRequest.update_mask:type_name -> google.protobuf.FieldMask
+	1,  // 9: blog.post.v1.UpdatePostResponse.post:type_name -> blog.post.v1.Post
+	1,  // 10: blog.post.v1.ListPostsResponse.posts:type_name -> blog.post.v1.Post
+	2,  // 11: blog.post.v1.PostService.GetPost:input_type -> blog.post.v1.GetPostRequest
+	4,  // 12: blog.post.v1.PostService.CreatePost:input_type -> blog.post.v1.CreatePostRequest
+	6,  // 13: blog.post.v1.PostService.UpdatePost:input_type -> blog.post.v1.UpdatePostRequest
+	8,  // 14: blog.post.v1.PostService.DeletePost:input_type -> blog.post.v1.DeletePostRequest
+	10, // 15: blog.post.v1.PostService.ListPosts:input_type -> blog.post.v1.ListPostsRequest
+	3,  // 16: blog.post.v1.PostService.GetPost:output_type -> blog.post.v1.GetPostResponse
+	5,  // 17: blog.post.v1.PostService.CreatePost:output_type -> blog.post.v1.CreatePostResponse
+	7,  // 18: blog.post.v1.PostService.UpdatePost:output_type -> blog.post.v1.UpdatePostResponse
+	9,  // 19: blog.post.v1.PostService.DeletePost:output_type -> blog.post.v1.DeletePostResponse
+	11, // 20: blog.post.v1.PostService.ListPosts:output_type -> blog.post.v1.ListPostsResponse
 	16, // [16:21] is the sub-list for method output_type
 	11, // [11:16] is the sub-list for method input_type
 	11, // [11:11] is the sub-list for extension type_name

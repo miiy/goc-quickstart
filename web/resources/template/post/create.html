@@ -14,11 +14,11 @@
                         <input type="hidden" name="_csrf" value="{{ .CSRFToken }}">
                         <div class="mb-3">
                             <label for="title" class="form-label">Title</label>
-                            <input type="text" class="form-control" id="title" name="title" required>
+                            <input type="text" class="form-control" id="title" name="title" value="{{ if .Post }}{{ .Post.Title }}{{ end }}" required>
                         </div>
                         <div class="mb-3">
                             <label for="content" class="form-label">Content</label>
-                            <textarea class="form-control" id="content" name="content" rows="10" required></textarea>
+                            <textarea class="form-control" id="content" name="content" rows="10" required>{{ if .Post }}{{ .Post.Content }}{{ end }}</textarea>
                         </div>
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">Create</button>

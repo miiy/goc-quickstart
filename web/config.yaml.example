@@ -3,6 +3,7 @@ app:
   env: local
   debug: true
   locale: zh-CN
+  timezone: Asia/Shanghai
   url: localhost
   footerCopyright: <p class="text-center">&copy; 2024</p>
 redis:

@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/miiy/goc-quickstart/web/internal/template"
-	gocauth "github.com/miiy/goc/auth"
 	"github.com/miiy/goc/gin"
 	gocauthmid "github.com/miiy/goc/gin/middleware/auth"
 	"github.com/miiy/goc/gin/sessions"
@@ -15,11 +14,6 @@ type AuthFormView struct {
 	Email    string
 	Flashes  []sessions.Flash
 	Username string
-}
-
-type ProfileView struct {
-	template.ViewData
-	User *gocauth.AuthenticatedUser
 }
 
 func RegisterForm(c *gin.Context) {
@@ -121,13 +115,15 @@ func Logout(c *gin.Context) {
 	c.Redirect(http.StatusFound, "/login")
 }
 
-func Profile(c *gin.Context) {
-	session := sessions.Default(c)
-	user, _ := gocauthmid.SessionUser(session.Get(gocauthmid.SessionKeyAuthUser))
-	c.HTML(http.StatusOK, "auth/profile", ProfileView{
-		ViewData: template.NewFormViewData(c),
-		User:     user,
-	})
+func ClearSession(c *gin.Context) {
+	if authModule == nil {
+		return
+	}
+	clearSession(c)
+}
+
+func ProfileRedirect(c *gin.Context) {
+	c.Redirect(http.StatusFound, "/user/profile")
 }
 
 func saveLoginSession(c *gin.Context, user map[string]any, accessToken string, expiresAt string) error {

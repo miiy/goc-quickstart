@@ -32,6 +32,7 @@
   "paths": {
     "/api/v1/posts": {
       "get": {
+        "summary": "ListPosts returns posts matched by filters and pagination.",
         "operationId": "PostService_ListPosts",
         "responses": {
           "200": {
@@ -88,6 +89,7 @@
         ]
       },
       "post": {
+        "summary": "CreatePost creates a new post.",
         "operationId": "PostService_CreatePost",
         "responses": {
           "200": {
@@ -106,6 +108,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "CreatePostRequest carries the post to create.",
             "in": "body",
             "required": true,
             "schema": {
@@ -120,6 +123,7 @@
     },
     "/api/v1/posts/{id}": {
       "get": {
+        "summary": "GetPost returns a single post by id.",
         "operationId": "PostService_GetPost",
         "responses": {
           "200": {
@@ -149,6 +153,7 @@
         ]
       },
       "delete": {
+        "summary": "DeletePost deletes a post by id.",
         "operationId": "PostService_DeletePost",
         "responses": {
           "200": {
@@ -178,6 +183,7 @@
         ]
       },
       "put": {
+        "summary": "UpdatePost updates mutable fields for a post.",
         "operationId": "PostService_UpdatePost",
         "responses": {
           "200": {
@@ -227,6 +233,7 @@
           "type": "string"
         }
       },
+      "description": "UpdatePostRequest carries post fields to update.",
       "required": [
         "post"
       ]
@@ -266,6 +273,7 @@
           "$ref": "#/definitions/v1Post"
         }
       },
+      "description": "CreatePostRequest carries the post to create.",
       "required": [
         "post"
       ]
@@ -276,10 +284,12 @@
         "post": {
           "$ref": "#/definitions/v1Post"
         }
-      }
+      },
+      "description": "CreatePostResponse returns the created post."
     },
     "v1DeletePostResponse": {
-      "type": "object"
+      "type": "object",
+      "description": "DeletePostResponse is returned after a post is deleted."
     },
     "v1GetPostResponse": {
       "type": "object",
@@ -287,7 +297,8 @@
         "post": {
           "$ref": "#/definitions/v1Post"
         }
-      }
+      },
+      "description": "GetPostResponse returns a single post."
     },
     "v1ListPostsResponse": {
       "type": "object",
@@ -315,7 +326,8 @@
             "$ref": "#/definitions/v1Post"
           }
         }
-      }
+      },
+      "description": "ListPostsResponse returns a paginated list of posts."
     },
     "v1Post": {
       "type": "object",
@@ -358,8 +370,13 @@
         "deletedAt": {
           "type": "string",
           "format": "date-time"
+        },
+        "authorName": {
+          "type": "string",
+          "description": "Populated by the API gateway from user-service for web responses."
         }
-      }
+      },
+      "description": "Post describes an article published by a user."
     },
     "v1PostStatus": {
       "type": "string",
@@ -368,7 +385,8 @@
         "POST_STATUS_DRAFT",
         "POST_STATUS_PUBLISHED"
       ],
-      "default": "POST_STATUS_UNSPECIFIED"
+      "default": "POST_STATUS_UNSPECIFIED",
+      "description": "PostStatus describes the publication state of a post."
     },
     "v1UpdatePostResponse": {
       "type": "object",
@@ -376,7 +394,8 @@
         "post": {
           "$ref": "#/definitions/v1Post"
         }
-      }
+      },
+      "description": "UpdatePostResponse returns the updated post."
     }
   },
   "externalDocs": {

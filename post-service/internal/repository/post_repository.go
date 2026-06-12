@@ -33,7 +33,11 @@ func NewPostRepository(db *gorm.DB) PostRepository {
 
 func (r *postRepository) First(ctx context.Context, id int64, columns ...string) (*entity.Post, error) {
 	var post entity.Post
-	err := r.db.WithContext(ctx).Select(columns).First(&post, id).Error
+	db := r.db.WithContext(ctx)
+	if len(columns) > 0 {
+		db = db.Select(columns)
+	}
+	err := db.First(&post, id).Error
 	if err != nil {
 		return nil, err
 	}

@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/miiy/goc-quickstart/web/client"
+	webauth "github.com/miiy/goc-quickstart/web/internal/service/auth"
 	"github.com/miiy/goc-quickstart/web/internal/template"
 	"github.com/miiy/goc/gin"
 	gocauthmid "github.com/miiy/goc/gin/middleware/auth"
@@ -119,7 +120,10 @@ func storeHandler(c *gin.Context) {
 
 	_, err := postModule.client.CreatePost(c.Request.Context(), title, content, authorID)
 	if err != nil {
-		template.InternalError(c)
+		if handleAuthError(c, err) {
+			return
+		}
+		renderCreateFormError(c, title, content, err)
 		return
 	}
 
@@ -162,7 +166,12 @@ func updateHandler(c *gin.Context) {
 
 	_, err = postModule.client.UpdatePost(c.Request.Context(), id, title, content)
 	if err != nil {
-		template.InternalError(c)
+		if handleAuthError(c, err) {
+			return
+		}
+		p.Title = title
+		p.Content = content
+		renderEditFormError(c, p, err)
 		return
 	}
 
@@ -195,6 +204,9 @@ func destroyHandler(c *gin.Context) {
 
 	err = postModule.client.DeletePost(c.Request.Context(), id)
 	if err != nil {
+		if handleAuthError(c, err) {
+			return
+		}
 		template.InternalError(c)
 		return
 	}
@@ -208,4 +220,43 @@ func canManagePost(c *gin.Context, post *client.PostResponse) bool {
 	}
 	userID, ok := gocauthmid.GetAuthUserID(c)
 	return ok && userID == post.AuthorId
+}
+
+func handleAuthError(c *gin.Context, err error) bool {
+	if !client.IsStatus(err, http.StatusUnauthorized) {
+		return false
+	}
+	webauth.ClearSession(c)
+	c.Redirect(http.StatusFound, "/login")
+	return true
+}
+
+func renderCreateFormError(c *gin.Context, title, content string, err error) {
+	c.HTML(postFormErrorStatus(err), "post/create", PostFormData{
+		ViewData: template.NewFormViewData(c),
+		Post: &client.PostResponse{
+			Title:   title,
+			Content: content,
+		},
+		Error: err.Error(),
+	})
+}
+
+func renderEditFormError(c *gin.Context, post *client.PostResponse, err error) {
+	c.HTML(postFormErrorStatus(err), "post/edit", PostFormData{
+		ViewData: template.NewFormViewData(c),
+		Post:     post,
+		Error:    err.Error(),
+	})
+}
+
+func postFormErrorStatus(err error) int {
+	switch {
+	case client.IsStatus(err, http.StatusBadRequest):
+		return http.StatusBadRequest
+	case client.IsStatus(err, http.StatusForbidden):
+		return http.StatusForbidden
+	default:
+		return http.StatusBadGateway
+	}
 }

@@ -20,8 +20,9 @@ import (
 )
 
 var protectedMethods = map[string]struct{}{
-	authpb.AuthService_RefreshToken_FullMethodName: {},
-	authpb.AuthService_Logout_FullMethodName:       {},
+	authpb.AuthService_RefreshToken_FullMethodName:   {},
+	authpb.AuthService_ChangePassword_FullMethodName: {},
+	authpb.AuthService_Logout_FullMethodName:         {},
 }
 
 func protectedMethodMatcher(ctx context.Context, callMeta interceptors.CallMeta) bool {

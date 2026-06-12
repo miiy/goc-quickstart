@@ -16,7 +16,7 @@ import (
 )
 
 type authenticatedUserClient interface {
-	GetAuthenticatedUser(ctx context.Context, in *authv1.GetAuthenticatedUserRequest, opts ...grpc.CallOption) (*authv1.User, error)
+	GetAuthenticatedUser(ctx context.Context, in *authv1.GetAuthenticatedUserRequest, opts ...grpc.CallOption) (*authv1.GetAuthenticatedUserResponse, error)
 }
 
 // JWTAuthenticationMiddleware assembles the JWT authentication middleware with api-gateway-specific behavior.
@@ -49,7 +49,7 @@ func authUserResolver(authClient authenticatedUserClient) ginauth.UserResolver {
 			return nil, errors.New("auth client not configured")
 		}
 
-		user, err := authClient.GetAuthenticatedUser(ctx, &authv1.GetAuthenticatedUserRequest{
+		resp, err := authClient.GetAuthenticatedUser(ctx, &authv1.GetAuthenticatedUserRequest{
 			Username: claims.Username,
 		})
 		if err != nil {
@@ -58,9 +58,10 @@ func authUserResolver(authClient authenticatedUserClient) ginauth.UserResolver {
 			}
 			return nil, err
 		}
-		if user == nil {
+		if resp == nil || resp.GetUser() == nil {
 			return nil, errors.New("authenticated user not found")
 		}
+		user := resp.GetUser()
 
 		return &gocauth.AuthenticatedUser{
 			ID:       user.Id,

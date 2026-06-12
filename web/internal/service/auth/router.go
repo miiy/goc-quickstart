@@ -14,7 +14,7 @@ func Router(r *gin.Engine) {
 	{
 		g.GET("/logout", Logout)
 		g.POST("/logout", Logout)
-		g.GET("/profile", Profile)
+		g.GET("/profile", ProfileRedirect)
 	}
 }
 
@@ -22,6 +22,5 @@ func Templates() map[string][]string {
 	return map[string][]string{
 		"auth/register": {"layout/layout.html", "layout/header.html", "layout/footer.html", "auth/register.html"},
 		"auth/login":    {"layout/layout.html", "layout/header.html", "layout/footer.html", "auth/login.html"},
-		"auth/profile":  {"layout/layout.html", "layout/header.html", "layout/footer.html", "auth/profile.html"},
 	}
 }

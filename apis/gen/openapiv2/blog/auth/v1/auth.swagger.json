@@ -1,13 +1,27 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "blog/auth/v1/auth.proto",
-    "version": "version not set"
+    "title": "Auth API",
+    "version": "1.0",
+    "contact": {
+      "name": "blog project",
+      "url": "https://github.com/miiy/goc-quickstart",
+      "email": "none@example.com"
+    },
+    "license": {
+      "name": "MIT License",
+      "url": "https://github.com/miiy/goc-quickstart/LICENSE"
+    }
   },
   "tags": [
     {
       "name": "AuthService"
     }
+  ],
+  "schemes": [
+    "http",
+    "https",
+    "wss"
   ],
   "consumes": [
     "application/json"
@@ -18,7 +32,7 @@
   "paths": {
     "/api/v1/auth/login": {
       "post": {
-        "summary": "login",
+        "summary": "Login authenticates a user with username or email and password.",
         "operationId": "AuthService_Login",
         "responses": {
           "200": {
@@ -37,6 +51,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "LoginRequest carries username or email credentials for password login.",
             "in": "body",
             "required": true,
             "schema": {
@@ -51,6 +66,7 @@
     },
     "/api/v1/auth/logout": {
       "post": {
+        "summary": "Logout revokes the current access token.",
         "operationId": "AuthService_Logout",
         "responses": {
           "200": {
@@ -69,6 +85,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "LogoutRequest carries the access token to revoke.",
             "in": "body",
             "required": true,
             "schema": {
@@ -83,13 +100,13 @@
     },
     "/api/v1/auth/mplogin": {
       "post": {
-        "summary": "wechat login",
+        "summary": "MpLogin authenticates a user with a WeChat Mini Program code.",
         "operationId": "AuthService_MpLogin",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1LoginResponse"
+              "$ref": "#/definitions/v1MpLoginResponse"
             }
           },
           "default": {
@@ -102,6 +119,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "MpLoginRequest carries the WeChat Mini Program login code.",
             "in": "body",
             "required": true,
             "schema": {
@@ -114,8 +132,43 @@
         ]
       }
     },
+    "/api/v1/auth/password": {
+      "post": {
+        "summary": "ChangePassword updates the password for the authenticated user.",
+        "operationId": "AuthService_ChangePassword",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ChangePasswordResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "description": "ChangePasswordRequest carries the current and new password values.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1ChangePasswordRequest"
+            }
+          }
+        ],
+        "tags": [
+          "AuthService"
+        ]
+      }
+    },
     "/api/v1/auth/phone_auth": {
       "post": {
+        "summary": "PhoneAuth authenticates a user with phone number and SMS code.",
         "operationId": "AuthService_PhoneAuth",
         "responses": {
           "200": {
@@ -134,6 +187,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "PhoneAuthRequest carries phone credentials for SMS based authentication.",
             "in": "body",
             "required": true,
             "schema": {
@@ -148,7 +202,7 @@
     },
     "/api/v1/auth/register": {
       "post": {
-        "summary": "register",
+        "summary": "Register creates a new user account.",
         "operationId": "AuthService_Register",
         "responses": {
           "200": {
@@ -167,6 +221,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "RegisterRequest carries credentials for email and username registration.",
             "in": "body",
             "required": true,
             "schema": {
@@ -181,12 +236,13 @@
     },
     "/api/v1/auth/register/email_check": {
       "post": {
+        "summary": "EmailCheck reports whether an email address is already registered.",
         "operationId": "AuthService_EmailCheck",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1FieldCheckResponse"
+              "$ref": "#/definitions/v1EmailCheckResponse"
             }
           },
           "default": {
@@ -199,10 +255,11 @@
         "parameters": [
           {
             "name": "body",
+            "description": "EmailCheckRequest checks whether an email address is already registered.",
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v1FieldCheckRequest"
+              "$ref": "#/definitions/v1EmailCheckRequest"
             }
           }
         ],
@@ -213,12 +270,13 @@
     },
     "/api/v1/auth/register/phone_check": {
       "post": {
+        "summary": "PhoneCheck reports whether a phone number is already registered.",
         "operationId": "AuthService_PhoneCheck",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1FieldCheckResponse"
+              "$ref": "#/definitions/v1PhoneCheckResponse"
             }
           },
           "default": {
@@ -231,10 +289,11 @@
         "parameters": [
           {
             "name": "body",
+            "description": "PhoneCheckRequest checks whether a phone number is already registered.",
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v1FieldCheckRequest"
+              "$ref": "#/definitions/v1PhoneCheckRequest"
             }
           }
         ],
@@ -245,13 +304,13 @@
     },
     "/api/v1/auth/register/username_check": {
       "post": {
-        "summary": "register check",
+        "summary": "UsernameCheck reports whether a username is already registered.",
         "operationId": "AuthService_UsernameCheck",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1FieldCheckResponse"
+              "$ref": "#/definitions/v1UsernameCheckResponse"
             }
           },
           "default": {
@@ -264,10 +323,11 @@
         "parameters": [
           {
             "name": "body",
+            "description": "UsernameCheckRequest checks whether a username is already registered.",
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v1FieldCheckRequest"
+              "$ref": "#/definitions/v1UsernameCheckRequest"
             }
           }
         ],
@@ -278,7 +338,7 @@
     },
     "/api/v1/auth/send_sms_code": {
       "post": {
-        "summary": "phone: send sms code → phone auth",
+        "summary": "SendSmsCode sends a verification code before phone authentication.",
         "operationId": "AuthService_SendSmsCode",
         "responses": {
           "200": {
@@ -297,6 +357,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "SendSmsCodeRequest requests an SMS verification code for a phone number.",
             "in": "body",
             "required": true,
             "schema": {
@@ -311,7 +372,7 @@
     },
     "/api/v1/auth/token/refresh": {
       "post": {
-        "summary": "token",
+        "summary": "RefreshToken refreshes an access token.",
         "operationId": "AuthService_RefreshToken",
         "responses": {
           "200": {
@@ -330,6 +391,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "RefreshTokenRequest carries an access token to be refreshed.",
             "in": "body",
             "required": true,
             "schema": {
@@ -372,25 +434,50 @@
         }
       }
     },
-    "v1FieldCheckRequest": {
+    "v1ChangePasswordRequest": {
+      "type": "object",
+      "properties": {
+        "oldPassword": {
+          "type": "string"
+        },
+        "newPassword": {
+          "type": "string"
+        },
+        "newPasswordConfirmation": {
+          "type": "string"
+        }
+      },
+      "description": "ChangePasswordRequest carries the current and new password values.",
+      "required": [
+        "oldPassword",
+        "newPassword",
+        "newPasswordConfirmation"
+      ]
+    },
+    "v1ChangePasswordResponse": {
+      "type": "object",
+      "description": "ChangePasswordResponse is returned after the password is changed."
+    },
+    "v1EmailCheckRequest": {
       "type": "object",
       "properties": {
         "value": {
           "type": "string"
         }
       },
-      "title": "register check",
+      "description": "EmailCheckRequest checks whether an email address is already registered.",
       "required": [
         "value"
       ]
     },
-    "v1FieldCheckResponse": {
+    "v1EmailCheckResponse": {
       "type": "object",
       "properties": {
         "exist": {
           "type": "boolean"
         }
-      }
+      },
+      "description": "EmailCheckResponse reports whether the email address already exists."
     },
     "v1LoginRequest": {
       "type": "object",
@@ -402,7 +489,7 @@
           "type": "string"
         }
       },
-      "title": "login (username/email + password)",
+      "description": "LoginRequest carries username or email credentials for password login.",
       "required": [
         "username",
         "password"
@@ -424,7 +511,8 @@
         "user": {
           "$ref": "#/definitions/v1User"
         }
-      }
+      },
+      "description": "LoginResponse returns an access token and the authenticated user identity."
     },
     "v1LogoutRequest": {
       "type": "object",
@@ -433,10 +521,11 @@
           "type": "string"
         }
       },
-      "title": "logout"
+      "description": "LogoutRequest carries the access token to revoke."
     },
     "v1LogoutResponse": {
-      "type": "object"
+      "type": "object",
+      "description": "LogoutResponse is returned after logout succeeds."
     },
     "v1MpLoginRequest": {
       "type": "object",
@@ -445,10 +534,29 @@
           "type": "string"
         }
       },
-      "title": "wechat mini program login",
+      "description": "MpLoginRequest carries the WeChat Mini Program login code.",
       "required": [
         "code"
       ]
+    },
+    "v1MpLoginResponse": {
+      "type": "object",
+      "properties": {
+        "tokenType": {
+          "type": "string"
+        },
+        "accessToken": {
+          "type": "string"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "user": {
+          "$ref": "#/definitions/v1User"
+        }
+      },
+      "description": "MpLoginResponse returns an access token for WeChat Mini Program login."
     },
     "v1PhoneAuthRequest": {
       "type": "object",
@@ -460,7 +568,7 @@
           "type": "string"
         }
       },
-      "title": "phone auth (auto register if not exists)",
+      "description": "PhoneAuthRequest carries phone credentials for SMS based authentication.",
       "required": [
         "phone",
         "code"
@@ -482,7 +590,29 @@
         "user": {
           "$ref": "#/definitions/v1User"
         }
-      }
+      },
+      "description": "PhoneAuthResponse returns an access token for phone authentication."
+    },
+    "v1PhoneCheckRequest": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "string"
+        }
+      },
+      "description": "PhoneCheckRequest checks whether a phone number is already registered.",
+      "required": [
+        "value"
+      ]
+    },
+    "v1PhoneCheckResponse": {
+      "type": "object",
+      "properties": {
+        "exist": {
+          "type": "boolean"
+        }
+      },
+      "description": "PhoneCheckResponse reports whether the phone number already exists."
     },
     "v1RefreshTokenRequest": {
       "type": "object",
@@ -491,7 +621,7 @@
           "type": "string"
         }
       },
-      "title": "refresh token"
+      "description": "RefreshTokenRequest carries an access token to be refreshed."
     },
     "v1RefreshTokenResponse": {
       "type": "object",
@@ -509,7 +639,8 @@
         "user": {
           "$ref": "#/definitions/v1User"
         }
-      }
+      },
+      "description": "RefreshTokenResponse returns the refreshed access token."
     },
     "v1RegisterRequest": {
       "type": "object",
@@ -527,7 +658,7 @@
           "type": "string"
         }
       },
-      "title": "register (email + username + password)",
+      "description": "RegisterRequest carries credentials for email and username registration.",
       "required": [
         "username",
         "password",
@@ -540,7 +671,8 @@
         "user": {
           "$ref": "#/definitions/v1User"
         }
-      }
+      },
+      "description": "RegisterResponse returns the registered user identity."
     },
     "v1SendSmsCodeRequest": {
       "type": "object",
@@ -549,13 +681,14 @@
           "type": "string"
         }
       },
-      "title": "send sms code",
+      "description": "SendSmsCodeRequest requests an SMS verification code for a phone number.",
       "required": [
         "phone"
       ]
     },
     "v1SendSmsCodeResponse": {
-      "type": "object"
+      "type": "object",
+      "description": "SendSmsCodeResponse is returned after an SMS code is requested."
     },
     "v1User": {
       "type": "object",
@@ -568,7 +701,32 @@
           "format": "int64"
         }
       },
-      "title": "authenticated user"
+      "description": "User contains the identity returned by authentication APIs."
+    },
+    "v1UsernameCheckRequest": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "string"
+        }
+      },
+      "description": "UsernameCheckRequest checks whether a username is already registered.",
+      "required": [
+        "value"
+      ]
+    },
+    "v1UsernameCheckResponse": {
+      "type": "object",
+      "properties": {
+        "exist": {
+          "type": "boolean"
+        }
+      },
+      "description": "UsernameCheckResponse reports whether the username already exists."
     }
+  },
+  "externalDocs": {
+    "description": "More about goc",
+    "url": "https://github.com/grpc-ecosystem/grpc-gateway"
   }
 }
