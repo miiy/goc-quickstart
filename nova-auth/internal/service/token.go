@@ -2,8 +2,9 @@ package service
 
 import (
 	"context"
-	"crypto/md5"
 	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -20,14 +21,17 @@ import (
 )
 
 const (
-	authTokenKey = "user_token:%s" // user_token:{md5(access_token)}
+	authTokenKey = "user_token:%s" // user_token:{sha256(access_token)}
 	userCacheKey = "auth_user:%d"  // active user cache, keyed by user id
 	userCacheTTL = 10 * time.Second
 
-	refreshTokenKey      = "refresh_token:%s"  // refresh_token:{md5(opaque)}
-	refreshFamilyKey     = "refresh_family:%s" // refresh_family:{family}; presence means family revoked
+	refreshTokenKey      = "refresh_token:%s"  // refresh_token:{sha256(opaque)}
+	refreshFamilyKey     = "refresh_family:%s" // refresh_family:{family}; expires after refresh TTL
 	refreshStatusActive  = "active"
 	refreshStatusRevoked = "revoked"
+
+	refreshFamilyBytes = 16
+	refreshTokenBytes  = 32
 )
 
 // tokenPair holds a freshly issued access + refresh token pair.
@@ -38,7 +42,7 @@ type tokenPair struct {
 	RefreshExpiresAt time.Time
 }
 
-// refreshRecord is the value stored under refresh_token:{md5(opaque)}.
+// refreshRecord is the value stored under refresh_token:{sha256(opaque)}.
 type refreshRecord struct {
 	UserID   int64     `json:"user_id"`
 	Family   string    `json:"family"`
@@ -53,25 +57,31 @@ type cachedUser struct {
 	Username string `json:"username"`
 }
 
+func tokenDigest(token string) string {
+	sum := sha256.Sum256([]byte(token))
+	return hex.EncodeToString(sum[:])
+}
+
 func formatTokenKey(token string) string {
-	return fmt.Sprintf(authTokenKey, fmt.Sprintf("%x", md5.Sum([]byte(token))))
+	return fmt.Sprintf(authTokenKey, tokenDigest(token))
 }
 
 func formatRefreshTokenKey(token string) string {
-	return fmt.Sprintf(refreshTokenKey, fmt.Sprintf("%x", md5.Sum([]byte(token))))
+	return fmt.Sprintf(refreshTokenKey, tokenDigest(token))
 }
 
 func formatRefreshFamilyKey(family string) string {
 	return fmt.Sprintf(refreshFamilyKey, family)
 }
 
-// newOpaqueToken returns n random bytes hex-encoded (n=32 -> 64 hex chars).
+// newOpaqueToken returns n random bytes encoded as unpadded base64url
+// (n=32 -> 43 chars).
 func newOpaqueToken(n int) (string, error) {
 	buf := make([]byte, n)
 	if _, err := rand.Read(buf); err != nil {
 		return "", err
 	}
-	return hex.EncodeToString(buf), nil
+	return base64.RawURLEncoding.EncodeToString(buf), nil
 }
 
 // createClaims builds access-token claims for the given user.
@@ -79,7 +89,7 @@ func (s *AuthService) createClaims(userID int64, username string) (*auth.UserCla
 	return s.jwtAuth.CreateClaims(userID, username), nil
 }
 
-// storeToken persists an access token in Redis (keyed by md5(token)) with TTL = its
+// storeToken persists an access token in Redis (keyed by sha256(token)) with TTL = its
 // remaining lifetime, enabling immediate revocation via Delete (Logout).
 func (s *AuthService) storeToken(ctx context.Context, token string, expiresTime time.Time) error {
 	ttl := time.Until(expiresTime)
@@ -91,6 +101,16 @@ func (s *AuthService) storeToken(ctx context.Context, token string, expiresTime 
 		return err
 	}
 	return nil
+}
+
+func (s *AuthService) revokeRefreshFamily(ctx context.Context, family string) {
+	ttl := s.refreshTTL
+	if ttl < 0 {
+		ttl = 0
+	}
+	if err := s.tokenRepo.Set(ctx, formatRefreshFamilyKey(family), refreshStatusRevoked, ttl); err != nil {
+		s.logger.Error("tokenRepo.Set refresh family", zap.Error(err), zap.String("family", family))
+	}
 }
 
 // issueTokenPair issues a new access token (JWT) and a new refresh token (opaque,
@@ -110,11 +130,11 @@ func (s *AuthService) issueTokenPair(ctx context.Context, userID int64, username
 		return nil, err
 	}
 
-	family, err := newOpaqueToken(16)
+	family, err := newOpaqueToken(refreshFamilyBytes)
 	if err != nil {
 		return nil, err
 	}
-	opaque, err := newOpaqueToken(32)
+	opaque, err := newOpaqueToken(refreshTokenBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -219,7 +239,7 @@ func (s *AuthService) rotateRefreshToken(ctx context.Context, refreshToken strin
 
 	// reuse detection: an already-rotated (revoked) token is presented again
 	if rec.Status == refreshStatusRevoked {
-		_ = s.tokenRepo.Set(ctx, formatRefreshFamilyKey(rec.Family), refreshStatusRevoked, 0)
+		s.revokeRefreshFamily(ctx, rec.Family)
 		s.logger.Warn("refresh token reuse detected, family revoked",
 			zap.Int64("user_id", rec.UserID), zap.String("family", rec.Family))
 		return nil, nil, status.Error(codes.Unauthenticated, "refresh token reuse detected")
@@ -250,7 +270,7 @@ func (s *AuthService) rotateRefreshToken(ctx context.Context, refreshToken strin
 		return nil, nil, status.Error(codes.Internal, err.Error())
 	}
 	if !swapped {
-		_ = s.tokenRepo.Set(ctx, formatRefreshFamilyKey(rec.Family), refreshStatusRevoked, 0)
+		s.revokeRefreshFamily(ctx, rec.Family)
 		s.logger.Warn("refresh token reuse detected (concurrent rotation), family revoked",
 			zap.Int64("user_id", rec.UserID), zap.String("family", rec.Family))
 		return nil, nil, status.Error(codes.Unauthenticated, "refresh token reuse detected")
@@ -269,7 +289,7 @@ func (s *AuthService) rotateRefreshToken(ctx context.Context, refreshToken strin
 		return nil, nil, status.Error(codes.Internal, err.Error())
 	}
 
-	newOpaque, err := newOpaqueToken(32)
+	newOpaque, err := newOpaqueToken(refreshTokenBytes)
 	if err != nil {
 		return nil, nil, status.Error(codes.Internal, err.Error())
 	}

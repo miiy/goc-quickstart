@@ -2,7 +2,9 @@ package service
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -243,6 +245,26 @@ func (m *MockTokenRepository) CompareAndSet(ctx context.Context, key, oldVal, ne
 		return true, nil
 	}
 	return false, nil
+}
+
+func TestNewOpaqueTokenUsesRawBase64URL(t *testing.T) {
+	token, err := newOpaqueToken(refreshTokenBytes)
+	if err != nil {
+		t.Fatalf("newOpaqueToken: %v", err)
+	}
+	if len(token) != 43 {
+		t.Fatalf("expected 43 chars for 32 random bytes, got %d: %q", len(token), token)
+	}
+	if strings.ContainsAny(token, "+/=") {
+		t.Fatalf("expected raw base64url token without '+', '/', or '=', got %q", token)
+	}
+	decoded, err := base64.RawURLEncoding.DecodeString(token)
+	if err != nil {
+		t.Fatalf("decode raw base64url token: %v", err)
+	}
+	if len(decoded) != 32 {
+		t.Fatalf("expected decoded token to be 32 bytes, got %d", len(decoded))
+	}
 }
 
 func TestRegisterValidate(t *testing.T) {
@@ -769,6 +791,14 @@ func TestAuthService_RefreshToken(t *testing.T) {
 	// reuse the rotated refresh token -> reuse detection -> family revoked
 	if _, err := service.RefreshToken(context.Background(), &pb.RefreshTokenRequest{RefreshToken: pair.RefreshToken}); err == nil {
 		t.Fatal("expected reuse to fail")
+	}
+	var revokedRec refreshRecord
+	if err := json.Unmarshal([]byte(oldRec), &revokedRec); err != nil {
+		t.Fatalf("unmarshal revoked refresh record: %v", err)
+	}
+	familyKey := formatRefreshFamilyKey(revokedRec.Family)
+	if got := tokenRepo.ttl[familyKey]; got != time.Hour {
+		t.Fatalf("expected family revoke ttl to be refresh ttl, got %v want %v", got, time.Hour)
 	}
 	// family now revoked: the rotated (active) token must also be rejected
 	if _, err := service.RefreshToken(context.Background(), &pb.RefreshTokenRequest{RefreshToken: resp.RefreshToken}); err == nil {
