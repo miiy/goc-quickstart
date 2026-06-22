@@ -1,0 +1,355 @@
+syntax = "proto3";
+
+package nova.auth.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option go_package = "github.com/miiy/goc-quickstart/nova-auth/gen/go/nova/auth/v1;novaauthv1";
+option java_multiple_files = true;
+option java_outer_classname = "AuthProto";
+option java_package = "com.github.miiy.nova.auth.v1";
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "Auth API"
+    version: "1.0"
+    contact: {
+      name: "nova project"
+      url: "https://github.com/miiy/goc-quickstart"
+      email: "none@example.com"
+    }
+    license: {
+      name: "MIT License"
+      url: "https://github.com/miiy/goc-quickstart/LICENSE"
+    }
+  }
+  external_docs: {
+    url: "https://github.com/grpc-ecosystem/grpc-gateway"
+    description: "More about goc"
+  }
+  schemes: HTTP
+  schemes: HTTPS
+  schemes: WSS
+};
+
+// User contains the identity returned by authentication APIs.
+message User {
+  string username = 1;
+  int64 id = 2;
+}
+
+// VerifyTokenRequest carries the access token to be verified.
+message VerifyTokenRequest {
+  string access_token = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string.min_len = 1
+  ];
+}
+
+// VerifyTokenResponse returns the authenticated user identity for a verified token.
+message VerifyTokenResponse {
+  User user = 1;
+}
+
+// RegisterRequest carries credentials for email and username registration.
+message RegisterRequest {
+  string email = 1 [(buf.validate.field).string = {
+    email: true
+    min_len: 1
+    max_len: 254
+  }];
+  string username = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string.min_len = 1
+  ];
+  string password = 3 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string = {
+      min_len: 8
+      max_len: 64
+    }
+  ];
+  string password_confirmation = 4 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string = {
+      min_len: 8
+      max_len: 64
+    }
+  ];
+}
+
+// RegisterResponse returns the registered user identity.
+message RegisterResponse {
+  User user = 1;
+}
+
+// UsernameCheckRequest checks whether a username is already registered.
+message UsernameCheckRequest {
+  string value = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string.min_len = 1
+  ];
+}
+
+// UsernameCheckResponse reports whether the username already exists.
+message UsernameCheckResponse {
+  bool exist = 1;
+}
+
+// EmailCheckRequest checks whether an email address is already registered.
+message EmailCheckRequest {
+  string value = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string = {
+      email: true
+      min_len: 1
+      max_len: 254
+    }
+  ];
+}
+
+// EmailCheckResponse reports whether the email address already exists.
+message EmailCheckResponse {
+  bool exist = 1;
+}
+
+// PhoneCheckRequest checks whether a phone number is already registered.
+message PhoneCheckRequest {
+  string value = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string.min_len = 1
+  ];
+}
+
+// PhoneCheckResponse reports whether the phone number already exists.
+message PhoneCheckResponse {
+  bool exist = 1;
+}
+
+// LoginRequest carries username or email credentials for password login.
+message LoginRequest {
+  string username = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string.min_len = 1
+  ];
+  string password = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string.min_len = 1
+  ];
+}
+
+// LoginResponse returns an access token and the authenticated user identity.
+message LoginResponse {
+  string token_type = 1;
+  string access_token = 2;
+  google.protobuf.Timestamp expires_at = 3;
+  User user = 4;
+  string refresh_token = 5;
+  google.protobuf.Timestamp refresh_expires_at = 6;
+}
+
+// SendSmsCodeRequest requests an SMS verification code for a phone number.
+message SendSmsCodeRequest {
+  string phone = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string.min_len = 1
+  ];
+}
+
+// SendSmsCodeResponse is returned after an SMS code is requested.
+message SendSmsCodeResponse {}
+
+// PhoneAuthRequest carries phone credentials for SMS based authentication.
+message PhoneAuthRequest {
+  string phone = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string.min_len = 1
+  ];
+  string code = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string.min_len = 1
+  ];
+}
+
+// PhoneAuthResponse returns an access token for phone authentication.
+message PhoneAuthResponse {
+  string token_type = 1;
+  string access_token = 2;
+  google.protobuf.Timestamp expires_at = 3;
+  User user = 4;
+  string refresh_token = 5;
+  google.protobuf.Timestamp refresh_expires_at = 6;
+}
+
+// MpLoginRequest carries the WeChat Mini Program login code.
+message MpLoginRequest {
+  string code = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string.min_len = 1
+  ];
+}
+
+// MpLoginResponse returns an access token for WeChat Mini Program login.
+message MpLoginResponse {
+  string token_type = 1;
+  string access_token = 2;
+  google.protobuf.Timestamp expires_at = 3;
+  User user = 4;
+  string refresh_token = 5;
+  google.protobuf.Timestamp refresh_expires_at = 6;
+}
+
+// RefreshTokenRequest carries the refresh token to exchange for a new token pair.
+message RefreshTokenRequest {
+  string refresh_token = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string.min_len = 1
+  ];
+}
+
+// RefreshTokenResponse returns the refreshed token pair.
+message RefreshTokenResponse {
+  string token_type = 1;
+  string access_token = 2;
+  google.protobuf.Timestamp expires_at = 3;
+  User user = 4;
+  string refresh_token = 5;
+  google.protobuf.Timestamp refresh_expires_at = 6;
+}
+
+// ChangePasswordRequest carries the current and new password values.
+message ChangePasswordRequest {
+  string old_password = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string.min_len = 1
+  ];
+  string new_password = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string = {
+      min_len: 8
+      max_len: 64
+    }
+  ];
+  string new_password_confirmation = 3 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string = {
+      min_len: 8
+      max_len: 64
+    }
+  ];
+}
+
+// ChangePasswordResponse is returned after the password is changed.
+message ChangePasswordResponse {}
+
+// LogoutRequest carries the tokens to revoke.
+message LogoutRequest {
+  option (buf.validate.message).cel = {
+    id: "logout.token_required"
+    message: "access_token or refresh_token is required"
+    expression: "this.access_token != '' || this.refresh_token != ''"
+  };
+
+  string access_token = 1;
+  string refresh_token = 2;
+}
+
+// LogoutResponse is returned after logout succeeds.
+message LogoutResponse {}
+
+// AuthService manages registration, authentication, and token workflows.
+service AuthService {
+  // VerifyToken validates an access token (signature + revocation + active user).
+  rpc VerifyToken(VerifyTokenRequest) returns (VerifyTokenResponse);
+
+  // Register creates a new user account.
+  rpc Register(RegisterRequest) returns (RegisterResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/register"
+      body: "*"
+    };
+  }
+
+  // UsernameCheck reports whether a username is already registered.
+  rpc UsernameCheck(UsernameCheckRequest) returns (UsernameCheckResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/register/username_check"
+      body: "*"
+    };
+  }
+
+  // EmailCheck reports whether an email address is already registered.
+  rpc EmailCheck(EmailCheckRequest) returns (EmailCheckResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/register/email_check"
+      body: "*"
+    };
+  }
+
+  // PhoneCheck reports whether a phone number is already registered.
+  rpc PhoneCheck(PhoneCheckRequest) returns (PhoneCheckResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/register/phone_check"
+      body: "*"
+    };
+  }
+
+  // Login authenticates a user with username or email and password.
+  rpc Login(LoginRequest) returns (LoginResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/login"
+      body: "*"
+    };
+  }
+
+  // SendSmsCode sends a verification code before phone authentication.
+  rpc SendSmsCode(SendSmsCodeRequest) returns (SendSmsCodeResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/send_sms_code"
+      body: "*"
+    };
+  }
+
+  // PhoneAuth authenticates a user with phone number and SMS code.
+  rpc PhoneAuth(PhoneAuthRequest) returns (PhoneAuthResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/phone_auth"
+      body: "*"
+    };
+  }
+
+  // MpLogin authenticates a user with a WeChat Mini Program code.
+  rpc MpLogin(MpLoginRequest) returns (MpLoginResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/mplogin"
+      body: "*"
+    };
+  }
+
+  // RefreshToken refreshes an access token.
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/token/refresh"
+      body: "*"
+    };
+  }
+
+  // ChangePassword updates the password for the authenticated user.
+  rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse) {
+    option (google.api.http) = {
+      put: "/api/v1/auth/password"
+      body: "*"
+    };
+  }
+
+  // Logout revokes the current access token.
+  rpc Logout(LogoutRequest) returns (LogoutResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/logout"
+      body: "*"
+    };
+  }
+}

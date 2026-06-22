@@ -1,0 +1,212 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "File API",
+    "version": "1.0",
+    "contact": {
+      "name": "nova project",
+      "url": "https://github.com/miiy/goc-quickstart",
+      "email": "none@example.com"
+    },
+    "license": {
+      "name": "MIT License",
+      "url": "https://github.com/miiy/goc-quickstart/LICENSE"
+    }
+  },
+  "tags": [
+    {
+      "name": "FileService"
+    }
+  ],
+  "schemes": [
+    "http",
+    "https",
+    "wss"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/api/v1/files/upload": {
+      "post": {
+        "summary": "UploadFile stores file content through the internal gRPC API.",
+        "operationId": "FileService_UploadFile",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UploadFileResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "description": "UploadFileRequest carries file content and metadata for storage.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1UploadFileRequest"
+            }
+          }
+        ],
+        "tags": [
+          "FileService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "v1File": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "int64"
+        },
+        "ownerId": {
+          "type": "string",
+          "format": "int64"
+        },
+        "ownerType": {
+          "type": "string"
+        },
+        "scene": {
+          "$ref": "#/definitions/v1FileScene"
+        },
+        "objectKey": {
+          "type": "string",
+          "description": "Stable relative storage key, for example \"avatars/2026/06/a.png\"."
+        },
+        "url": {
+          "type": "string",
+          "description": "Derived public URL for presentation clients."
+        },
+        "mimeType": {
+          "type": "string"
+        },
+        "size": {
+          "type": "string",
+          "format": "int64"
+        },
+        "checksum": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/v1FileStatus"
+        },
+        "createdBy": {
+          "type": "string",
+          "format": "int64"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "deletedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "description": "File describes a file stored by the file service."
+    },
+    "v1FileScene": {
+      "type": "string",
+      "enum": [
+        "FILE_SCENE_UNSPECIFIED",
+        "FILE_SCENE_AVATAR",
+        "FILE_SCENE_POST_COVER"
+      ],
+      "default": "FILE_SCENE_UNSPECIFIED",
+      "description": "FileScene describes the business scene for a stored file."
+    },
+    "v1FileStatus": {
+      "type": "string",
+      "enum": [
+        "FILE_STATUS_UNSPECIFIED",
+        "FILE_STATUS_ACTIVE",
+        "FILE_STATUS_DELETED"
+      ],
+      "default": "FILE_STATUS_UNSPECIFIED",
+      "description": "FileStatus describes the lifecycle state of a stored file."
+    },
+    "v1UploadFileRequest": {
+      "type": "object",
+      "properties": {
+        "scene": {
+          "$ref": "#/definitions/v1FileScene"
+        },
+        "filename": {
+          "type": "string"
+        },
+        "mimeType": {
+          "type": "string"
+        },
+        "content": {
+          "type": "string",
+          "format": "byte"
+        }
+      },
+      "description": "UploadFileRequest carries file content and metadata for storage.",
+      "required": [
+        "scene",
+        "mimeType",
+        "content"
+      ]
+    },
+    "v1UploadFileResponse": {
+      "type": "object",
+      "properties": {
+        "file": {
+          "$ref": "#/definitions/v1File"
+        }
+      },
+      "description": "UploadFileResponse returns the stored file record."
+    }
+  },
+  "externalDocs": {
+    "description": "More about goc",
+    "url": "https://github.com/grpc-ecosystem/grpc-gateway"
+  }
+}

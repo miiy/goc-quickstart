@@ -1,12 +1,12 @@
-SERVICES := auth-service user-service post-service upload-service api-gateway web apidoc-server
-WIRE_SERVICES := auth-service user-service post-service upload-service
+SERVICES := nova-auth nova-user nova-post nova-file nova-gateway nova-web nova-apidoc
+WIRE_SERVICES := nova-auth nova-user nova-post nova-file nova-web
 GOLANGCI_LINT ?= golangci-lint
 DOCKER_COMPOSE ?= docker-compose
 
 .DEFAULT_GOAL := help
 
 .PHONY: help proto proto-deps proto-generate proto-copy proto-clean wire build test lint fmt clean \
-	docker-up docker-down docker-build dev-auth dev-auth-client dev-user dev-post dev-upload dev-gateway \
+	docker-up docker-down docker-build dev dev-auth dev-auth-client dev-user dev-post dev-file dev-gateway \
 	dev-web dev-apidoc
 
 help:
@@ -15,8 +15,8 @@ help:
 	@echo "Targets:"
 	@echo "  proto          Update buf deps, clean, generate, and copy generated files"
 	@echo "  proto-deps     Update buf dependencies"
-	@echo "  proto-generate Generate proto and OpenAPI files under apis/gen"
-	@echo "  proto-copy     Copy generated files from apis/gen to services"
+	@echo "  proto-generate Generate proto and OpenAPI files under nova-proto/gen"
+	@echo "  proto-copy     Copy generated files from nova-proto/gen to services"
 	@echo "  proto-clean    Remove generated proto/OpenAPI files"
 	@echo "  wire           Generate Wire code for DI-based services"
 	@echo "  build          Build all Go projects"
@@ -27,22 +27,23 @@ help:
 	@echo "  docker-up      Start docker-compose services"
 	@echo "  docker-down    Stop docker-compose services"
 	@echo "  docker-build   Build docker-compose images"
+	@echo "  dev            Start all services under the nova-launcher supervisor (Ctrl+C stops all)"
 	@echo "  dev-*          Run a single project locally"
 
 proto:
-	$(MAKE) -C apis proto
+	$(MAKE) -C nova-proto proto
 
 proto-deps:
-	$(MAKE) -C apis deps
+	$(MAKE) -C nova-proto deps
 
 proto-generate:
-	$(MAKE) -C apis generate
+	$(MAKE) -C nova-proto generate
 
 proto-copy:
-	$(MAKE) -C apis copy
+	$(MAKE) -C nova-proto copy
 
 proto-clean:
-	$(MAKE) -C apis clean-all
+	$(MAKE) -C nova-proto clean-all
 
 wire:
 	@set -e; for service in $(WIRE_SERVICES); do \
@@ -63,7 +64,7 @@ test:
 	done
 
 lint:
-	$(MAKE) -C apis lint
+	$(MAKE) -C nova-proto lint
 	@set -e; for service in $(SERVICES); do \
 		echo ">>> lint: $$service"; \
 		(cd $$service && $(GOLANGCI_LINT) run ./...); \
@@ -80,7 +81,7 @@ clean:
 		echo ">>> clean: $$service"; \
 		$(MAKE) -C $$service clean; \
 	done
-	$(MAKE) -C apis clean
+	$(MAKE) -C nova-proto clean
 
 docker-up:
 	$(DOCKER_COMPOSE) up -d
@@ -91,26 +92,31 @@ docker-down:
 docker-build:
 	$(DOCKER_COMPOSE) build
 
+# Start every service under a single supervisor (nova-launcher). Ctrl+C tears
+# them all down atomically. Use ONLY=svc1,svc2 to launch a subset.
+dev:
+	cd nova-launcher && go run . $(if $(ONLY),-only $(ONLY))
+
 dev-auth:
-	$(MAKE) -C auth-service run
+	$(MAKE) -C nova-auth run
 
 dev-auth-client:
-	$(MAKE) -C auth-service run-client
+	$(MAKE) -C nova-auth run-client
 
 dev-user:
-	$(MAKE) -C user-service run
+	$(MAKE) -C nova-user run
 
 dev-post:
-	$(MAKE) -C post-service run
+	$(MAKE) -C nova-post run
 
-dev-upload:
-	$(MAKE) -C upload-service run
+dev-file:
+	$(MAKE) -C nova-file run
 
 dev-gateway:
-	$(MAKE) -C api-gateway run
+	$(MAKE) -C nova-gateway run
 
 dev-web:
-	$(MAKE) -C web run
+	$(MAKE) -C nova-web run
 
 dev-apidoc:
-	$(MAKE) -C apidoc-server run
+	$(MAKE) -C nova-apidoc run

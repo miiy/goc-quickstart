@@ -12,7 +12,7 @@ services:
       - mysql_data:/var/lib/mysql
       - ./deploy/mysql/init:/docker-entrypoint-initdb.d
     networks:
-      - blog-network
+      - nova-network
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
@@ -27,7 +27,7 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - blog-network
+      - nova-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -35,123 +35,123 @@ services:
       retries: 5
 
   # gRPC Services
-  auth-service:
+  nova-auth:
     build:
-      context: ./auth-service
+      context: ./nova-auth
       dockerfile: Dockerfile
-    container_name: auth-service
+    container_name: nova-auth
     ports:
       - "50051:50051"
     environment:
       - APP_ENV=docker
     volumes:
-      - ./auth-service/config.yaml:/app/config.yaml:ro
+      - ./nova-auth/config.yaml:/app/config.yaml:ro
     depends_on:
       mysql:
         condition: service_healthy
       redis:
         condition: service_healthy
     networks:
-      - blog-network
+      - nova-network
 
-  user-service:
+  nova-user:
     build:
-      context: ./user-service
+      context: ./nova-user
       dockerfile: Dockerfile
-    container_name: user-service
-    ports:
-      - "50053:50053"
-    environment:
-      - APP_ENV=docker
-    volumes:
-      - ./user-service/config.yaml:/app/config.yaml:ro
-    depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - blog-network
-
-  post-service:
-    build:
-      context: ./post-service
-      dockerfile: Dockerfile
-    container_name: post-service
+    container_name: nova-user
     ports:
       - "50052:50052"
     environment:
       - APP_ENV=docker
     volumes:
-      - ./post-service/config.yaml:/app/config.yaml:ro
+      - ./nova-user/config.yaml:/app/config.yaml:ro
     depends_on:
       mysql:
         condition: service_healthy
       redis:
         condition: service_healthy
     networks:
-      - blog-network
+      - nova-network
 
-  upload-service:
+  nova-post:
     build:
-      context: ./upload-service
+      context: ./nova-post
       dockerfile: Dockerfile
-    container_name: upload-service
+    container_name: nova-post
+    ports:
+      - "50053:50053"
+    environment:
+      - APP_ENV=docker
+    volumes:
+      - ./nova-post/config.yaml:/app/config.yaml:ro
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - nova-network
+
+  nova-file:
+    build:
+      context: ./nova-file
+      dockerfile: Dockerfile
+    container_name: nova-file
     ports:
       - "50054:50054"
     environment:
       - APP_ENV=docker
     volumes:
-      - ./upload-service/config.yaml:/app/config.yaml:ro
-      - ./upload-service/storage:/app/storage
+      - ./nova-file/config.yaml:/app/config.yaml:ro
+      - ./nova-file/storage:/app/storage
     depends_on:
       mysql:
         condition: service_healthy
       redis:
         condition: service_healthy
     networks:
-      - blog-network
+      - nova-network
 
   # API Gateway
-  api-gateway:
+  nova-gateway:
     build:
-      context: ./api-gateway
+      context: ./nova-gateway
       dockerfile: Dockerfile
-    container_name: api-gateway
+    container_name: nova-gateway
     ports:
       - "8080:8080"
     environment:
       - APP_ENV=docker
     volumes:
-      - ./api-gateway/config.yaml:/app/config.yaml:ro
-      - ./upload-service/storage/uploads:/upload-service/storage/uploads:ro
+      - ./nova-gateway/config.yaml:/app/config.yaml:ro
     depends_on:
-      - auth-service
-      - user-service
-      - post-service
-      - upload-service
+      - nova-auth
+      - nova-user
+      - nova-post
+      - nova-file
     networks:
-      - blog-network
+      - nova-network
 
   # Web Frontend
-  web:
+  nova-web:
     build:
-      context: ./web
+      context: ./nova-web
       dockerfile: Dockerfile
-    container_name: web
+    container_name: nova-web
     ports:
       - "8081:8081"
     environment:
       - APP_ENV=docker
     volumes:
-      - ./web/config.yaml:/app/config.yaml:ro
+      - ./nova-web/config.yaml:/app/config.yaml:ro
+      - ./nova-file/storage/uploads:/nova-file/storage/uploads:ro
     depends_on:
-      - api-gateway
+      - nova-gateway
     networks:
-      - blog-network
+      - nova-network
 
 networks:
-  blog-network:
+  nova-network:
     driver: bridge
 
 volumes:

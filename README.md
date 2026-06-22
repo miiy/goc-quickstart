@@ -1,66 +1,75 @@
-# goc-quickstart
+# nova
 
 基于 gRPC 的博客微服务项目，采用 Go 语言开发。
 
 ## 项目架构
 
 ```
-┌─────────────┐     ┌─────────────┐
-│    Web      │────▶│ API Gateway │
-│  (前端)     │     │  (HTTP网关) │
-└─────────────┘     └──────┬──────┘
+┌─────────────┐     ┌──────────────┐
+│  nova-web   │────▶│ nova-gateway │
+│  (前端)     │     │  (HTTP网关)  │
+└─────────────┘     └──────┬───────┘
                            │ gRPC
-          ┌────────────────┼────────────────┐
-          ▼                ▼                ▼
-   ┌─────────────┐  ┌─────────────┐  ┌─────────────┐
-   │Auth Service │  │Post Service │  │User Service │
-   │  认证服务   │  │  文章服务   │  │  用户服务   │
-   └─────────────┘  └─────────────┘  └─────────────┘
-          │                │                │
-          └────────────────┴────────────────┘
-                           │
-                    ┌──────┴──────┐
-                    │   MySQL     │
-                    │   Redis     │
-                    └─────────────┘
+        ┌──────────┬───────┼───────┬──────────┐
+        ▼          ▼       ▼       ▼          ▼
+ ┌────────────┐ ┌────────────┐ ┌────────────┐
+ │ nova-auth  │ │ nova-post  │ │ nova-user  │
+ │  认证服务  │ │  文章服务  │ │  用户服务  │
+ └────────────┘ └────────────┘ └────────────┘
+        │          │       │
+        │  ┌────────────┐  │
+        │  │ nova-file  │  │
+        │  │  文件服务  │  │
+        │  └────────────┘  │
+        └──────────┴───────┘
+                   │
+            ┌──────┴──────┐
+            │   MySQL     │
+            │   Redis     │
+            └─────────────┘
 ```
 
 ## 项目结构
 
 ```
 goc-quickstart
-├── apis/                    # Proto 定义和生成代码
-│   ├── proto/blog/          # Proto 文件
-│   └── gen/                 # 生成的 Go/OpenAPI 代码
-├── auth-service/            # 认证服务 (gRPC :50051)
-├── user-service/            # 用户服务 (gRPC :50053)
-├── post-service/            # 文章服务 (gRPC :50052)
-├── api-gateway/             # HTTP 网关 (:8080)
-├── web/                     # Web 前端服务 (:8081)
-├── apidoc-server/           # API 文档服务
-└── README.md
+├── nova-proto/             # Proto 定义和生成代码
+│   ├── proto/nova/         # Proto 文件 (auth, post, user, file)
+│   └── gen/                # 生成的 Go/OpenAPI 代码
+├── nova-auth/              # 认证服务 (gRPC :50051)
+├── nova-user/              # 用户服务 (gRPC :50052)
+├── nova-post/              # 文章服务 (gRPC :50053)
+├── nova-file/              # 文件服务 (gRPC :50054)
+├── nova-gateway/           # HTTP 网关 (:8080)
+├── nova-web/               # Web 前端服务 (:8081)
+├── nova-apidoc/            # API 文档服务
+├── nova-launcher/          # 本地开发 supervisor（make dev）
+├── Makefile                # 统一构建管理
+└── docker-compose.yml
 ```
 
 ## 服务端口
 
-| 服务 | 端口 | 说明 |
-|------|------|------|
-| api-gateway | 8080 | HTTP 入口，路由转发 |
-| web | 8081 | Web 前端页面 |
-| auth-service | 50051 | 认证/登录/注册 |
-| post-service | 50052 | 文章 CRUD |
-| user-service | 50053 | 用户信息管理 |
+| 服务         | 端口  | 说明                   |
+| ------------ | ----- | ---------------------- |
+| nova-gateway | 8080  | HTTP 入口，路由转发    |
+| nova-web     | 8081  | Web 前端页面           |
+| nova-auth    | 50051 | 认证/登录/注册         |
+| nova-user    | 50052 | 用户信息管理           |
+| nova-post    | 50053 | 文章 CRUD              |
+| nova-file    | 50054 | 文件上传与管理         |
 
 ## 技术栈
 
 - **语言**: Go 1.26
-- **RPC**: gRPC + gRPC-Gateway
+- **RPC**: gRPC
+- **HTTP**: Gin (nova-gateway)
 - **数据库**: MySQL + GORM
 - **缓存**: Redis
 - **依赖注入**: Wire
-- **配置**: Viper
 - **日志**: Zap
 - **Proto**: Buf
+- **容器**: Docker + Docker Compose
 
 ## 快速开始
 
@@ -70,33 +79,20 @@ goc-quickstart
 - MySQL 8.0+
 - Redis 7.0+
 - Buf CLI (用于 proto 生成)
+- Wire (用于依赖注入生成)
 
-### 安装依赖
+### 安装工具
 
 ```bash
-# 安装 buf
 go install github.com/bufbuild/buf/cmd/buf@latest
-
-# 安装 wire
 go install github.com/google/wire/cmd/wire@latest
 ```
 
-### 生成代码
+### 一键构建
 
 ```bash
-# 生成 proto 代码
-cd apis && buf generate
-
-# 复制生成代码到各服务
-cp -r apis/gen/go/blog/auth/v1 auth-service/gen/go/blog/auth/v1/
-cp -r apis/gen/go/blog/post/v1 post-service/gen/go/blog/post/v1/
-cp -r apis/gen/go/blog/user/v1 user-service/gen/go/blog/user/v1/
-cp -r apis/gen/go/blog/* api-gateway/gen/go/blog/
-
-# 生成 wire 依赖注入
-cd auth-service && wire ./internal/di/
-cd post-service && wire ./internal/di/
-cd user-service && wire ./internal/di/
+# 生成 proto + wire + 编译，一步到位
+make proto && make wire && make build
 ```
 
 ### 数据库初始化
@@ -110,69 +106,55 @@ CREATE DATABASE goc CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ### 启动服务
 
 ```bash
-# 启动 auth-service
-cd auth-service && go run cmd/server/main.go
+# 方式一：一键启动所有服务（go run，Ctrl+C 原子回收，无孤儿进程）
+make dev
 
-# 启动 user-service
-cd user-service && go run cmd/server/main.go
+# 方式二：Docker Compose
+make docker-up
 
-# 启动 post-service
-cd post-service && go run cmd/server/main.go
-
-# 启动 api-gateway
-cd api-gateway && go run cmd/main.go
-
-# 启动 web
-cd web && go run cmd/server/main.go
+# 方式三：单独启动某个服务
+make dev-auth
+make dev-user
+make dev-post
+make dev-file
+make dev-gateway
+make dev-web
 ```
+
+### 配置
+
+各服务从 `config.yaml` 读取配置，提供 `config.yaml.example` 作为模板：
+
+```bash
+cp nova-auth/config.yaml.example nova-auth/config.yaml
+cp nova-user/config.yaml.example nova-user/config.yaml
+cp nova-post/config.yaml.example nova-post/config.yaml
+cp nova-file/config.yaml.example nova-file/config.yaml
+cp nova-gateway/config.yaml.example nova-gateway/config.yaml
+cp nova-web/config.yaml.example nova-web/config.yaml
+```
+
+`config.yaml` 为本地运行配置，不提交到 Git。mTLS 证书放在各服务 `configs/x509/` 目录，该目录整体忽略。
 
 ### 访问服务
 
 - Web 界面: http://localhost:8081
 - API 网关: http://localhost:8080
-- API 文档: 查看 `apis/gen/openapiv2/` 目录
+- API 文档: 查看 `nova-proto/gen/openapiv2/` 目录
 
-## 配置说明
-
-各服务从项目根部的 `config.yaml` 读取配置，并提供 `config.yaml.example` 作为模板。实际运行前可复制模板：
+## Makefile 命令
 
 ```bash
-cp auth-service/config.yaml.example auth-service/config.yaml
-cp user-service/config.yaml.example user-service/config.yaml
-cp post-service/config.yaml.example post-service/config.yaml
-cp api-gateway/config.yaml.example api-gateway/config.yaml
-cp web/config.yaml.example web/config.yaml
-```
-
-`config.yaml` 作为本地运行配置被忽略，按本机环境调整即可。mTLS 证书和私钥可继续放在各服务的 `configs/x509/` 目录，该目录整体忽略，不提交证书材料。
-
-```yaml
-app:
-  name: blog
-  env: local
-  debug: true
-
-database:
-  driver: mysql
-  host: 127.0.0.1
-  port: 3306
-  database: goc
-  username: root
-  password: 123456
-
-redis:
-  addrs:
-    - 127.0.0.1:6379
-  password:
-  db: 0
-
-server:
-  grpc:
-    addr: 0.0.0.0:50051
-
-jwt:
-  secret: 123456
-  expiresIn: 7200
+make proto              # 生成 proto 代码 + 复制到各服务
+make proto-generate     # 仅生成 proto 代码
+make proto-copy         # 仅复制生成代码到各服务
+make build              # 构建所有服务
+make test               # 运行所有测试
+make wire               # 生成所有 Wire DI
+make lint               # 运行 lint
+make fmt                # 格式化 Go 代码
+make docker-up          # 启动 Docker
+make docker-down        # 停止 Docker
 ```
 
 ## API 示例
@@ -199,22 +181,13 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
 curl http://localhost:8080/api/v1/posts
 ```
 
-## 开发指南
+### 上传头像
 
-### 添加新服务
-
-1. 在 `apis/proto/blog/` 下创建 proto 文件
-2. 运行 `buf generate` 生成代码
-3. 创建服务目录，实现 `pb.XxxServiceServer` 接口
-4. 添加 wire 依赖注入
-5. 在 api-gateway 注册服务路由
-
-### 代码规范
-
-- Service 层: `internal/service/xxx_service.go`
-- Repository 层: `internal/repository/xxx_repository.go`
-- Entity: `internal/entity/xxx.go`
-- 使用 `status.Error()` 返回 gRPC 错误
+```bash
+curl -X POST http://localhost:8080/api/v1/files/upload/avatar \
+  -H "Authorization: Bearer <token>" \
+  -F "avatar=@avatar.png"
+```
 
 ## License
 

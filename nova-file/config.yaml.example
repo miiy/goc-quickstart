@@ -1,0 +1,39 @@
+app:
+  name: nova-file
+  env: local
+  debug: true
+  version: 1.0
+database:
+  driver: mysql
+  host: 127.0.0.1
+  port: 3306
+  database: goc
+  username: root
+  password: <change-me>
+redis:
+  addrs:
+    - 127.0.0.1:6379
+  password:
+  db: 0
+server:
+  grpc:
+    addr: 0.0.0.0:50054
+    tls:
+      enabled: true
+      certFile: ./configs/x509/server_cert.pem
+      keyFile: ./configs/x509/server_key.pem
+      caFile: ./configs/x509/ca_cert.pem
+grpcClient:
+  endpoint: 127.0.0.1:50054
+  tls:
+    serverName: "*.goc.dev"
+    certFile: ./configs/x509/client_cert.pem
+    keyFile: ./configs/x509/client_key.pem
+    caFile: ./configs/x509/ca_cert.pem
+snowflake:
+  node: 1
+storage:
+  root: ./storage/uploads
+  publicUrl: /uploads
+  maxAvatarSize: 2097152
+  maxPostCoverSize: 5242880

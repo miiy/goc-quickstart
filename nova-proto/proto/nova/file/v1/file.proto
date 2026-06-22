@@ -1,0 +1,107 @@
+syntax = "proto3";
+
+package nova.file.v1;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option go_package = "github.com/miiy/goc-quickstart/nova-file/gen/go/nova/file/v1;novafilev1";
+option java_package = "com.github.miiy.nova.file.v1";
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "File API"
+    version: "1.0"
+    contact: {
+      name: "nova project"
+      url: "https://github.com/miiy/goc-quickstart"
+      email: "none@example.com"
+    }
+    license: {
+      name: "MIT License"
+      url: "https://github.com/miiy/goc-quickstart/LICENSE"
+    }
+  }
+  external_docs: {
+    url: "https://github.com/grpc-ecosystem/grpc-gateway"
+    description: "More about goc"
+  }
+  schemes: HTTP
+  schemes: HTTPS
+  schemes: WSS
+};
+
+// FileScene describes the business scene for a stored file.
+enum FileScene {
+  FILE_SCENE_UNSPECIFIED = 0;
+  FILE_SCENE_AVATAR = 1;
+  FILE_SCENE_POST_COVER = 2;
+}
+
+// FileStatus describes the lifecycle state of a stored file.
+enum FileStatus {
+  FILE_STATUS_UNSPECIFIED = 0;
+  FILE_STATUS_ACTIVE = 1;
+  FILE_STATUS_DELETED = 2;
+}
+
+// File describes a file stored by the file service.
+message File {
+  int64 id = 1;
+  int64 owner_id = 2;
+  string owner_type = 3;
+  FileScene scene = 4;
+  // Stable relative storage key, for example "avatars/2026/06/a.png".
+  string object_key = 5;
+  // Derived public URL for presentation clients.
+  string url = 6;
+  string mime_type = 7;
+  int64 size = 8;
+  string checksum = 9;
+  FileStatus status = 10;
+  int64 created_by = 11;
+  google.protobuf.Timestamp created_at = 12;
+  google.protobuf.Timestamp updated_at = 13;
+  google.protobuf.Timestamp deleted_at = 14;
+}
+
+// UploadFileRequest carries file content and metadata for storage.
+message UploadFileRequest {
+  FileScene scene = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).enum = {
+      defined_only: true
+      not_in: 0
+    }
+  ];
+  string filename = 2 [(buf.validate.field).string.max_len = 255];
+  string mime_type = 3 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string = {
+      min_len: 1
+      max_len: 255
+    }
+  ];
+  bytes content = 4 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).bytes.min_len = 1
+  ];
+}
+
+// UploadFileResponse returns the stored file record.
+message UploadFileResponse {
+  File file = 1;
+}
+
+// FileService stores files and returns file records.
+service FileService {
+  // UploadFile stores file content through the internal gRPC API.
+  rpc UploadFile(UploadFileRequest) returns (UploadFileResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/files/upload"
+      body: "*"
+    };
+  }
+}

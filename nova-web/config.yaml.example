@@ -1,0 +1,24 @@
+app:
+  name: nova-web
+  env: local
+  debug: true
+  locale: zh-CN
+  timezone: Asia/Shanghai
+  url: localhost
+  footerCopyright: <p class="text-center">&copy; 2024</p>
+redis:
+  addr: 127.0.0.1:6379
+  password:
+  db: 0
+session:
+  name: COOKIE_SESSION
+  secret: secret
+  maxAge: 604800
+  secure: true
+server:
+  http:
+    addr: 0.0.0.0:8081
+gateway:
+  addr: 127.0.0.1:8080
+storage:
+  root: ../nova-file/storage/uploads

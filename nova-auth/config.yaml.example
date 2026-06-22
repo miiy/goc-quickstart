@@ -1,0 +1,39 @@
+app:
+  name: nova-auth
+  env: local
+  debug: true
+  version: 1.0
+database:
+  driver: mysql
+  host: 127.0.0.1
+  port: 3306
+  database: goc
+  username: root
+  password: <change-me>
+redis:
+  addrs:
+    - 127.0.0.1:6379
+  password:
+  db: 0
+server:
+  grpc:
+    addr: 0.0.0.0:50051
+    tls:
+      enabled: true
+      certFile: ./configs/x509/server_cert.pem
+      keyFile: ./configs/x509/server_key.pem
+      caFile: ./configs/x509/ca_cert.pem
+grpcClient:
+  endpoint: 127.0.0.1:50051
+  tls:
+    serverName: "*.goc.dev"
+    certFile: ./configs/x509/client_cert.pem
+    keyFile: ./configs/x509/client_key.pem
+    caFile:
+jwt:
+  secret: <change-me-to-a-long-random-string>
+  issuer: goc
+  expiresIn: 900 # 15min
+  refreshExpiresIn: 604800 # 7d
+snowflake:
+  node: 1
