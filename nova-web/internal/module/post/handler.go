@@ -9,7 +9,7 @@ import (
 	"github.com/miiy/goc-quickstart/nova-web/client"
 	"github.com/miiy/goc-quickstart/nova-web/internal/template"
 	"github.com/miiy/goc/gin"
-	gocauthmid "github.com/miiy/goc/gin/middleware/auth"
+	"github.com/miiy/goc/gin/authctx"
 	"github.com/unknwon/paginater"
 )
 
@@ -94,7 +94,7 @@ func showHandler(c *gin.Context) {
 	}
 
 	viewData := template.NewViewData(c)
-	if c.GetBool("isLoggedIn") {
+	if _, ok := authctx.CurrentUser(c); ok {
 		viewData = template.NewFormViewData(c)
 	}
 	c.HTML(http.StatusOK, "post/detail", PostDetailViewData{
@@ -113,11 +113,6 @@ func createHandler(c *gin.Context) {
 func storeHandler(c *gin.Context) {
 	title := c.PostForm("title")
 	content := c.PostForm("content")
-	authorID, ok := gocauthmid.GetAuthUserID(c)
-	if !ok {
-		c.Status(http.StatusForbidden)
-		return
-	}
 
 	coverURL, err := uploadPostCoverIfPresent(c)
 	if err != nil {
@@ -128,7 +123,7 @@ func storeHandler(c *gin.Context) {
 		return
 	}
 
-	_, err = postModule.postClient.CreatePost(c.Request.Context(), title, content, authorID, coverURL)
+	_, err = postModule.postClient.CreatePost(c.Request.Context(), title, content, coverURL)
 	if err != nil {
 		if handleAuthError(c, err) {
 			return
@@ -248,7 +243,7 @@ func canManagePost(c *gin.Context, post *client.PostResponse) bool {
 	if post == nil || post.AuthorId <= 0 {
 		return false
 	}
-	userID, ok := gocauthmid.GetAuthUserID(c)
+	userID, ok := authctx.CurrentUserInt64ID(c)
 	return ok && userID == post.AuthorId
 }
 

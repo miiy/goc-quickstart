@@ -3,10 +3,10 @@
     <div class="container py-4">
         <div class="row align-items-center gy-3">
             <div class="col-md">
-                <a class="navbar-brand" href="/">{{ "app.name" | config }}</a>
+                <a class="navbar-brand" href="/">{{ .Site.Name }}</a>
             </div>
             <div class="col-md-auto small text-body-secondary">
-                {{ "app.footerCopyright" | config | unescaped }}
+                {{ .Site.FooterCopyright }}
             </div>
         </div>
     </div>

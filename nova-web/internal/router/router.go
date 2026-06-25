@@ -1,27 +1,29 @@
 package router
 
 import (
+	htmltemplate "html/template"
 	"net/http"
 
 	"github.com/miiy/goc-quickstart/nova-web/internal/config"
-	authmid "github.com/miiy/goc-quickstart/nova-web/internal/middleware/auth"
-	"github.com/miiy/goc-quickstart/nova-web/internal/service/about"
-	"github.com/miiy/goc-quickstart/nova-web/internal/service/auth"
-	"github.com/miiy/goc-quickstart/nova-web/internal/service/home"
-	"github.com/miiy/goc-quickstart/nova-web/internal/service/page"
-	"github.com/miiy/goc-quickstart/nova-web/internal/service/post"
-	"github.com/miiy/goc-quickstart/nova-web/internal/service/user"
+	authmw "github.com/miiy/goc-quickstart/nova-web/internal/middleware/auth"
+	"github.com/miiy/goc-quickstart/nova-web/internal/module/about"
+	"github.com/miiy/goc-quickstart/nova-web/internal/module/auth"
+	"github.com/miiy/goc-quickstart/nova-web/internal/module/home"
+	"github.com/miiy/goc-quickstart/nova-web/internal/module/page"
+	"github.com/miiy/goc-quickstart/nova-web/internal/module/post"
+	"github.com/miiy/goc-quickstart/nova-web/internal/module/user"
 	websession "github.com/miiy/goc-quickstart/nova-web/internal/session"
 	"github.com/miiy/goc-quickstart/nova-web/internal/template"
 	"github.com/miiy/goc-quickstart/nova-web/resources/static"
 	resourceTemplate "github.com/miiy/goc-quickstart/nova-web/resources/template"
 	"github.com/miiy/goc/gin"
 	"github.com/miiy/goc/gin/middleware/csrf"
+	"github.com/miiy/goc/gin/middleware/sessionauth"
 	pkgTemplate "github.com/miiy/goc/gin/template"
 	"github.com/miiy/goc/logger"
 )
 
-func Router(r *gin.Engine, sessionManager *websession.Manager, timezone string, authClient authmid.RefreshClient, log logger.Logger, storageRoot string) {
+func Router(r *gin.Engine, sessionManager *websession.Manager, appConfig config.AppConfig, authClient authmw.RefreshClient, log logger.Logger, storageRoot string) {
 	// assets
 	r.StaticFS("/static", http.FS(static.FS))
 
@@ -45,17 +47,22 @@ func Router(r *gin.Engine, sessionManager *websession.Manager, timezone string, 
 
 	r.Use(csrf.Middleware())
 
-	// proactively refresh an expiring access token, then bridge the session-backed
+	// Proactively refresh an expiring access token, then bridge the session-backed
 	// identity into the gin/template + request contexts for downstream handlers.
-	r.Use(authmid.SessionAuth(sessionManager, authClient, log))
+	r.Use(authmw.RefreshSessionToken(sessionManager, authClient, log))
+	r.Use(sessionauth.LoadSessionUser())
 
 	// template
-	t := pkgTemplate.NewTemplate()
-	t.AddFunc("config", func(key string) any {
-		return config.GetConfig(key)
+	template.SetDefaultSite(template.SiteData{
+		Name:            appConfig.Name,
+		URL:             appConfig.Url,
+		Locale:          appConfig.Locale,
+		FooterCopyright: htmltemplate.HTML(appConfig.FooterCopyright),
 	})
+
+	t := pkgTemplate.NewTemplate()
 	t.AddFunc("alertType", template.FlashLevelClass)
-	t.AddFunc("formatTime", template.NewFormatTimeFunc(timezone))
+	t.AddFunc("formatTime", template.NewFormatTimeFunc(appConfig.Timezone))
 	t.AddTemplate(resourceTemplate.FS, about.Templates())
 	t.AddTemplate(resourceTemplate.FS, home.Templates())
 	t.AddTemplate(resourceTemplate.FS, post.Templates())

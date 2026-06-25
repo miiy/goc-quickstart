@@ -46,7 +46,6 @@ type PostInput struct {
 	Title    string `json:"title"`
 	CoverURL string `json:"cover_url,omitempty"`
 	Content  string `json:"content"`
-	AuthorId int64  `json:"author_id"`
 }
 
 func (c *PostClient) ListPosts(ctx context.Context, page, pageSize int32) (*PostListResponse, error) {
@@ -115,14 +114,13 @@ func (c *PostClient) GetPost(ctx context.Context, id int64) (*PostResponse, erro
 	return wrapper.Post, nil
 }
 
-func (c *PostClient) CreatePost(ctx context.Context, title, content string, authorId int64, coverURL string) (*PostResponse, error) {
+func (c *PostClient) CreatePost(ctx context.Context, title, content string, coverURL string) (*PostResponse, error) {
 	url := fmt.Sprintf("%s/api/v1/posts", c.baseURL)
 	reqBody := CreatePostRequest{
 		Post: PostInput{
 			Title:    title,
 			CoverURL: coverURL,
 			Content:  content,
-			AuthorId: authorId,
 		},
 	}
 

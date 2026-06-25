@@ -1,8 +1,84 @@
 package template
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"testing"
+
+	gogin "github.com/gin-gonic/gin"
+	gocauth "github.com/miiy/goc/auth"
+	"github.com/miiy/goc/gin"
+	"github.com/miiy/goc/gin/authctx"
+	"github.com/miiy/goc/gin/sessions"
 )
+
+func TestNewViewDataIncludesSiteData(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	SetDefaultSite(SiteData{
+		Name:            "nova-web",
+		URL:             "https://example.test",
+		Locale:          "zh-CN",
+		FooterCopyright: "&copy; 2024",
+	})
+
+	c, _ := gogin.CreateTestContext(httptest.NewRecorder())
+	c.Request = httptest.NewRequest(http.MethodGet, "/", nil)
+
+	view := NewViewData(c)
+	if view.Site.Name != "nova-web" {
+		t.Fatalf("expected site name, got %q", view.Site.Name)
+	}
+	if view.Site.URL != "https://example.test" {
+		t.Fatalf("expected site url, got %q", view.Site.URL)
+	}
+	if view.Site.Locale != "zh-CN" {
+		t.Fatalf("expected site locale, got %q", view.Site.Locale)
+	}
+	if string(view.Site.FooterCopyright) != "&copy; 2024" {
+		t.Fatalf("expected footer copyright, got %q", view.Site.FooterCopyright)
+	}
+	if view.Auth.IsLoggedIn {
+		t.Fatal("expected logged out auth data")
+	}
+	if view.Auth.CurrentUser != nil {
+		t.Fatalf("expected no current user, got %#v", view.Auth.CurrentUser)
+	}
+	if view.CSRFToken != "" {
+		t.Fatalf("expected no csrf token for logged out view, got %q", view.CSRFToken)
+	}
+}
+
+func TestNewViewDataIncludesAuthData(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	SetDefaultSite(SiteData{})
+
+	r := gin.New()
+	r.Use(sessions.Middleware("sess", sessions.NewCookieStore("test-secret")))
+	r.GET("/", func(c *gin.Context) {
+		authctx.SetUser(c, &gocauth.AuthenticatedUser{ID: "7", Username: "alice"})
+
+		view := NewViewData(c)
+		if !view.Auth.IsLoggedIn {
+			t.Fatal("expected logged in auth data")
+		}
+		if view.Auth.CurrentUser == nil {
+			t.Fatal("expected current user")
+		}
+		if view.Auth.CurrentUser.ID != "7" || view.Auth.CurrentUser.Username != "alice" {
+			t.Fatalf("unexpected current user: %#v", view.Auth.CurrentUser)
+		}
+		if view.CSRFToken == "" {
+			t.Fatal("expected csrf token for logged in view")
+		}
+		c.Status(http.StatusOK)
+	})
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/", nil))
+	if w.Code != http.StatusOK {
+		t.Fatalf("GET / got %d", w.Code)
+	}
+}
 
 func TestNewFormatTimeFunc(t *testing.T) {
 	formatTime := NewFormatTimeFunc("Asia/Shanghai")

@@ -141,8 +141,8 @@ func authenticatedUser(ctx context.Context) (*gocauth.AuthenticatedUser, error) 
 	if err != nil {
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
-	if user.ID <= 0 {
-		return nil, status.Error(codes.Unauthenticated, "invalid authenticated user")
+	if _, err := user.Int64ID(); err != nil {
+		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
 	return user, nil
 }
@@ -152,7 +152,11 @@ func requireSelf(ctx context.Context, id int64) error {
 	if err != nil {
 		return err
 	}
-	if user.ID != id {
+	userID, err := user.Int64ID()
+	if err != nil {
+		return status.Error(codes.Unauthenticated, err.Error())
+	}
+	if userID != id {
 		return status.Error(codes.PermissionDenied, ErrPermissionDenied.Error())
 	}
 	return nil

@@ -76,7 +76,7 @@ func TestAuthenticationMiddlewareInjectsUserAndMetadata(t *testing.T) {
 	req.Header.Set("Authorization", "Bearer tok")
 	engine.ServeHTTP(w, req)
 
-	if gotUser == nil || gotUser.ID != 42 || gotUser.Username != "alice" {
+	if gotUser == nil || gotUser.ID != "42" || gotUser.Username != "alice" {
 		t.Fatalf("expected injected user {42 alice}, got %+v", gotUser)
 	}
 	if v := gotMD.Get(gocauth.AuthenticatedUserIDMetadataKey); len(v) == 0 || v[0] != "42" {

@@ -59,7 +59,7 @@ func (s *FileService) UploadFile(ctx context.Context, req *pb.UploadFileRequest)
 	if err := protovalidate.Validate(req); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	user, err := authenticatedUser(ctx)
+	userID, err := authenticatedUserID(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +100,7 @@ func (s *FileService) UploadFile(ctx context.Context, req *pb.UploadFileRequest)
 
 	checksum := sha256.Sum256(req.GetContent())
 	file := &entity.File{
-		OwnerID:   user.ID,
+		OwnerID:   userID,
 		OwnerType: entity.OwnerTypeUser,
 		Scene:     int64(req.GetScene()),
 		ObjectKey: objectKey,
@@ -108,7 +108,7 @@ func (s *FileService) UploadFile(ctx context.Context, req *pb.UploadFileRequest)
 		Size:      int64(len(req.GetContent())),
 		Checksum:  hex.EncodeToString(checksum[:]),
 		Status:    entity.FileStatusActive,
-		CreatedBy: user.ID,
+		CreatedBy: userID,
 	}
 	if err := s.repo.Create(ctx, file); err != nil {
 		_ = os.Remove(filePath)
@@ -119,15 +119,16 @@ func (s *FileService) UploadFile(ctx context.Context, req *pb.UploadFileRequest)
 	return &pb.UploadFileResponse{File: entityToProto(file, s.storage.PublicURL)}, nil
 }
 
-func authenticatedUser(ctx context.Context) (*gocauth.AuthenticatedUser, error) {
+func authenticatedUserID(ctx context.Context) (int64, error) {
 	user, err := gocauth.ExtractAuthenticatedUser(ctx)
 	if err != nil {
-		return nil, status.Error(codes.Unauthenticated, err.Error())
+		return 0, status.Error(codes.Unauthenticated, err.Error())
 	}
-	if user.ID <= 0 {
-		return nil, status.Error(codes.Unauthenticated, "invalid authenticated user")
+	id, err := user.Int64ID()
+	if err != nil {
+		return 0, status.Error(codes.Unauthenticated, err.Error())
 	}
-	return user, nil
+	return id, nil
 }
 
 func normalizeStorage(storage config.Storage) config.Storage {

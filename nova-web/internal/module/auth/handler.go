@@ -2,6 +2,7 @@ package auth
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/miiy/goc-quickstart/nova-web/internal/template"
 	"github.com/miiy/goc/gin"
@@ -86,8 +87,8 @@ func Login(c *gin.Context) {
 	if sessionUsername == "" {
 		sessionUsername = username
 	}
-	if err := authModule.sessionManager.SaveLogin(c, map[string]any{
-		"id":       int64(resp.User.Id),
+	if err := authModule.sessionManager.SaveLoginSession(c, map[string]any{
+		"id":       strconv.FormatInt(int64(resp.User.Id), 10),
 		"username": sessionUsername,
 	}, resp.AccessToken, resp.ExpiresAt, resp.RefreshToken); err != nil {
 		_ = c.Error(err)

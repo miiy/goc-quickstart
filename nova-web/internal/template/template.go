@@ -1,22 +1,29 @@
 package template
 
 import (
+	"html/template"
 	"net/http"
 	"time"
 
-	gocauth "github.com/miiy/goc/auth"
+	"github.com/miiy/goc/auth"
 	"github.com/miiy/goc/gin"
-	gocauthmid "github.com/miiy/goc/gin/middleware/auth"
+	"github.com/miiy/goc/gin/authctx"
 	"github.com/miiy/goc/gin/middleware/csrf"
-	gocTemplate "github.com/miiy/goc/gin/template"
 	timeutil "github.com/miiy/goc/utils/time"
 )
 
-// Re-export goc template types for convenience
-type Template = gocTemplate.Template
+// SiteData is the public, display-safe site metadata available to templates.
+type SiteData struct {
+	Name            string
+	URL             string
+	Locale          string
+	FooterCopyright template.HTML
+}
 
-func NewTemplate() *Template {
-	return gocTemplate.NewTemplate()
+// AuthData is the authenticated request identity available to templates.
+type AuthData struct {
+	IsLoggedIn  bool
+	CurrentUser *auth.AuthenticatedUser
 }
 
 // ViewData is the common data passed to all templates.
@@ -24,23 +31,26 @@ type ViewData struct {
 	PageTitle   string
 	Keywords    string
 	Description string
-	IsLoggedIn  bool
-	CurrentUser *gocauth.AuthenticatedUser
+	Site        SiteData
+	Auth        AuthData
 	CSRFToken   string
+}
+
+var defaultSite SiteData
+
+func SetDefaultSite(site SiteData) {
+	defaultSite = site
 }
 
 func NewViewData(c *gin.Context) ViewData {
 	view := ViewData{
-		IsLoggedIn: c.GetBool("isLoggedIn"),
+		Site: defaultSite,
 	}
-	if user, ok := c.Get("currentUser"); ok {
-		if authUser, ok := user.(*gocauth.AuthenticatedUser); ok {
-			view.CurrentUser = authUser
-		} else if authUser, ok := gocauthmid.SessionUser(user); ok {
-			view.CurrentUser = authUser
-		}
+	if user, ok := authctx.CurrentUser(c); ok {
+		view.Auth.IsLoggedIn = true
+		view.Auth.CurrentUser = user
 	}
-	if view.IsLoggedIn {
+	if view.Auth.IsLoggedIn {
 		view.CSRFToken = csrf.Token(c)
 	}
 	return view

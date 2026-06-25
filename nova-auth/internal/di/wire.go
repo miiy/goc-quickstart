@@ -4,6 +4,8 @@
 package di
 
 import (
+	"time"
+
 	"github.com/google/wire"
 	"github.com/miiy/goc-quickstart/nova-auth/internal/app"
 	"github.com/miiy/goc-quickstart/nova-auth/internal/config"
@@ -16,7 +18,6 @@ import (
 	"github.com/miiy/goc/logger"
 	"github.com/miiy/goc/logger/zap"
 	"github.com/miiy/goc/redis"
-	"time"
 )
 
 func InitApp(conf string) (*app.App, func(), error) {

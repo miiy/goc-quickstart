@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -32,7 +33,7 @@ func (m *mockFileRepository) Create(ctx context.Context, file *entity.File) erro
 
 func fileTestContext(userID int64) context.Context {
 	return gocauth.InjectAuthenticatedUser(context.Background(), &gocauth.AuthenticatedUser{
-		ID:       userID,
+		ID:       strconv.FormatInt(userID, 10),
 		Username: "alice",
 	})
 }

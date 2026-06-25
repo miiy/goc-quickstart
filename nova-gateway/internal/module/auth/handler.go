@@ -5,7 +5,7 @@ import (
 	"github.com/miiy/goc-quickstart/nova-gateway/internal/transport"
 
 	"github.com/miiy/goc/gin"
-	ginauth "github.com/miiy/goc/gin/middleware/auth"
+	"github.com/miiy/goc/gin/middleware/jwtauth"
 )
 
 func (m *Module) register(c *gin.Context) {
@@ -144,7 +144,7 @@ func (m *Module) logout(c *gin.Context) {
 		return
 	}
 	if req.AccessToken == "" {
-		req.AccessToken, _ = ginauth.BearerToken(c)
+		req.AccessToken, _ = jwtauth.Token(c)
 	}
 	resp, err := m.authClient.Logout(c.Request.Context(), &req)
 	if err != nil {

@@ -7,13 +7,17 @@
 package di
 
 import (
-	"net/http"
-
 	"github.com/miiy/goc-quickstart/nova-web/client"
 	"github.com/miiy/goc-quickstart/nova-web/internal/app"
 	"github.com/miiy/goc-quickstart/nova-web/internal/config"
+	"github.com/miiy/goc-quickstart/nova-web/internal/module"
+	"github.com/miiy/goc-quickstart/nova-web/internal/module/auth"
+	"github.com/miiy/goc-quickstart/nova-web/internal/module/post"
+	"github.com/miiy/goc-quickstart/nova-web/internal/module/user"
+	"github.com/miiy/goc-quickstart/nova-web/internal/session"
 	"github.com/miiy/goc/gin/sessions"
 	"github.com/miiy/goc/logger"
+	"net/http"
 )
 
 // Injectors from wire.go:
@@ -32,13 +36,19 @@ func InitApp(conf string) (*app.App, func(), error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	v2 := provideSessionOptions(configConfig)
-	v3, err := provideSessionStore(configConfig, v2)
+	options := provideSessionOptions(configConfig)
+	store, err := provideSessionStore(configConfig, options)
 	if err != nil {
 		cleanup()
 		return nil, nil, err
 	}
-	appApp := app.NewApp(configConfig, loggerLogger, clients, v3)
+	manager := provideSessionManager(store, configConfig)
+	postClient := providePostClient(clients)
+	authClient := provideAuthClient(clients)
+	userClient := provideUserClient(clients)
+	fileClient := provideFileClient(clients)
+	modules := provideModules(loggerLogger, postClient, authClient, userClient, fileClient, manager)
+	appApp := app.NewApp(configConfig, loggerLogger, clients, manager, modules)
 	return appApp, func() {
 		cleanup()
 	}, nil
@@ -52,6 +62,22 @@ func provideLoggerOption() []logger.Option {
 
 func provideClients(config2 *config.Config) (*client.Clients, func(), error) {
 	return client.NewClients(config2.Gateway.Addr)
+}
+
+func providePostClient(clients *client.Clients) *client.PostClient {
+	return clients.Post
+}
+
+func provideAuthClient(clients *client.Clients) *client.AuthClient {
+	return clients.Auth
+}
+
+func provideUserClient(clients *client.Clients) *client.UserClient {
+	return clients.User
+}
+
+func provideFileClient(clients *client.Clients) *client.FileClient {
+	return clients.File
 }
 
 func provideSessionOptions(config2 *config.Config) sessions.Options {
@@ -79,4 +105,23 @@ func provideSessionStore(config2 *config.Config, options sessions.Options) (sess
 		}
 	}
 	return store, nil
+}
+
+func provideSessionManager(store sessions.Store, config2 *config.Config) *session.Manager {
+	return session.NewManager(store, config2.Session.Name)
+}
+
+func provideModules(
+	log logger.Logger,
+	postClient *client.PostClient,
+	authClient *client.AuthClient,
+	userClient *client.UserClient,
+	fileClient *client.FileClient,
+	sessionManager *session.Manager,
+) *module.Modules {
+	return &module.Modules{
+		Post: post.NewModule(log, postClient, fileClient, sessionManager),
+		Auth: auth.NewModule(log, authClient, sessionManager),
+		User: user.NewModule(log, authClient, userClient, fileClient, sessionManager),
+	}
 }

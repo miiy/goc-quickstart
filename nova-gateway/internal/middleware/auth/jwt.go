@@ -3,10 +3,11 @@ package auth
 import (
 	"context"
 	"errors"
+	"strconv"
 
 	gocauth "github.com/miiy/goc/auth"
 	"github.com/miiy/goc/gin"
-	ginauth "github.com/miiy/goc/gin/middleware/auth"
+	"github.com/miiy/goc/gin/middleware/jwtauth"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
 
@@ -22,16 +23,16 @@ type verifyTokenClient interface {
 // AuthenticationMiddleware authenticates each request via nova-auth's VerifyToken
 // (signature + revocation + active user in one RPC). The generic flow (token
 // extraction, user/metadata injection, 401 handling) is provided by goc's
-// ginauth.AuthenticationMiddleware; only the token-to-user resolution is nova-specific.
+// jwtauth.Authenticate; only the token-to-user resolution is nova-specific.
 func AuthenticationMiddleware(authClient verifyTokenClient) gin.HandlerFunc {
-	return ginauth.AuthenticationMiddleware(tokenAuthenticator(authClient),
-		ginauth.WithUnauthorized(transport.WriteUnauthorized),
-		ginauth.WithMetadataPropagation())
+	return jwtauth.Authenticate(tokenUserResolver(authClient),
+		jwtauth.WithUnauthorized(transport.WriteUnauthorized),
+		jwtauth.WithMetadataPropagation())
 }
 
-// tokenAuthenticator resolves a bearer token to an authenticated user by calling
+// tokenUserResolver resolves a bearer token to an authenticated user by calling
 // nova-auth's VerifyToken.
-func tokenAuthenticator(authClient verifyTokenClient) ginauth.Authenticator {
+func tokenUserResolver(authClient verifyTokenClient) jwtauth.UserResolver {
 	return func(ctx context.Context, token string) (*gocauth.AuthenticatedUser, error) {
 		if authClient == nil {
 			return nil, errors.New("auth client not configured")
@@ -47,7 +48,7 @@ func tokenAuthenticator(authClient verifyTokenClient) ginauth.Authenticator {
 			return nil, errors.New("authenticated user not found")
 		}
 		return &gocauth.AuthenticatedUser{
-			ID:       resp.User.Id,
+			ID:       strconv.FormatInt(resp.User.Id, 10),
 			Username: resp.User.Username,
 		}, nil
 	}

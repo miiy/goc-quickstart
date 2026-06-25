@@ -3,15 +3,13 @@ package session
 import (
 	"net/http"
 
-	gocauth "github.com/miiy/goc/auth"
 	"github.com/miiy/goc/gin"
-	gocauthmid "github.com/miiy/goc/gin/middleware/auth"
+	"github.com/miiy/goc/gin/middleware/sessionauth"
 	"github.com/miiy/goc/gin/sessions"
 )
 
-// Session value keys. Unexported on purpose: Manager is the single owner of the
-// session schema, so callers go through its typed methods instead of touching
-// raw keys (which used to leak into the auth middleware).
+// Token value keys. Unexported so callers use Manager's typed accessors instead
+// of touching raw session keys.
 const (
 	keyAccessToken     = "access_token"
 	keyAccessExpiresAt = "access_expires_at"
@@ -32,11 +30,6 @@ func NewManager(store sessions.Store, name string) *Manager {
 
 func (m *Manager) Middleware() gin.HandlerFunc {
 	return sessions.Middleware(m.name, m.store)
-}
-
-// AuthUser returns the authenticated user stored in the session, if any.
-func (m *Manager) AuthUser(c *gin.Context) (*gocauth.AuthenticatedUser, bool) {
-	return gocauthmid.SessionUser(sessions.Default(c).Get(gocauthmid.SessionKeyAuthUser))
 }
 
 // AccessToken returns the stored access token, or "" when none is set.
@@ -63,9 +56,9 @@ func (m *Manager) Tokens(c *gin.Context) (accessToken, refreshToken string) {
 	return m.AccessToken(c), m.RefreshToken(c)
 }
 
-// SaveTokens writes a refreshed token pair back to the session. Empty fields are
-// ignored so a response without a rotated refresh token keeps the existing one.
-func (m *Manager) SaveTokens(c *gin.Context, accessToken, expiresAt, refreshToken string) {
+// SaveRefreshedTokens stores tokens returned by a refresh response. Empty fields
+// keep the existing session values.
+func (m *Manager) SaveRefreshedTokens(c *gin.Context, accessToken, expiresAt, refreshToken string) {
 	session := sessions.Default(c)
 	session.Set(keyAccessToken, accessToken)
 	if expiresAt != "" {
@@ -77,34 +70,36 @@ func (m *Manager) SaveTokens(c *gin.Context, accessToken, expiresAt, refreshToke
 	_ = session.Save()
 }
 
-func (m *Manager) SaveLogin(c *gin.Context, user map[string]any, accessToken, expiresAt, refreshToken string) error {
+// SaveLoginSession expires the old cookie and saves a fresh login session.
+// The response first deletes the old cookie, then sends a new session cookie.
+// Set-Cookie order:
+//
+//	Set-Cookie: session_name=...; Max-Age=0
+//	Set-Cookie: session_name=new_value; Path=/; Max-Age=...
+func (m *Manager) SaveLoginSession(c *gin.Context, user map[string]any, accessToken, expiresAt, refreshToken string) error {
 	m.Clear(c)
 
-	session, err := m.store.New(requestWithoutCookie(c.Request, m.name), m.name)
+	// Create a new session
+	newSession, err := m.store.New(requestWithoutCookie(c.Request, m.name), m.name)
 	if err != nil {
 		return err
 	}
-	session.Values[gocauthmid.SessionKeyAuthUser] = user
-	session.Values[keyAccessToken] = accessToken
+	newSession.Values[sessionauth.SessionKeyUser] = user
+	newSession.Values[keyAccessToken] = accessToken
 	if expiresAt != "" {
-		session.Values[keyAccessExpiresAt] = expiresAt
+		newSession.Values[keyAccessExpiresAt] = expiresAt
 	}
 	if refreshToken != "" {
-		session.Values[keyRefreshToken] = refreshToken
+		newSession.Values[keyRefreshToken] = refreshToken
 	}
-	return m.store.Save(c.Request, c.Writer, session)
+	return m.store.Save(c.Request, c.Writer, newSession)
 }
 
-// Clear wipes the session values and expires its cookie. It operates on the
-// request's context session (sessions.Default) so that reads later in the same
-// request — e.g. the auth middleware injecting identity right after a failed
-// refresh — observe the cleared state instead of the stale pre-clear snapshot.
+// Clear wipes session values and expires the browser cookie.
 func (m *Manager) Clear(c *gin.Context) {
-	if m == nil {
-		return
-	}
 	session := sessions.Default(c)
 	session.Clear()
+	// MaxAge < 0 tells the browser to delete the cookie.
 	session.Options(sessions.Options{Path: "/", MaxAge: -1})
 	_ = session.Save()
 }

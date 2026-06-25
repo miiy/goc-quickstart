@@ -2,7 +2,7 @@ package post
 
 import (
 	"github.com/miiy/goc/gin"
-	gocauthmid "github.com/miiy/goc/gin/middleware/auth"
+	"github.com/miiy/goc/gin/middleware/sessionauth"
 )
 
 func Router(r *gin.Engine) {
@@ -14,7 +14,7 @@ func Router(r *gin.Engine) {
 	}
 
 	private := r.Group("")
-	private.Use(gocauthmid.SessionAuthenticationMiddleware("/login"))
+	private.Use(sessionauth.Authenticate(sessionauth.WithRedirect("/login")))
 	{
 		private.GET("/posts/create", createHandler)
 		private.POST("/posts", storeHandler)

@@ -64,7 +64,7 @@ func (s *PostService) CreatePost(ctx context.Context, req *pb.CreatePostRequest)
 	if strings.TrimSpace(req.Post.Title) == "" {
 		return nil, status.Error(codes.InvalidArgument, "title is required")
 	}
-	user, err := authenticatedUser(ctx)
+	userID, err := authenticatedUserID(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +72,7 @@ func (s *PostService) CreatePost(ctx context.Context, req *pb.CreatePostRequest)
 	tags, _ := json.Marshal(req.Post.Tags)
 
 	post := &entity.Post{
-		AuthorId:   user.ID,
+		AuthorId:   userID,
 		Title:      strings.TrimSpace(req.Post.Title),
 		CoverUrl:   strings.TrimSpace(req.Post.CoverUrl),
 		Content:    req.Post.Content,
@@ -95,7 +95,7 @@ func (s *PostService) UpdatePost(ctx context.Context, req *pb.UpdatePostRequest)
 	if err := protovalidate.Validate(req); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	user, err := authenticatedUser(ctx)
+	userID, err := authenticatedUserID(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +108,7 @@ func (s *PostService) UpdatePost(ctx context.Context, req *pb.UpdatePostRequest)
 		s.logger.Error("repo.First", zap.Error(err))
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	if existing.AuthorId != user.ID {
+	if existing.AuthorId != userID {
 		return nil, status.Error(codes.PermissionDenied, ErrPermissionDenied.Error())
 	}
 
@@ -156,7 +156,7 @@ func (s *PostService) DeletePost(ctx context.Context, req *pb.DeletePostRequest)
 	if err := protovalidate.Validate(req); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	user, err := authenticatedUser(ctx)
+	userID, err := authenticatedUserID(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +169,7 @@ func (s *PostService) DeletePost(ctx context.Context, req *pb.DeletePostRequest)
 		s.logger.Error("repo.First", zap.Error(err))
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	if existing.AuthorId != user.ID {
+	if existing.AuthorId != userID {
 		return nil, status.Error(codes.PermissionDenied, ErrPermissionDenied.Error())
 	}
 
@@ -185,15 +185,16 @@ func (s *PostService) DeletePost(ctx context.Context, req *pb.DeletePostRequest)
 	return &pb.DeletePostResponse{}, nil
 }
 
-func authenticatedUser(ctx context.Context) (*gocauth.AuthenticatedUser, error) {
+func authenticatedUserID(ctx context.Context) (int64, error) {
 	user, err := gocauth.ExtractAuthenticatedUser(ctx)
 	if err != nil {
-		return nil, status.Error(codes.Unauthenticated, err.Error())
+		return 0, status.Error(codes.Unauthenticated, err.Error())
 	}
-	if user.ID <= 0 {
-		return nil, status.Error(codes.Unauthenticated, "invalid authenticated user")
+	id, err := user.Int64ID()
+	if err != nil {
+		return 0, status.Error(codes.Unauthenticated, err.Error())
 	}
-	return user, nil
+	return id, nil
 }
 
 func (s *PostService) ListPosts(ctx context.Context, req *pb.ListPostsRequest) (*pb.ListPostsResponse, error) {

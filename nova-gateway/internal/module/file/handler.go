@@ -10,7 +10,7 @@ import (
 	userv1 "github.com/miiy/goc-quickstart/nova-gateway/gen/go/nova/user/v1"
 	"github.com/miiy/goc-quickstart/nova-gateway/internal/transport"
 	"github.com/miiy/goc/gin"
-	ginauth "github.com/miiy/goc/gin/middleware/auth"
+	"github.com/miiy/goc/gin/authctx"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
@@ -25,7 +25,7 @@ func (m *Module) avatar(c *gin.Context) {
 		return
 	}
 
-	userID, ok := ginauth.GetAuthUserID(c)
+	userID, ok := authctx.CurrentUserInt64ID(c)
 	if !ok || userID <= 0 {
 		transport.WriteError(c, status.Error(codes.Unauthenticated, "invalid authenticated user"))
 		return

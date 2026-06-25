@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"strconv"
 	"testing"
 
 	pb "github.com/miiy/goc-quickstart/nova-post/gen/go/nova/post/v1"
@@ -31,7 +32,7 @@ func NewMockPostRepository() *MockPostRepository {
 
 func authenticatedContext(userID int64) context.Context {
 	return gocauth.InjectAuthenticatedUser(context.Background(), &gocauth.AuthenticatedUser{
-		ID:       userID,
+		ID:       strconv.FormatInt(userID, 10),
 		Username: "alice",
 	})
 }

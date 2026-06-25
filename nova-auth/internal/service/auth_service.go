@@ -372,14 +372,15 @@ func (s *AuthService) ChangePassword(ctx context.Context, req *pb.ChangePassword
 	}
 
 	authUser, err := auth.ExtractAuthenticatedUser(ctx)
-	if err != nil || authUser.ID <= 0 {
-		if err == nil {
-			err = errors.New("invalid authenticated user")
-		}
+	if err != nil {
+		return nil, status.Error(codes.Unauthenticated, err.Error())
+	}
+	authUserID, err := authUser.Int64ID()
+	if err != nil {
 		return nil, status.Error(codes.Unauthenticated, err.Error())
 	}
 
-	user, err := s.authRepo.First(ctx, uint64(authUser.ID), "id", "password", "status")
+	user, err := s.authRepo.First(ctx, uint64(authUserID), "id", "password", "status")
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, status.Error(codes.NotFound, ErrUserNotFound.Error())
@@ -401,7 +402,7 @@ func (s *AuthService) ChangePassword(ctx context.Context, req *pb.ChangePassword
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	rowsAffected, err := s.authRepo.Update(ctx, uint64(authUser.ID), &entity.User{Password: hashPasswd}, "password")
+	rowsAffected, err := s.authRepo.Update(ctx, uint64(authUserID), &entity.User{Password: hashPasswd}, "password")
 	if err != nil {
 		s.logger.Error("authRepo.Update", zap.Error(err))
 		return nil, status.Error(codes.Internal, err.Error())

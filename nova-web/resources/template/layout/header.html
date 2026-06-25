@@ -2,7 +2,7 @@
 <header class="sticky-top">
     <nav class="navbar navbar-expand-lg bg-body-tertiary border-bottom">
         <div class="container">
-            <a class="navbar-brand" href="/">{{ "app.name" | config }}</a>
+            <a class="navbar-brand" href="/">{{ .Site.Name }}</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar" aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -13,7 +13,7 @@
                     </li>
                 </ul>
                 <ul class="navbar-nav mb-2 mb-lg-0">
-                    {{if not .IsLoggedIn}}
+                    {{if not .Auth.IsLoggedIn}}
                     <li class="nav-item">
                         <a class="nav-link" href="/register">注册</a>
                     </li>
@@ -22,7 +22,7 @@
                     </li>
                     {{else}}
                     <li class="nav-item">
-                        <a class="nav-link" href="/user/profile">{{ if .CurrentUser }}{{ .CurrentUser.Username }}{{ else }}用户中心{{ end }}</a>
+                        <a class="nav-link" href="/user/profile">{{ if .Auth.CurrentUser }}{{ .Auth.CurrentUser.Username }}{{ else }}用户中心{{ end }}</a>
                     </li>
                     <li class="nav-item d-flex align-items-center">
                         <form method="POST" action="/auth/logout" class="m-0">

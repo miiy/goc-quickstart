@@ -574,7 +574,7 @@ func TestAuthService_ChangePassword(t *testing.T) {
 			}
 			service := NewAuthServiceServer(logger, authRepo, tokenRepo, NewMockSMSCodeRepository(), jwtAuth, mp, RefreshTTL(time.Hour)).(*AuthService)
 			ctx := auth.InjectAuthenticatedUser(context.Background(), &auth.AuthenticatedUser{
-				ID:       1,
+				ID:       "1",
 				Username: "testuser",
 			})
 

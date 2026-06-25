@@ -7,8 +7,18 @@
 package di
 
 import (
+	"github.com/miiy/goc-quickstart/nova-gateway/gen/go/nova/auth/v1"
+	"github.com/miiy/goc-quickstart/nova-gateway/gen/go/nova/file/v1"
+	"github.com/miiy/goc-quickstart/nova-gateway/gen/go/nova/post/v1"
+	"github.com/miiy/goc-quickstart/nova-gateway/gen/go/nova/user/v1"
 	"github.com/miiy/goc-quickstart/nova-gateway/internal/app"
+	"github.com/miiy/goc-quickstart/nova-gateway/internal/client"
 	"github.com/miiy/goc-quickstart/nova-gateway/internal/config"
+	"github.com/miiy/goc-quickstart/nova-gateway/internal/module"
+	"github.com/miiy/goc-quickstart/nova-gateway/internal/module/auth"
+	"github.com/miiy/goc-quickstart/nova-gateway/internal/module/file"
+	"github.com/miiy/goc-quickstart/nova-gateway/internal/module/post"
+	"github.com/miiy/goc-quickstart/nova-gateway/internal/module/user"
 	"github.com/miiy/goc/logger"
 )
 
@@ -24,11 +34,17 @@ func InitApp(conf string) (*app.App, func(), error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	appApp, cleanup2, err := app.NewApp(configConfig, logger)
+	clients, cleanup2, err := client.NewClients(configConfig)
 	if err != nil {
 		cleanup()
 		return nil, nil, err
 	}
+	authServiceClient := provideAuthClient(clients)
+	postServiceClient := providePostClient(clients)
+	fileServiceClient := provideFileClient(clients)
+	userServiceClient := provideUserClient(clients)
+	modules := provideModules(authServiceClient, postServiceClient, fileServiceClient, userServiceClient)
+	appApp := app.NewApp(configConfig, logger, clients, modules)
 	return appApp, func() {
 		cleanup2()
 		cleanup()
@@ -51,4 +67,34 @@ func provideLogger(options []logger.Option) (logger.Logger, func(), error) {
 			_ = sync.Sync()
 		}
 	}, nil
+}
+
+func provideAuthClient(clients *client.Clients) authv1.AuthServiceClient {
+	return clients.Auth
+}
+
+func providePostClient(clients *client.Clients) postv1.PostServiceClient {
+	return clients.Post
+}
+
+func provideFileClient(clients *client.Clients) filev1.FileServiceClient {
+	return clients.File
+}
+
+func provideUserClient(clients *client.Clients) userv1.UserServiceClient {
+	return clients.User
+}
+
+func provideModules(
+	authClient authv1.AuthServiceClient,
+	postClient postv1.PostServiceClient,
+	fileClient filev1.FileServiceClient,
+	userClient userv1.UserServiceClient,
+) *module.Modules {
+	return &module.Modules{
+		Auth: auth.NewModule(authClient),
+		Post: post.NewModule(postClient, userClient),
+		File: file.NewModule(fileClient, userClient),
+		User: user.NewModule(userClient),
+	}
 }

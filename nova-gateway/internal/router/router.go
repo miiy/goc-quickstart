@@ -2,12 +2,8 @@ package router
 
 import (
 	"github.com/miiy/goc-quickstart/nova-gateway/internal/app"
-	authmiddleware "github.com/miiy/goc-quickstart/nova-gateway/internal/middleware/auth"
-	"github.com/miiy/goc-quickstart/nova-gateway/internal/service/auth"
-	"github.com/miiy/goc-quickstart/nova-gateway/internal/service/file"
-	"github.com/miiy/goc-quickstart/nova-gateway/internal/service/health"
-	"github.com/miiy/goc-quickstart/nova-gateway/internal/service/post"
-	"github.com/miiy/goc-quickstart/nova-gateway/internal/service/user"
+	authmw "github.com/miiy/goc-quickstart/nova-gateway/internal/middleware/auth"
+	"github.com/miiy/goc-quickstart/nova-gateway/internal/module/health"
 	"github.com/miiy/goc/gin"
 )
 
@@ -16,19 +12,19 @@ func Router(app *app.App) func(r *gin.Engine) {
 	return func(r *gin.Engine) {
 		health.NewModule(r).RegisterRouter()
 
-		authModule := auth.NewModule(app.AuthClient())
-		authModule.RegisterPublicRouter(r)
+		modules := app.Modules()
+		clients := app.Clients()
+		modules.Auth.RegisterPublicRouter(r)
 
 		public := r.Group("/api/v1")
-		postModule := post.NewModule(app.PostClient(), app.UserClient())
-		postModule.RegisterPublicRouter(public)
+		modules.Post.RegisterPublicRouter(public)
 
 		protected := r.Group("/api/v1")
-		protected.Use(authmiddleware.AuthenticationMiddleware(app.AuthClient()))
+		protected.Use(authmw.AuthenticationMiddleware(clients.Auth))
 
-		authModule.RegisterProtectedRouter(protected)
-		postModule.RegisterProtectedRouter(protected)
-		file.NewModule(app.FileClient(), app.UserClient()).RegisterRouter(protected)
-		user.NewModule(app.UserClient()).RegisterRouter(protected)
+		modules.Auth.RegisterProtectedRouter(protected)
+		modules.Post.RegisterProtectedRouter(protected)
+		modules.File.RegisterRouter(protected)
+		modules.User.RegisterRouter(protected)
 	}
 }

@@ -8,11 +8,12 @@ import (
 	authv1 "github.com/miiy/goc-quickstart/nova-gateway/gen/go/nova/auth/v1"
 	postv1 "github.com/miiy/goc-quickstart/nova-gateway/gen/go/nova/post/v1"
 	userv1 "github.com/miiy/goc-quickstart/nova-gateway/gen/go/nova/user/v1"
-	authsvc "github.com/miiy/goc-quickstart/nova-gateway/internal/service/auth"
-	filesvc "github.com/miiy/goc-quickstart/nova-gateway/internal/service/file"
-	"github.com/miiy/goc-quickstart/nova-gateway/internal/service/health"
-	postsvc "github.com/miiy/goc-quickstart/nova-gateway/internal/service/post"
-	usersvc "github.com/miiy/goc-quickstart/nova-gateway/internal/service/user"
+	"github.com/miiy/goc-quickstart/nova-gateway/internal/module"
+	"github.com/miiy/goc-quickstart/nova-gateway/internal/module/auth"
+	"github.com/miiy/goc-quickstart/nova-gateway/internal/module/file"
+	"github.com/miiy/goc-quickstart/nova-gateway/internal/module/health"
+	"github.com/miiy/goc-quickstart/nova-gateway/internal/module/post"
+	"github.com/miiy/goc-quickstart/nova-gateway/internal/module/user"
 	"github.com/miiy/goc/gin"
 	"google.golang.org/genproto/googleapis/api/annotations"
 	"google.golang.org/protobuf/proto"
@@ -51,22 +52,26 @@ func ginRoutesForTest() map[route]struct{} {
 
 	health.NewModule(r).RegisterRouter()
 
-	authModule := authsvc.NewModule(nil)
-	authModule.RegisterPublicRouter(r)
+	modules := &module.Modules{
+		Auth: auth.NewModule(nil),
+		Post: post.NewModule(nil, nil),
+		File: file.NewModule(nil, nil),
+		User: user.NewModule(nil),
+	}
+	modules.Auth.RegisterPublicRouter(r)
 
 	public := r.Group("/api/v1")
-	postModule := postsvc.NewModule(nil, nil)
-	postModule.RegisterPublicRouter(public)
+	modules.Post.RegisterPublicRouter(public)
 
 	protected := r.Group("/api/v1")
 	protected.Use(func(c *gin.Context) {
 		c.Next()
 	})
 
-	authModule.RegisterProtectedRouter(protected)
-	postModule.RegisterProtectedRouter(protected)
-	filesvc.NewModule(nil, nil).RegisterRouter(protected)
-	usersvc.NewModule(nil).RegisterRouter(protected)
+	modules.Auth.RegisterProtectedRouter(protected)
+	modules.Post.RegisterProtectedRouter(protected)
+	modules.File.RegisterRouter(protected)
+	modules.User.RegisterRouter(protected)
 
 	routes := make(map[route]struct{})
 	for _, item := range r.Routes() {

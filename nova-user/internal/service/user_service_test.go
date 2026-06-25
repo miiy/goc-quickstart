@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"strconv"
 	"testing"
 
 	pb "github.com/miiy/goc-quickstart/nova-user/gen/go/nova/user/v1"
@@ -29,7 +30,7 @@ func NewMockUserRepository() *MockUserRepository {
 
 func authenticatedContext(userID int64) context.Context {
 	return gocauth.InjectAuthenticatedUser(context.Background(), &gocauth.AuthenticatedUser{
-		ID:       userID,
+		ID:       strconv.FormatInt(userID, 10),
 		Username: "testuser",
 	})
 }

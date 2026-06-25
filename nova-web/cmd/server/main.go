@@ -6,10 +6,6 @@ import (
 
 	"github.com/miiy/goc-quickstart/nova-web/internal/di"
 	"github.com/miiy/goc-quickstart/nova-web/internal/router"
-	"github.com/miiy/goc-quickstart/nova-web/internal/service/auth"
-	"github.com/miiy/goc-quickstart/nova-web/internal/service/post"
-	"github.com/miiy/goc-quickstart/nova-web/internal/service/user"
-	websession "github.com/miiy/goc-quickstart/nova-web/internal/session"
 	"github.com/miiy/goc/gin"
 	ginzap "github.com/miiy/goc/gin/middleware/zap"
 	httpserver "github.com/miiy/goc/http/server"
@@ -25,13 +21,9 @@ func main() {
 	}
 	defer cleanup()
 
-	// init modules
-	clients := app.Clients()
 	cfg := app.Config()
-	sessionManager := websession.NewManager(app.SessionStore(), cfg.Session.Name)
-	post.NewModule(app.Logger(), clients.Post, clients.File, sessionManager)
-	auth.NewModule(app.Logger(), clients.Auth, sessionManager)
-	user.NewModule(app.Logger(), clients.Auth, clients.User, clients.File, sessionManager)
+	clients := app.Clients()
+	sessionManager := app.SessionManager()
 
 	log.Printf("Starting server on %s", cfg.Server.HTTP.Addr)
 	server := httpserver.New(
@@ -40,7 +32,7 @@ func main() {
 	)
 	server.Use(ginzap.Ginzap(app.Logger().ZapLogger()), ginzap.RecoveryWithZap(app.Logger().ZapLogger(), true))
 	server.RegisterRouter(func(r *gin.Engine) {
-		router.Router(r, sessionManager, cfg.App.Timezone, clients.Auth, app.Logger(), cfg.Storage.Root)
+		router.Router(r, sessionManager, cfg.App, clients.Auth, app.Logger(), cfg.Storage.Root)
 	})
 	server.Run()
 }

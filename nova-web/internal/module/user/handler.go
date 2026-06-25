@@ -6,9 +6,8 @@ import (
 
 	"github.com/miiy/goc-quickstart/nova-web/client"
 	"github.com/miiy/goc-quickstart/nova-web/internal/template"
-	gocauth "github.com/miiy/goc/auth"
 	"github.com/miiy/goc/gin"
-	gocauthmid "github.com/miiy/goc/gin/middleware/auth"
+	"github.com/miiy/goc/gin/authctx"
 	"github.com/miiy/goc/gin/sessions"
 )
 
@@ -41,21 +40,26 @@ func Profile(c *gin.Context) {
 }
 
 func UpdateProfile(c *gin.Context) {
-	authUser, ok := currentAuthUser(c)
+	authUser, ok := authctx.CurrentUser(c)
 	if !ok {
 		c.Redirect(http.StatusFound, "/login")
+		return
+	}
+	authUserID, err := authUser.Int64ID()
+	if err != nil {
+		handleAuthError(c, &client.HTTPError{StatusCode: http.StatusUnauthorized, Message: err.Error()})
 		return
 	}
 
 	nickname := strings.TrimSpace(c.PostForm("nickname"))
 	email := strings.TrimSpace(c.PostForm("email"))
-	_, err := userModule.userClient.UpdateProfile(c.Request.Context(), authUser.ID, nickname, email)
+	_, err = userModule.userClient.UpdateProfile(c.Request.Context(), authUserID, nickname, email)
 	if err != nil {
 		if handleAuthError(c, err) {
 			return
 		}
 		renderProfile(c, profileErrorStatus(err), &client.UserResponse{
-			Id:       client.Int64String(authUser.ID),
+			Id:       client.Int64String(authUserID),
 			Username: authUser.Username,
 			Nickname: nickname,
 			Email:    email,
@@ -72,7 +76,7 @@ func UpdateProfile(c *gin.Context) {
 }
 
 func UploadAvatar(c *gin.Context) {
-	if _, ok := currentAuthUser(c); !ok {
+	if _, ok := authctx.CurrentUser(c); !ok {
 		c.Redirect(http.StatusFound, "/login")
 		return
 	}
@@ -112,7 +116,7 @@ func UploadAvatar(c *gin.Context) {
 }
 
 func ChangePassword(c *gin.Context) {
-	if _, ok := currentAuthUser(c); !ok {
+	if _, ok := authctx.CurrentUser(c); !ok {
 		c.Redirect(http.StatusFound, "/login")
 		return
 	}
@@ -144,25 +148,15 @@ func ChangePassword(c *gin.Context) {
 }
 
 func loadCurrentProfile(c *gin.Context) (*client.UserResponse, error) {
-	authUser, ok := currentAuthUser(c)
+	authUser, ok := authctx.CurrentUser(c)
 	if !ok {
 		return nil, &client.HTTPError{StatusCode: http.StatusUnauthorized, Message: "unauthenticated"}
 	}
-	return userModule.userClient.GetUser(c.Request.Context(), authUser.ID)
-}
-
-func currentAuthUser(c *gin.Context) (*gocauth.AuthenticatedUser, bool) {
-	if user, ok := c.Get("currentUser"); ok {
-		if authUser, ok := user.(*gocauth.AuthenticatedUser); ok && authUser != nil {
-			return authUser, true
-		}
-		if authUser, ok := gocauthmid.SessionUser(user); ok {
-			return authUser, true
-		}
+	authUserID, err := authUser.Int64ID()
+	if err != nil {
+		return nil, &client.HTTPError{StatusCode: http.StatusUnauthorized, Message: err.Error()}
 	}
-
-	session := sessions.Default(c)
-	return gocauthmid.SessionUser(session.Get(gocauthmid.SessionKeyAuthUser))
+	return userModule.userClient.GetUser(c.Request.Context(), authUserID)
 }
 
 func handleAuthError(c *gin.Context, err error) bool {

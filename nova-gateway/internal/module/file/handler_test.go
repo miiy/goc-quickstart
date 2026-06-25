@@ -57,7 +57,7 @@ func TestAvatarUploadsAndUpdatesCurrentUser(t *testing.T) {
 
 	r := gin.New()
 	r.POST("/api/v1/files/upload/avatar", func(c *gin.Context) {
-		ctx := gocauth.InjectAuthenticatedUser(c.Request.Context(), &gocauth.AuthenticatedUser{ID: 7, Username: "alice"})
+		ctx := gocauth.InjectAuthenticatedUser(c.Request.Context(), &gocauth.AuthenticatedUser{ID: "7", Username: "alice"})
 		c.Request = c.Request.WithContext(ctx)
 		module.avatar(c)
 	})
@@ -104,7 +104,7 @@ func TestUploadPostCoverUploadsFile(t *testing.T) {
 
 	r := gin.New()
 	r.POST("/api/v1/files/upload", func(c *gin.Context) {
-		ctx := gocauth.InjectAuthenticatedUser(c.Request.Context(), &gocauth.AuthenticatedUser{ID: 7, Username: "alice"})
+		ctx := gocauth.InjectAuthenticatedUser(c.Request.Context(), &gocauth.AuthenticatedUser{ID: "7", Username: "alice"})
 		c.Request = c.Request.WithContext(ctx)
 		module.upload(c)
 	})
