@@ -2,8 +2,10 @@ package about
 
 import "github.com/miiy/goc/gin"
 
-func Router(r *gin.Engine) {
-	r.GET("/about", indexHandler)
+func RegisterRouter(r gin.IRouter) {
+	handler := NewAboutHandler()
+
+	r.GET("/about", handler.index)
 }
 
 func Templates() map[string][]string {

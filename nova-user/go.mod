@@ -6,7 +6,6 @@ require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.11-20260415201107-50325440f8f2.1
 	buf.build/go/protovalidate v1.2.0
 	github.com/google/wire v0.7.0
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0
 	github.com/miiy/goc v0.1.1
 	google.golang.org/genproto/googleapis/api v0.0.0-20260523011958-0a33c5d7ca68
 	google.golang.org/grpc v1.81.1

@@ -1,0 +1,42 @@
+{
+  "$schema": "node_modules/@openapitools/openapi-generator-cli/config.schema.json",
+  "spaces": 2,
+  "generator-cli": {
+    "version": "7.23.0",
+    "generators": {
+      "go-gin-server": {
+        "generatorName": "go-gin-server",
+        "inputSpec": "openapi/openapi.yaml",
+        "output": "gen/go/http/go-gin-server",
+        "gitUserId": "miiy",
+        "gitRepoId": "goc-quickstart/nova-contracts/gen/go/http/go-gin-server",
+        "additionalProperties": {
+          "packageName": "openapi",
+          "packageVersion": "1.0.0",
+          "serverPort": "8080",
+          "interfaceOnly": "true"
+        }
+      },
+      "go-client": {
+        "generatorName": "go",
+        "inputSpec": "openapi/openapi.yaml",
+        "output": "gen/go/http/go-client",
+        "gitUserId": "miiy",
+        "gitRepoId": "goc-quickstart/nova-contracts/gen/go/http/go-client",
+        "additionalProperties": {
+          "packageName": "apiclient",
+          "packageVersion": "1.0.0",
+          "withGoMod": "true"
+        }
+      },
+      "swagger-json": {
+        "generatorName": "openapi",
+        "inputSpec": "openapi/openapi.yaml",
+        "output": "gen/go/http/swagger-json",
+        "additionalProperties": {
+          "outputFileName": "swagger.json"
+        }
+      }
+    }
+  }
+}

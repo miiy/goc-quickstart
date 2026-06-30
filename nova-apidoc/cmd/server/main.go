@@ -29,7 +29,7 @@ func main() {
 	mux := http.NewServeMux()
 
 	// openapi
-	mux.Handle("/openapiv2/", http.FileServer(http.FS(gen.OpenAPIFS)))
+	mux.Handle("/openapi/", http.FileServer(http.FS(gen.OpenAPIFS)))
 
 	// swagger-ui
 	subFS, err := fs.Sub(openapi.SwaggerUIFS, openapi.SwaggerUIFolder)

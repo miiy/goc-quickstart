@@ -1,0 +1,66 @@
+uploadFile:
+  post:
+    tags:
+      - Files
+    operationId: uploadFile
+    summary: Upload a file
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            required:
+              - scene
+              - file
+            properties:
+              scene:
+                $ref: ../schemas/file.yaml#/FileScene
+                description: Upload scene accepted by the gateway.
+              file:
+                type: string
+                format: binary
+    responses:
+      '200':
+        description: Stored file record.
+        content:
+          application/json:
+            schema:
+              $ref: ../schemas/file.yaml#/UploadFileResponse
+      default:
+        description: Error response.
+        content:
+          application/json:
+            schema:
+              $ref: ../../../common/v1/schemas/error.yaml#/ErrorResponse
+uploadAvatar:
+  post:
+    tags:
+      - Files
+    operationId: uploadAvatar
+    summary: Upload current user's avatar
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            required:
+              - avatar
+            properties:
+              avatar:
+                type: string
+                format: binary
+    responses:
+      '200':
+        description: Updated user with avatar.
+        content:
+          application/json:
+            schema:
+              $ref: ../../../user/v1/schemas/user.yaml#/UpdateUserResponse
+      default:
+        description: Error response.
+        content:
+          application/json:
+            schema:
+              $ref: ../../../common/v1/schemas/error.yaml#/ErrorResponse

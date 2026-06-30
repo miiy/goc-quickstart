@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestAuthClientLoginParsesStringUserID(t *testing.T) {
+func TestAuthClientLoginParsesUserID(t *testing.T) {
 	client := &AuthClient{HTTPClient: newTestHTTPClient(func(r *http.Request) (*http.Response, error) {
 		if r.Method != http.MethodPost {
 			t.Fatalf("method = %s, want %s", r.Method, http.MethodPost)
@@ -27,7 +27,7 @@ func TestAuthClientLoginParsesStringUserID(t *testing.T) {
 			t.Fatalf("unexpected login body: %+v", body)
 		}
 
-		resp := testResponse(http.StatusOK, `{"access_token":"access-token","token_type":"Bearer","expires_at":"2026-01-01T00:00:00Z","user":{"id":"7","username":"alice"}}`)
+		resp := testResponse(http.StatusOK, `{"access_token":"access-token","token_type":"Bearer","expires_at":"2026-01-01T00:00:00Z","refresh_token":"refresh-token","refresh_expires_at":"2026-01-08T00:00:00Z","user":{"id":7,"username":"alice"}}`)
 		resp.Header.Set("Content-Type", "application/json")
 		return resp, nil
 	})}
@@ -39,7 +39,7 @@ func TestAuthClientLoginParsesStringUserID(t *testing.T) {
 	if resp.AccessToken != "access-token" {
 		t.Fatalf("access token = %q, want access-token", resp.AccessToken)
 	}
-	if int64(resp.User.Id) != 7 || resp.User.Username != "alice" {
+	if resp.User.Id != 7 || resp.User.Username != "alice" {
 		t.Fatalf("unexpected user: %+v", resp.User)
 	}
 }
@@ -65,7 +65,9 @@ func TestAuthClientChangePassword(t *testing.T) {
 			t.Fatalf("unexpected password body: %+v", body)
 		}
 
-		return testResponse(http.StatusOK, `{}`), nil
+		resp := testResponse(http.StatusOK, `{}`)
+		resp.Header.Set("Content-Type", "application/json")
+		return resp, nil
 	})}
 
 	if err := client.ChangePassword(context.Background(), "old", "new", "new"); err != nil {

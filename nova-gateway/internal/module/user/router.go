@@ -2,10 +2,12 @@ package user
 
 import "github.com/miiy/goc/gin"
 
-func (m *Module) RegisterRouter(r gin.IRouter) {
-	g := r.Group("/users")
-	g.GET("", m.list)
-	g.GET("/batch", m.batchGet)
-	g.GET("/:id", m.get)
-	g.PUT("/:id", m.update)
+func (m *Module) RegisterRouter(protected gin.IRouter) {
+	api := m.usersAPI
+
+	protectedGroup := protected.Group("/users")
+	protectedGroup.GET("", api.ListUsers)
+	protectedGroup.GET("/batch", api.BatchGetUsers)
+	protectedGroup.GET("/:id", api.GetUser)
+	protectedGroup.PUT("/:id", api.UpdateUser)
 }

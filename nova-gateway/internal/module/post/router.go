@@ -2,20 +2,15 @@ package post
 
 import "github.com/miiy/goc/gin"
 
-func (m *Module) RegisterRouter(r gin.IRouter) {
-	m.RegisterPublicRouter(r)
-	m.RegisterProtectedRouter(r)
-}
+func (m *Module) RegisterRouter(public, protected gin.IRouter) {
+	api := m.postsAPI
 
-func (m *Module) RegisterPublicRouter(r gin.IRouter) {
-	g := r.Group("/posts")
-	g.GET("", m.list)
-	g.GET("/:id", m.get)
-}
+	publicGroup := public.Group("/posts")
+	publicGroup.GET("", api.ListPosts)
+	publicGroup.GET("/:id", api.GetPost)
 
-func (m *Module) RegisterProtectedRouter(r gin.IRouter) {
-	g := r.Group("/posts")
-	g.POST("", m.create)
-	g.PUT("/:id", m.update)
-	g.DELETE("/:id", m.delete)
+	protectedGroup := protected.Group("/posts")
+	protectedGroup.POST("", api.CreatePost)
+	protectedGroup.PUT("/:id", api.UpdatePost)
+	protectedGroup.DELETE("/:id", api.DeletePost)
 }

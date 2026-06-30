@@ -6,8 +6,10 @@ import (
 	"net/http"
 	"strings"
 
+	openapi "github.com/miiy/goc-quickstart/nova-contracts/gen/go/http/go-gin-server/go"
 	filev1 "github.com/miiy/goc-quickstart/nova-gateway/gen/go/nova/file/v1"
 	userv1 "github.com/miiy/goc-quickstart/nova-gateway/gen/go/nova/user/v1"
+	usermodule "github.com/miiy/goc-quickstart/nova-gateway/internal/module/user"
 	"github.com/miiy/goc-quickstart/nova-gateway/internal/transport"
 	"github.com/miiy/goc/gin"
 	"github.com/miiy/goc/gin/authctx"
@@ -19,8 +21,20 @@ import (
 const maxAvatarUploadSize = 2 << 20
 const maxPostCoverUploadSize = 5 << 20
 
-func (m *Module) avatar(c *gin.Context) {
-	if m.fileClient == nil || m.userClient == nil {
+type FilesAPI struct {
+	fileClient filev1.FileServiceClient
+	userClient userv1.UserServiceClient
+}
+
+func NewFilesAPI(fileClient filev1.FileServiceClient, userClient userv1.UserServiceClient) openapi.FilesAPI {
+	return &FilesAPI{
+		fileClient: fileClient,
+		userClient: userClient,
+	}
+}
+
+func (api *FilesAPI) UploadAvatar(c *gin.Context) {
+	if api.fileClient == nil || api.userClient == nil {
 		transport.WriteError(c, status.Error(codes.Unavailable, "file service not configured"))
 		return
 	}
@@ -42,7 +56,7 @@ func (m *Module) avatar(c *gin.Context) {
 		mimeType = http.DetectContentType(content)
 	}
 
-	fileResp, err := m.fileClient.UploadFile(c.Request.Context(), &filev1.UploadFileRequest{
+	fileResp, err := api.fileClient.UploadFile(c.Request.Context(), &filev1.UploadFileRequest{
 		Scene:    filev1.FileScene_FILE_SCENE_AVATAR,
 		Filename: header.Filename,
 		MimeType: mimeType,
@@ -57,7 +71,7 @@ func (m *Module) avatar(c *gin.Context) {
 		return
 	}
 
-	resp, err := m.userClient.UpdateUser(c.Request.Context(), &userv1.UpdateUserRequest{
+	resp, err := api.userClient.UpdateUser(c.Request.Context(), &userv1.UpdateUserRequest{
 		Id: userID,
 		User: &userv1.User{
 			Avatar: fileResp.GetFile().GetObjectKey(),
@@ -69,11 +83,11 @@ func (m *Module) avatar(c *gin.Context) {
 		return
 	}
 
-	transport.WriteProto(c, resp)
+	c.JSON(http.StatusOK, openapi.UpdateUserResponse{User: usermodule.OpenAPIUser(resp.GetUser())})
 }
 
-func (m *Module) upload(c *gin.Context) {
-	if m.fileClient == nil {
+func (api *FilesAPI) UploadFile(c *gin.Context) {
+	if api.fileClient == nil {
 		transport.WriteError(c, status.Error(codes.Unavailable, "file service not configured"))
 		return
 	}
@@ -95,7 +109,7 @@ func (m *Module) upload(c *gin.Context) {
 		mimeType = http.DetectContentType(content)
 	}
 
-	resp, err := m.fileClient.UploadFile(c.Request.Context(), &filev1.UploadFileRequest{
+	resp, err := api.fileClient.UploadFile(c.Request.Context(), &filev1.UploadFileRequest{
 		Scene:    scene,
 		Filename: header.Filename,
 		MimeType: mimeType,
@@ -105,12 +119,12 @@ func (m *Module) upload(c *gin.Context) {
 		transport.WriteError(c, err)
 		return
 	}
-	transport.WriteProto(c, resp)
+	c.JSON(http.StatusOK, openapi.UploadFileResponse{File: openapiFile(resp.GetFile())})
 }
 
 func uploadSceneFromForm(value string) (filev1.FileScene, error) {
 	switch strings.ToLower(strings.TrimSpace(value)) {
-	case "post_cover", "post-cover", "cover", "file_scene_post_cover":
+	case string(openapi.FILE_SCENE_POST_COVER):
 		return filev1.FileScene_FILE_SCENE_POST_COVER, nil
 	default:
 		return filev1.FileScene_FILE_SCENE_UNSPECIFIED, status.Error(codes.InvalidArgument, "unsupported file scene")

@@ -1,28 +1,22 @@
 package post
 
-import (
-	"github.com/miiy/goc/gin"
-	"github.com/miiy/goc/gin/middleware/sessionauth"
-)
+import "github.com/miiy/goc/gin"
 
-func Router(r *gin.Engine) {
-	public := r.Group("")
-	{
-		public.GET("/posts", indexHandler)
-		public.GET("/posts/pages/:page", pagesHandler)
-		public.GET("/posts/:id", showHandler)
-	}
+func (m *Module) RegisterRouter(public, protected gin.IRouter) {
+	handler := m.handler
 
-	private := r.Group("")
-	private.Use(sessionauth.Authenticate(sessionauth.WithRedirect("/login")))
-	{
-		private.GET("/posts/create", createHandler)
-		private.POST("/posts", storeHandler)
-		private.GET("/posts/:id/edit", editHandler)
-		private.POST("/posts/:id", postHandler)
-		private.PUT("/posts/:id", updateHandler)
-		private.DELETE("/posts/:id", destroyHandler)
-	}
+	publicGroup := public.Group("/posts")
+	publicGroup.GET("", handler.index)
+	publicGroup.GET("/pages/:page", handler.pages)
+	publicGroup.GET("/:id", handler.show)
+
+	protectedGroup := protected.Group("/posts")
+	protectedGroup.GET("/create", handler.create)
+	protectedGroup.POST("", handler.store)
+	protectedGroup.GET("/:id/edit", handler.edit)
+	protectedGroup.POST("/:id", handler.post)
+	protectedGroup.PUT("/:id", handler.update)
+	protectedGroup.DELETE("/:id", handler.destroy)
 }
 
 func Templates() map[string][]string {

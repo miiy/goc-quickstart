@@ -2,8 +2,10 @@ package post
 
 import (
 	"context"
+	"net/http"
 	"strings"
 
+	openapi "github.com/miiy/goc-quickstart/nova-contracts/gen/go/http/go-gin-server/go"
 	postv1 "github.com/miiy/goc-quickstart/nova-gateway/gen/go/nova/post/v1"
 	userv1 "github.com/miiy/goc-quickstart/nova-gateway/gen/go/nova/user/v1"
 	"github.com/miiy/goc-quickstart/nova-gateway/internal/transport"
@@ -12,102 +14,137 @@ import (
 	"google.golang.org/grpc"
 )
 
-func (m *Module) get(c *gin.Context) {
+type PostsAPI struct {
+	postClient postv1.PostServiceClient
+	userClient userClient
+}
+
+func NewPostsAPI(postClient postv1.PostServiceClient, userClient userv1.UserServiceClient) openapi.PostsAPI {
+	return &PostsAPI{
+		postClient: postClient,
+		userClient: userClient,
+	}
+}
+
+func (api *PostsAPI) GetPost(c *gin.Context) {
 	id, ok := transport.Int64Param(c, "id")
 	if !ok {
 		return
 	}
 
-	resp, err := m.postClient.GetPost(c.Request.Context(), &postv1.GetPostRequest{Id: id})
+	resp, err := api.postClient.GetPost(c.Request.Context(), &postv1.GetPostRequest{Id: id})
 	if err != nil {
 		transport.WriteError(c, err)
 		return
 	}
-	if err := m.enrichPostAuthors(c.Request.Context(), resp.Post); err != nil {
-		transport.WriteError(c, err)
-		return
-	}
-	transport.WriteProto(c, resp)
-}
-
-func (m *Module) create(c *gin.Context) {
-	var req postv1.CreatePostRequest
-	if !transport.BindProto(c, &req) {
-		return
-	}
-
-	resp, err := m.postClient.CreatePost(c.Request.Context(), &req)
+	authorNames, err := api.authorNames(c.Request.Context(), resp.Post)
 	if err != nil {
 		transport.WriteError(c, err)
 		return
 	}
-	if err := m.enrichPostAuthors(c.Request.Context(), resp.Post); err != nil {
+	c.JSON(http.StatusOK, openapi.GetPostResponse{Post: openapiPost(resp.GetPost(), authorNames)})
+}
+
+func (api *PostsAPI) CreatePost(c *gin.Context) {
+	var req openapi.CreatePostRequest
+	if !transport.BindJSON(c, &req) {
+		return
+	}
+
+	post, err := protoCreatePostInput(req.Post)
+	if err != nil {
 		transport.WriteError(c, err)
 		return
 	}
-	transport.WriteProto(c, resp)
+
+	resp, err := api.postClient.CreatePost(c.Request.Context(), &postv1.CreatePostRequest{Post: post})
+	if err != nil {
+		transport.WriteError(c, err)
+		return
+	}
+	authorNames, err := api.authorNames(c.Request.Context(), resp.Post)
+	if err != nil {
+		transport.WriteError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, openapi.CreatePostResponse{Post: openapiPost(resp.GetPost(), authorNames)})
 }
 
-func (m *Module) update(c *gin.Context) {
+func (api *PostsAPI) UpdatePost(c *gin.Context) {
 	id, ok := transport.Int64Param(c, "id")
 	if !ok {
 		return
 	}
 
-	var req postv1.UpdatePostRequest
-	if !transport.BindProto(c, &req) {
+	var req openapi.UpdatePostRequest
+	if !transport.BindJSON(c, &req) {
 		return
 	}
-	req.Id = id
 
-	resp, err := m.postClient.UpdatePost(c.Request.Context(), &req)
+	post, err := protoUpdatePostInput(req.Post)
 	if err != nil {
 		transport.WriteError(c, err)
 		return
 	}
-	if err := m.enrichPostAuthors(c.Request.Context(), resp.Post); err != nil {
+	updateMask, err := protoUpdateMask(req.UpdateFields)
+	if err != nil {
 		transport.WriteError(c, err)
 		return
 	}
-	transport.WriteProto(c, resp)
+
+	resp, err := api.postClient.UpdatePost(c.Request.Context(), &postv1.UpdatePostRequest{
+		Id:         id,
+		Post:       post,
+		UpdateMask: updateMask,
+	})
+	if err != nil {
+		transport.WriteError(c, err)
+		return
+	}
+	authorNames, err := api.authorNames(c.Request.Context(), resp.Post)
+	if err != nil {
+		transport.WriteError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, openapi.UpdatePostResponse{Post: openapiPost(resp.GetPost(), authorNames)})
 }
 
-func (m *Module) delete(c *gin.Context) {
+func (api *PostsAPI) DeletePost(c *gin.Context) {
 	id, ok := transport.Int64Param(c, "id")
 	if !ok {
 		return
 	}
 
-	resp, err := m.postClient.DeletePost(c.Request.Context(), &postv1.DeletePostRequest{Id: id})
+	_, err := api.postClient.DeletePost(c.Request.Context(), &postv1.DeletePostRequest{Id: id})
 	if err != nil {
 		transport.WriteError(c, err)
 		return
 	}
-	transport.WriteProto(c, resp)
+	c.JSON(http.StatusOK, map[string]any{})
 }
 
-func (m *Module) list(c *gin.Context) {
-	authorID, ok := transport.Int64Query(c, "author_id", "authorId")
+func (api *PostsAPI) ListPosts(c *gin.Context) {
+	authorID, ok := transport.Int64Query(c, "author_id")
 	if !ok {
 		return
 	}
-	categoryID, ok := transport.Int64Query(c, "category_id", "categoryId")
+	categoryID, ok := transport.Int64Query(c, "category_id")
 	if !ok {
 		return
 	}
-	page, ok := transport.Int32Query(c, "page", "")
+	page, ok := transport.Int32Query(c, "page")
 	if !ok {
 		return
 	}
-	pageSize, ok := transport.Int32Query(c, "page_size", "pageSize")
+	pageSize, ok := transport.Int32Query(c, "page_size")
 	if !ok {
 		return
 	}
 
-	resp, err := m.postClient.ListPosts(c.Request.Context(), &postv1.ListPostsRequest{
+	resp, err := api.postClient.ListPosts(c.Request.Context(), &postv1.ListPostsRequest{
 		AuthorId:   authorID,
 		CategoryId: categoryID,
-		Tag:        transport.QueryValue(c, "tag", ""),
+		Tag:        c.Query("tag"),
 		Page:       page,
 		PageSize:   pageSize,
 	})
@@ -115,22 +152,29 @@ func (m *Module) list(c *gin.Context) {
 		transport.WriteError(c, err)
 		return
 	}
-	if err := m.enrichPostAuthors(c.Request.Context(), resp.Posts...); err != nil {
+	authorNames, err := api.authorNames(c.Request.Context(), resp.Posts...)
+	if err != nil {
 		transport.WriteError(c, err)
 		return
 	}
-	transport.WriteProto(c, resp)
+	c.JSON(http.StatusOK, openapi.ListPostsResponse{
+		Total:       resp.GetTotal(),
+		TotalPages:  resp.GetTotalPages(),
+		PageSize:    resp.GetPageSize(),
+		CurrentPage: resp.GetCurrentPage(),
+		Posts:       openapiPosts(resp.GetPosts(), authorNames),
+	})
 }
 
-func (m *Module) enrichPostAuthors(ctx context.Context, posts ...*postv1.Post) error {
+func (api *PostsAPI) authorNames(ctx context.Context, posts ...*postv1.Post) (map[int64]string, error) {
 	ids := uniqueAuthorIDs(posts)
-	if len(ids) == 0 || m.userClient == nil {
-		return nil
+	if len(ids) == 0 || api.userClient == nil {
+		return nil, nil
 	}
 
-	resp, err := m.userClient.BatchGetUsers(ctx, &userv1.BatchGetUsersRequest{Ids: ids})
+	resp, err := api.userClient.BatchGetUsers(ctx, &userv1.BatchGetUsersRequest{Ids: ids})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	names := make(map[int64]string, len(resp.GetUsers()))
@@ -143,13 +187,7 @@ func (m *Module) enrichPostAuthors(ctx context.Context, posts ...*postv1.Post) e
 			names[user.GetId()] = name
 		}
 	}
-	for _, post := range posts {
-		if post == nil {
-			continue
-		}
-		post.AuthorName = names[post.GetAuthorId()]
-	}
-	return nil
+	return names, nil
 }
 
 func uniqueAuthorIDs(posts []*postv1.Post) []int64 {
@@ -169,8 +207,8 @@ func uniqueAuthorIDs(posts []*postv1.Post) []int64 {
 	return ids
 }
 
-type authorUserClient interface {
+type userClient interface {
 	BatchGetUsers(ctx context.Context, in *userv1.BatchGetUsersRequest, opts ...grpc.CallOption) (*userv1.BatchGetUsersResponse, error)
 }
 
-var _ authorUserClient = userv1.UserServiceClient(nil)
+var _ userClient = userv1.UserServiceClient(nil)

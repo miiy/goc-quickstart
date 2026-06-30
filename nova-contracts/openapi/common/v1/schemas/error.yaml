@@ -1,0 +1,18 @@
+ErrorStatus:
+  type: object
+  required:
+    - code
+    - message
+  properties:
+    code:
+      type: integer
+      format: int32
+    message:
+      type: string
+ErrorResponse:
+  type: object
+  required:
+    - error
+  properties:
+    error:
+      $ref: '#/ErrorStatus'

@@ -14,9 +14,12 @@ nova 是一个基于 gRPC 的博客微服务项目，包含认证、用户、文
 
 ```
 goc-quickstart
-├── nova-proto/                    # Proto 定义和生成代码
+├── nova-contracts/                # gRPC/OpenAPI 契约和生成代码
 │   ├── proto/nova/                # Proto 文件 (auth, post, user, file)
-│   └── gen/                       # 生成的 Go/OpenAPI 代码
+│   ├── openapi/                   # OpenAPI YAML 文件
+│   └── gen/go/                    # 生成代码
+│       ├── rpc/                   # protobuf/gRPC Go 代码
+│       └── http/                  # OpenAPI server/client/swagger 输出
 ├── nova-auth/                     # 认证服务 (gRPC)
 ├── nova-user/                     # 用户服务 (gRPC)
 ├── nova-post/                     # 文章服务 (gRPC)
@@ -37,15 +40,25 @@ goc-quickstart
 
 ## Proto 管理
 
-- Proto 文件统一在 `nova-proto/proto/nova/` 管理
+- Proto 文件统一在 `nova-contracts/proto/nova/` 管理
 - 各服务通过 `buf generate` 生成代码后复制到服务的 `gen/` 目录
 - package 命名: `nova.{service}.v1`
 - service 命名: `{Service}Service` (如 `AuthService`, `PostService`, `FileService`)
-- 保留 `protoc-gen-openapiv2` 用于生成 OpenAPI 文档；不要启用 `protoc-gen-grpc-gateway` 生成 `*.pb.gw.go`，运行时 HTTP 网关由 Gin 手写 handler 承担。
+- Proto 只描述服务间 gRPC 契约；HTTP 网关契约、DTO 和文档由 `nova-contracts/openapi/` 维护。
+
+## OpenAPI 管理
+
+- OpenAPI 源文件统一在 `nova-contracts/openapi/` 管理，聚合入口是 `nova-contracts/openapi/openapi.yaml`。
+- HTTP path、公开 request/response DTO、错误响应 schema 和 API 文档以 OpenAPI 为准；不要在 proto 中添加 `google.api.http` 或 grpc-gateway OpenAPI 注解。
+- 生成输出位于 `nova-contracts/gen/go/http/`：
+  - `go-gin-server/`：`nova-gateway` 使用的 API interface、DTO 和路由契约
+  - `go-client/`：`nova-web` 使用的 Go HTTP client SDK
+  - `swagger-json/`：API 文档源，生成时复制到 `nova-apidoc/gen/openapi/swagger.json`
+- 修改 OpenAPI 源文件后运行 `make openapi`；不要手动编辑 `nova-contracts/gen/go/http/` 或 `nova-apidoc/gen/openapi/swagger.json`。
 
 ## API Gateway 与认证边界
 
-- `nova-gateway` 使用 Gin 手写 HTTP 路由和 handler，不使用 grpc-gateway generated mux 作为主链路。
+- `nova-gateway` 使用 Gin 手写 HTTP 路由和 handler，handler 的 API interface/DTO 来自 `nova-contracts/gen/go/http/go-gin-server/go`，不使用 grpc-gateway generated mux 作为主链路。
 - grpc-gateway 不负责认证；认证由 `nova-gateway` 的 Gin middleware 完成。
 - JWT middleware 需要完成两步：
   - 校验 JWT 签名、issuer、过期时间等 token claims。
@@ -82,6 +95,7 @@ goc-quickstart
 | nova-file    | `github.com/miiy/goc-quickstart/nova-file`    | 50054     |
 | nova-gateway | `github.com/miiy/goc-quickstart/nova-gateway` | 8080      |
 | nova-web     | `github.com/miiy/goc-quickstart/nova-web`     | 8081      |
+| nova-apidoc  | `github.com/miiy/goc-quickstart/nova-apidoc`  | 8090      |
 
 ## Service 层规范
 
@@ -138,6 +152,12 @@ goc-quickstart
 make proto              # 生成 proto 代码 + 复制到各服务
 make proto-generate     # 仅生成 proto 代码
 make proto-copy         # 仅复制生成代码到各服务
+
+# OpenAPI 相关
+make openapi            # 校验并生成 OpenAPI server/client/swagger
+make openapi-validate   # 仅校验 nova-contracts/openapi/openapi.yaml
+make openapi-generate   # 仅生成 OpenAPI 输出并复制 swagger.json 到 nova-apidoc
+make openapi-deps       # 安装 OpenAPI Generator npm 依赖
 
 # 构建
 make build              # 构建所有服务（二进制命名为服务名，如 bin/nova-auth）

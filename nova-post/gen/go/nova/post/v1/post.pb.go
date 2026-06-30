@@ -8,7 +8,6 @@ package postv1
 
 import (
 	_ "buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
-	_ "github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2/options"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -78,20 +77,18 @@ func (PostStatus) EnumDescriptor() ([]byte, []int) {
 
 // Post describes an article published by a user.
 type Post struct {
-	state      protoimpl.MessageState `protogen:"open.v1"`
-	Id         int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	AuthorId   int64                  `protobuf:"varint,2,opt,name=author_id,json=authorId,proto3" json:"author_id,omitempty"`
-	Title      string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
-	Content    string                 `protobuf:"bytes,4,opt,name=content,proto3" json:"content,omitempty"`
-	Status     PostStatus             `protobuf:"varint,5,opt,name=status,proto3,enum=nova.post.v1.PostStatus" json:"status,omitempty"`
-	Tags       []string               `protobuf:"bytes,6,rep,name=tags,proto3" json:"tags,omitempty"`
-	CategoryId int64                  `protobuf:"varint,7,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
-	CreatedAt  *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt  *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
-	DeletedAt  *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=deleted_at,json=deletedAt,proto3" json:"deleted_at,omitempty"`
-	// Populated by the API gateway from nova-user for web responses.
-	AuthorName    string `protobuf:"bytes,11,opt,name=author_name,json=authorName,proto3" json:"author_name,omitempty"`
-	CoverUrl      string `protobuf:"bytes,12,opt,name=cover_url,json=coverUrl,proto3" json:"cover_url,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	AuthorId      int64                  `protobuf:"varint,2,opt,name=author_id,json=authorId,proto3" json:"author_id,omitempty"`
+	Title         string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
+	Content       string                 `protobuf:"bytes,4,opt,name=content,proto3" json:"content,omitempty"`
+	Status        PostStatus             `protobuf:"varint,5,opt,name=status,proto3,enum=nova.post.v1.PostStatus" json:"status,omitempty"`
+	Tags          []string               `protobuf:"bytes,6,rep,name=tags,proto3" json:"tags,omitempty"`
+	CategoryId    int64                  `protobuf:"varint,7,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
+	CoverUrl      string                 `protobuf:"bytes,12,opt,name=cover_url,json=coverUrl,proto3" json:"cover_url,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	DeletedAt     *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=deleted_at,json=deletedAt,proto3" json:"deleted_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -175,6 +172,13 @@ func (x *Post) GetCategoryId() int64 {
 	return 0
 }
 
+func (x *Post) GetCoverUrl() string {
+	if x != nil {
+		return x.CoverUrl
+	}
+	return ""
+}
+
 func (x *Post) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.CreatedAt
@@ -194,20 +198,6 @@ func (x *Post) GetDeletedAt() *timestamppb.Timestamp {
 		return x.DeletedAt
 	}
 	return nil
-}
-
-func (x *Post) GetAuthorName() string {
-	if x != nil {
-		return x.AuthorName
-	}
-	return ""
-}
-
-func (x *Post) GetCoverUrl() string {
-	if x != nil {
-		return x.CoverUrl
-	}
-	return ""
 }
 
 // GetPostRequest identifies a post by id.
@@ -736,7 +726,7 @@ var File_nova_post_v1_post_proto protoreflect.FileDescriptor
 
 const file_nova_post_v1_post_proto_rawDesc = "" +
 	"\n" +
-	"\x17nova/post/v1/post.proto\x12\fnova.post.v1\x1a\x1bbuf/validate/validate.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a google/protobuf/field_mask.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\"\xb9\x03\n" +
+	"\x17nova/post/v1/post.proto\x12\fnova.post.v1\x1a\x1bbuf/validate/validate.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a google/protobuf/field_mask.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xab\x03\n" +
 	"\x04Post\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1b\n" +
 	"\tauthor_id\x18\x02 \x01(\x03R\bauthorId\x12\x14\n" +
@@ -745,17 +735,15 @@ const file_nova_post_v1_post_proto_rawDesc = "" +
 	"\x06status\x18\x05 \x01(\x0e2\x18.nova.post.v1.PostStatusR\x06status\x12\x12\n" +
 	"\x04tags\x18\x06 \x03(\tR\x04tags\x12\x1f\n" +
 	"\vcategory_id\x18\a \x01(\x03R\n" +
-	"categoryId\x129\n" +
+	"categoryId\x12\x1b\n" +
+	"\tcover_url\x18\f \x01(\tR\bcoverUrl\x129\n" +
 	"\n" +
 	"created_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
 	"updated_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x129\n" +
 	"\n" +
 	"deleted_at\x18\n" +
-	" \x01(\v2\x1a.google.protobuf.TimestampR\tdeletedAt\x12\x1f\n" +
-	"\vauthor_name\x18\v \x01(\tR\n" +
-	"authorName\x12\x1b\n" +
-	"\tcover_url\x18\f \x01(\tR\bcoverUrl\",\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampR\tdeletedAtJ\x04\b\v\x10\fR\vauthor_name\",\n" +
 	"\x0eGetPostRequest\x12\x1a\n" +
 	"\x02id\x18\x01 \x01(\x03B\n" +
 	"\xe0A\x02\xbaH\x04\"\x02 \x00R\x02id\"9\n" +
@@ -795,21 +783,17 @@ const file_nova_post_v1_post_proto_rawDesc = "" +
 	"PostStatus\x12\x1b\n" +
 	"\x17POST_STATUS_UNSPECIFIED\x10\x00\x12\x15\n" +
 	"\x11POST_STATUS_DRAFT\x10\x01\x12\x19\n" +
-	"\x15POST_STATUS_PUBLISHED\x10\x022\x9e\x04\n" +
-	"\vPostService\x12b\n" +
-	"\aGetPost\x12\x1c.nova.post.v1.GetPostRequest\x1a\x1d.nova.post.v1.GetPostResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/api/v1/posts/{id}\x12i\n" +
+	"\x15POST_STATUS_PUBLISHED\x10\x022\x96\x03\n" +
+	"\vPostService\x12F\n" +
+	"\aGetPost\x12\x1c.nova.post.v1.GetPostRequest\x1a\x1d.nova.post.v1.GetPostResponse\x12O\n" +
 	"\n" +
-	"CreatePost\x12\x1f.nova.post.v1.CreatePostRequest\x1a .nova.post.v1.CreatePostResponse\"\x18\x82\xd3\xe4\x93\x02\x12:\x01*\"\r/api/v1/posts\x12n\n" +
+	"CreatePost\x12\x1f.nova.post.v1.CreatePostRequest\x1a .nova.post.v1.CreatePostResponse\x12O\n" +
 	"\n" +
-	"UpdatePost\x12\x1f.nova.post.v1.UpdatePostRequest\x1a .nova.post.v1.UpdatePostResponse\"\x1d\x82\xd3\xe4\x93\x02\x17:\x01*\x1a\x12/api/v1/posts/{id}\x12k\n" +
+	"UpdatePost\x12\x1f.nova.post.v1.UpdatePostRequest\x1a .nova.post.v1.UpdatePostResponse\x12O\n" +
 	"\n" +
-	"DeletePost\x12\x1f.nova.post.v1.DeletePostRequest\x1a .nova.post.v1.DeletePostResponse\"\x1a\x82\xd3\xe4\x93\x02\x14*\x12/api/v1/posts/{id}\x12c\n" +
-	"\tListPosts\x12\x1e.nova.post.v1.ListPostsRequest\x1a\x1f.nova.post.v1.ListPostsResponse\"\x15\x82\xd3\xe4\x93\x02\x0f\x12\r/api/v1/postsB\x9b\x03\x92A\xe2\x01\x12\x98\x01\n" +
-	"\bPost API\"H\n" +
-	"\fnova project\x12&https://github.com/miiy/goc-quickstart\x1a\x10none@example.com*=\n" +
-	"\vMIT License\x12.https://github.com/miiy/goc-quickstart/LICENSE2\x031.0*\x03\x01\x02\x04r@\n" +
-	"\x0eMore about goc\x12.https://github.com/grpc-ecosystem/grpc-gateway\n" +
-	"\x10com.nova.post.v1B\tPostProtoP\x01ZDgithub.com/miiy/goc-quickstart/nova-proto/gen/go/nova/post/v1;postv1\xa2\x02\x03NPX\xaa\x02\fNova.Post.V1\xca\x02\fNova\\Post\\V1\xe2\x02\x18Nova\\Post\\V1\\GPBMetadata\xea\x02\x0eNova::Post::V1b\x06proto3"
+	"DeletePost\x12\x1f.nova.post.v1.DeletePostRequest\x1a .nova.post.v1.DeletePostResponse\x12L\n" +
+	"\tListPosts\x12\x1e.nova.post.v1.ListPostsRequest\x1a\x1f.nova.post.v1.ListPostsResponseB\xbd\x01\n" +
+	"\x10com.nova.post.v1B\tPostProtoP\x01ZLgithub.com/miiy/goc-quickstart/nova-contracts/gen/go/rpc/nova/post/v1;postv1\xa2\x02\x03NPX\xaa\x02\fNova.Post.V1\xca\x02\fNova\\Post\\V1\xe2\x02\x18Nova\\Post\\V1\\GPBMetadata\xea\x02\x0eNova::Post::V1b\x06proto3"
 
 var (
 	file_nova_post_v1_post_proto_rawDescOnce sync.Once

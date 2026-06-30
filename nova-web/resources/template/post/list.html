@@ -17,8 +17,8 @@
                     {{ range .Posts }}
                     <li class="list-group-item d-flex justify-content-between align-items-center gap-3">
                         <div class="d-flex align-items-center gap-3 min-w-0">
-                            {{ if .CoverURL }}
-                            <img src="{{ .CoverURL }}" alt="" class="rounded object-fit-cover" style="width: 88px; height: 56px;">
+                            {{ if .CoverUrl }}
+                            <img src="{{ .CoverUrl }}" alt="" class="rounded object-fit-cover" style="width: 88px; height: 56px;">
                             {{ end }}
                             <div class="min-w-0">
                             <a href="/posts/{{ .Id }}">{{ .Title }}</a>

@@ -5,7 +5,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	gogin "github.com/gin-gonic/gin"
 	gocauth "github.com/miiy/goc/auth"
 	"github.com/miiy/goc/gin"
 	"github.com/miiy/goc/gin/authctx"
@@ -21,7 +20,7 @@ func TestNewViewDataIncludesSiteData(t *testing.T) {
 		FooterCopyright: "&copy; 2024",
 	})
 
-	c, _ := gogin.CreateTestContext(httptest.NewRecorder())
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 	c.Request = httptest.NewRequest(http.MethodGet, "/", nil)
 
 	view := NewViewData(c)

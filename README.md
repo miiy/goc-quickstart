@@ -4,38 +4,31 @@
 
 ## 项目架构
 
-```
-┌─────────────┐     ┌──────────────┐
-│  nova-web   │────▶│ nova-gateway │
-│  (前端)     │     │  (HTTP网关)  │
-└─────────────┘     └──────┬───────┘
-                           │ gRPC
-        ┌──────────┬───────┼───────┬──────────┐
-        ▼          ▼       ▼       ▼          ▼
- ┌────────────┐ ┌────────────┐ ┌────────────┐
- │ nova-auth  │ │ nova-post  │ │ nova-user  │
- │  认证服务  │ │  文章服务  │ │  用户服务  │
- └────────────┘ └────────────┘ └────────────┘
-        │          │       │
-        │  ┌────────────┐  │
-        │  │ nova-file  │  │
-        │  │  文件服务  │  │
-        │  └────────────┘  │
-        └──────────┴───────┘
-                   │
-            ┌──────┴──────┐
-            │   MySQL     │
-            │   Redis     │
-            └─────────────┘
+```mermaid
+flowchart TB
+    web["nova-web<br/>前端"] -->|HTTP| gateway["nova-gateway<br/>HTTP 网关"]
+
+    gateway -->|gRPC| auth["nova-auth<br/>认证服务"]
+    gateway -->|gRPC| user["nova-user<br/>用户服务"]
+    gateway -->|gRPC| post["nova-post<br/>文章服务"]
+    gateway -->|gRPC| file["nova-file<br/>文件服务"]
+
+    auth --> storage[("MySQL / Redis")]
+    user --> storage
+    post --> storage
+    file --> storage
 ```
 
 ## 项目结构
 
 ```
 goc-quickstart
-├── nova-proto/             # Proto 定义和生成代码
+├── nova-contracts/         # gRPC/OpenAPI 契约和生成代码
 │   ├── proto/nova/         # Proto 文件 (auth, post, user, file)
-│   └── gen/                # 生成的 Go/OpenAPI 代码
+│   ├── openapi/            # OpenAPI YAML 文件
+│   └── gen/go/             # 生成代码
+│       ├── rpc/            # protobuf/gRPC Go 代码
+│       └── http/           # OpenAPI server/client/swagger 输出
 ├── nova-auth/              # 认证服务 (gRPC :50051)
 ├── nova-user/              # 用户服务 (gRPC :50052)
 ├── nova-post/              # 文章服务 (gRPC :50053)
@@ -54,6 +47,7 @@ goc-quickstart
 | ------------ | ----- | ---------------------- |
 | nova-gateway | 8080  | HTTP 入口，路由转发    |
 | nova-web     | 8081  | Web 前端页面           |
+| nova-apidoc  | 8090  | Swagger UI/API 文档    |
 | nova-auth    | 50051 | 认证/登录/注册         |
 | nova-user    | 50052 | 用户信息管理           |
 | nova-post    | 50053 | 文章 CRUD              |
@@ -69,6 +63,7 @@ goc-quickstart
 - **依赖注入**: Wire
 - **日志**: Zap
 - **Proto**: Buf
+- **OpenAPI**: OpenAPI Generator
 - **容器**: Docker + Docker Compose
 
 ## 快速开始
@@ -80,19 +75,21 @@ goc-quickstart
 - Redis 7.0+
 - Buf CLI (用于 proto 生成)
 - Wire (用于依赖注入生成)
+- Node.js/npm + Java (用于 OpenAPI Generator)
 
 ### 安装工具
 
 ```bash
 go install github.com/bufbuild/buf/cmd/buf@latest
 go install github.com/google/wire/cmd/wire@latest
+make openapi-deps
 ```
 
 ### 一键构建
 
 ```bash
-# 生成 proto + wire + 编译，一步到位
-make proto && make wire && make build
+# 生成 proto/OpenAPI + wire + 编译，一步到位
+make proto && make openapi && make wire && make build
 ```
 
 ### 数据库初始化
@@ -119,6 +116,7 @@ make dev-post
 make dev-file
 make dev-gateway
 make dev-web
+make dev-apidoc
 ```
 
 ### 配置
@@ -140,7 +138,7 @@ cp nova-web/config.yaml.example nova-web/config.yaml
 
 - Web 界面: http://localhost:8081
 - API 网关: http://localhost:8080
-- API 文档: 查看 `nova-proto/gen/openapiv2/` 目录
+- API 文档: http://localhost:8090 （或查看 `nova-contracts/gen/go/http/swagger-json/swagger.json`）
 
 ## Makefile 命令
 
@@ -148,6 +146,10 @@ cp nova-web/config.yaml.example nova-web/config.yaml
 make proto              # 生成 proto 代码 + 复制到各服务
 make proto-generate     # 仅生成 proto 代码
 make proto-copy         # 仅复制生成代码到各服务
+make openapi            # 校验并生成 OpenAPI server/client/swagger
+make openapi-validate   # 仅校验 nova-contracts/openapi/openapi.yaml
+make openapi-generate   # 仅生成 OpenAPI 输出并复制 swagger.json 到 nova-apidoc
+make openapi-deps       # 安装 OpenAPI Generator npm 依赖
 make build              # 构建所有服务
 make test               # 运行所有测试
 make wire               # 生成所有 Wire DI
@@ -155,38 +157,6 @@ make lint               # 运行 lint
 make fmt                # 格式化 Go 代码
 make docker-up          # 启动 Docker
 make docker-down        # 停止 Docker
-```
-
-## API 示例
-
-### 用户注册
-
-```bash
-curl -X POST http://localhost:8080/api/v1/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com","username":"testuser","password":"password123","password_confirmation":"password123"}'
-```
-
-### 用户登录
-
-```bash
-curl -X POST http://localhost:8080/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"testuser","password":"password123"}'
-```
-
-### 获取文章列表
-
-```bash
-curl http://localhost:8080/api/v1/posts
-```
-
-### 上传头像
-
-```bash
-curl -X POST http://localhost:8080/api/v1/files/upload/avatar \
-  -H "Authorization: Bearer <token>" \
-  -F "avatar=@avatar.png"
 ```
 
 ## License

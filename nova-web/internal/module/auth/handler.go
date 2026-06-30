@@ -3,11 +3,29 @@ package auth
 import (
 	"net/http"
 	"strconv"
+	"time"
 
+	"github.com/miiy/goc-quickstart/nova-web/client"
+	"github.com/miiy/goc-quickstart/nova-web/internal/session"
 	"github.com/miiy/goc-quickstart/nova-web/internal/template"
 	"github.com/miiy/goc/gin"
 	"github.com/miiy/goc/gin/sessions"
+	"github.com/miiy/goc/logger"
 )
+
+type AuthHandler struct {
+	logger         logger.Logger
+	authClient     *client.AuthClient
+	sessionManager *session.Manager
+}
+
+func NewAuthHandler(logger logger.Logger, authClient *client.AuthClient, sessionManager *session.Manager) *AuthHandler {
+	return &AuthHandler{
+		logger:         logger,
+		authClient:     authClient,
+		sessionManager: sessionManager,
+	}
+}
 
 type AuthFormView struct {
 	template.ViewData
@@ -16,7 +34,7 @@ type AuthFormView struct {
 	Username string
 }
 
-func RegisterForm(c *gin.Context) {
+func (h *AuthHandler) RegisterForm(c *gin.Context) {
 	flashes, err := sessions.Flashes(c)
 	if err != nil {
 		_ = c.Error(err)
@@ -28,13 +46,13 @@ func RegisterForm(c *gin.Context) {
 	})
 }
 
-func Register(c *gin.Context) {
+func (h *AuthHandler) Register(c *gin.Context) {
 	email := c.PostForm("email")
 	username := c.PostForm("username")
 	password := c.PostForm("password")
 	passwordConfirmation := c.PostForm("password_confirmation")
 
-	_, err := authModule.authClient.Register(c.Request.Context(), email, username, password, passwordConfirmation)
+	_, err := h.authClient.Register(c.Request.Context(), email, username, password, passwordConfirmation)
 	if err != nil {
 		c.HTML(http.StatusBadRequest, "auth/register", AuthFormView{
 			ViewData: template.NewFormViewData(c),
@@ -55,7 +73,7 @@ func Register(c *gin.Context) {
 	c.Redirect(http.StatusFound, "/login")
 }
 
-func LoginForm(c *gin.Context) {
+func (h *AuthHandler) LoginForm(c *gin.Context) {
 	flashes, err := sessions.Flashes(c)
 	if err != nil {
 		_ = c.Error(err)
@@ -67,11 +85,11 @@ func LoginForm(c *gin.Context) {
 	})
 }
 
-func Login(c *gin.Context) {
+func (h *AuthHandler) Login(c *gin.Context) {
 	username := c.PostForm("username")
 	password := c.PostForm("password")
 
-	resp, err := authModule.authClient.Login(c.Request.Context(), username, password)
+	resp, err := h.authClient.Login(c.Request.Context(), username, password)
 	if err != nil {
 		c.HTML(http.StatusBadRequest, "auth/login", AuthFormView{
 			ViewData: template.NewFormViewData(c),
@@ -87,10 +105,10 @@ func Login(c *gin.Context) {
 	if sessionUsername == "" {
 		sessionUsername = username
 	}
-	if err := authModule.sessionManager.SaveLoginSession(c, map[string]any{
-		"id":       strconv.FormatInt(int64(resp.User.Id), 10),
+	if err := h.sessionManager.SaveLoginSession(c, map[string]any{
+		"id":       strconv.FormatInt(resp.User.Id, 10),
 		"username": sessionUsername,
-	}, resp.AccessToken, resp.ExpiresAt, resp.RefreshToken); err != nil {
+	}, resp.AccessToken, formatAPITime(resp.ExpiresAt), resp.RefreshToken); err != nil {
 		_ = c.Error(err)
 		c.String(http.StatusInternalServerError, "保存会话失败")
 		return
@@ -99,17 +117,24 @@ func Login(c *gin.Context) {
 	c.Redirect(http.StatusFound, "/")
 }
 
-func Logout(c *gin.Context) {
+func (h *AuthHandler) Logout(c *gin.Context) {
 	if c.Request.Method != http.MethodPost {
 		c.Redirect(http.StatusFound, "/login")
 		return
 	}
 
-	accessToken, refreshToken := authModule.sessionManager.Tokens(c)
+	accessToken, refreshToken := h.sessionManager.Tokens(c)
 	if accessToken != "" || refreshToken != "" {
-		_ = authModule.authClient.Logout(c.Request.Context(), accessToken, refreshToken)
+		_ = h.authClient.Logout(c.Request.Context(), accessToken, refreshToken)
 	}
-	authModule.sessionManager.Clear(c)
+	h.sessionManager.Clear(c)
 
 	c.Redirect(http.StatusFound, "/login")
+}
+
+func formatAPITime(t time.Time) string {
+	if t.IsZero() {
+		return ""
+	}
+	return t.Format(time.RFC3339)
 }

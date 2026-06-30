@@ -1,0 +1,151 @@
+posts:
+  get:
+    tags:
+      - Posts
+    operationId: listPosts
+    summary: List posts
+    security: []
+    parameters:
+      - name: author_id
+        in: query
+        schema:
+          type: integer
+          format: int64
+          minimum: 0
+        description: Filter by author id.
+      - name: category_id
+        in: query
+        schema:
+          type: integer
+          format: int64
+          minimum: 0
+        description: Filter by category id.
+      - name: tag
+        in: query
+        schema:
+          type: string
+          maxLength: 64
+        description: Filter by tag.
+      - name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+          minimum: 0
+        description: Page number.
+      - name: page_size
+        in: query
+        schema:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 100
+        description: Number of posts per page.
+    responses:
+      '200':
+        description: Posts matched by filters.
+        content:
+          application/json:
+            schema:
+              $ref: ../schemas/post.yaml#/ListPostsResponse
+      default:
+        description: Error response.
+        content:
+          application/json:
+            schema:
+              $ref: ../../../common/v1/schemas/error.yaml#/ErrorResponse
+  post:
+    tags:
+      - Posts
+    operationId: createPost
+    summary: Create a post
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/post.yaml#/CreatePostRequest
+    responses:
+      '200':
+        description: Created post.
+        content:
+          application/json:
+            schema:
+              $ref: ../schemas/post.yaml#/CreatePostResponse
+      default:
+        description: Error response.
+        content:
+          application/json:
+            schema:
+              $ref: ../../../common/v1/schemas/error.yaml#/ErrorResponse
+postById:
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+      description: Post id.
+  get:
+    tags:
+      - Posts
+    operationId: getPost
+    summary: Get a post
+    security: []
+    responses:
+      '200':
+        description: Post detail.
+        content:
+          application/json:
+            schema:
+              $ref: ../schemas/post.yaml#/GetPostResponse
+      default:
+        description: Error response.
+        content:
+          application/json:
+            schema:
+              $ref: ../../../common/v1/schemas/error.yaml#/ErrorResponse
+  put:
+    tags:
+      - Posts
+    operationId: updatePost
+    summary: Update a post
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/post.yaml#/UpdatePostRequest
+    responses:
+      '200':
+        description: Updated post.
+        content:
+          application/json:
+            schema:
+              $ref: ../schemas/post.yaml#/UpdatePostResponse
+      default:
+        description: Error response.
+        content:
+          application/json:
+            schema:
+              $ref: ../../../common/v1/schemas/error.yaml#/ErrorResponse
+  delete:
+    tags:
+      - Posts
+    operationId: deletePost
+    summary: Delete a post
+    responses:
+      '200':
+        description: Post deleted.
+        content:
+          application/json:
+            schema:
+              $ref: ../schemas/post.yaml#/DeletePostResponse
+      default:
+        description: Error response.
+        content:
+          application/json:
+            schema:
+              $ref: ../../../common/v1/schemas/error.yaml#/ErrorResponse

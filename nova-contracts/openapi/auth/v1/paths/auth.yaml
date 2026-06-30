@@ -1,0 +1,284 @@
+register:
+  post:
+    tags:
+      - Auth
+    operationId: register
+    summary: Register a user
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/auth.yaml#/RegisterRequest
+    responses:
+      '200':
+        description: Registered user identity.
+        content:
+          application/json:
+            schema:
+              $ref: ../schemas/auth.yaml#/RegisterResponse
+      default:
+        description: Error response.
+        content:
+          application/json:
+            schema:
+              $ref: ../../../common/v1/schemas/error.yaml#/ErrorResponse
+usernameCheck:
+  post:
+    tags:
+      - Auth
+    operationId: usernameCheck
+    summary: Check username availability
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/auth.yaml#/UsernameCheckRequest
+    responses:
+      '200':
+        description: Username existence result.
+        content:
+          application/json:
+            schema:
+              $ref: ../schemas/auth.yaml#/UsernameCheckResponse
+      default:
+        description: Error response.
+        content:
+          application/json:
+            schema:
+              $ref: ../../../common/v1/schemas/error.yaml#/ErrorResponse
+emailCheck:
+  post:
+    tags:
+      - Auth
+    operationId: emailCheck
+    summary: Check email availability
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/auth.yaml#/EmailCheckRequest
+    responses:
+      '200':
+        description: Email existence result.
+        content:
+          application/json:
+            schema:
+              $ref: ../schemas/auth.yaml#/EmailCheckResponse
+      default:
+        description: Error response.
+        content:
+          application/json:
+            schema:
+              $ref: ../../../common/v1/schemas/error.yaml#/ErrorResponse
+phoneCheck:
+  post:
+    tags:
+      - Auth
+    operationId: phoneCheck
+    summary: Check phone availability
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/auth.yaml#/PhoneCheckRequest
+    responses:
+      '200':
+        description: Phone existence result.
+        content:
+          application/json:
+            schema:
+              $ref: ../schemas/auth.yaml#/PhoneCheckResponse
+      default:
+        description: Error response.
+        content:
+          application/json:
+            schema:
+              $ref: ../../../common/v1/schemas/error.yaml#/ErrorResponse
+login:
+  post:
+    tags:
+      - Auth
+    operationId: login
+    summary: Login with username or email
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/auth.yaml#/LoginRequest
+    responses:
+      '200':
+        description: Access and refresh tokens.
+        content:
+          application/json:
+            schema:
+              $ref: ../schemas/auth.yaml#/TokenResponse
+      default:
+        description: Error response.
+        content:
+          application/json:
+            schema:
+              $ref: ../../../common/v1/schemas/error.yaml#/ErrorResponse
+sendSmsCode:
+  post:
+    tags:
+      - Auth
+    operationId: sendSmsCode
+    summary: Send SMS code
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/auth.yaml#/SendSmsCodeRequest
+    responses:
+      '200':
+        description: SMS code requested.
+        content:
+          application/json:
+            schema:
+              $ref: ../schemas/auth.yaml#/SendSmsCodeResponse
+      default:
+        description: Error response.
+        content:
+          application/json:
+            schema:
+              $ref: ../../../common/v1/schemas/error.yaml#/ErrorResponse
+phoneAuth:
+  post:
+    tags:
+      - Auth
+    operationId: phoneAuth
+    summary: Login with phone and SMS code
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/auth.yaml#/PhoneAuthRequest
+    responses:
+      '200':
+        description: Access and refresh tokens.
+        content:
+          application/json:
+            schema:
+              $ref: ../schemas/auth.yaml#/TokenResponse
+      default:
+        description: Error response.
+        content:
+          application/json:
+            schema:
+              $ref: ../../../common/v1/schemas/error.yaml#/ErrorResponse
+mpLogin:
+  post:
+    tags:
+      - Auth
+    operationId: mpLogin
+    summary: Login with WeChat Mini Program code
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/auth.yaml#/MpLoginRequest
+    responses:
+      '200':
+        description: Access and refresh tokens.
+        content:
+          application/json:
+            schema:
+              $ref: ../schemas/auth.yaml#/TokenResponse
+      default:
+        description: Error response.
+        content:
+          application/json:
+            schema:
+              $ref: ../../../common/v1/schemas/error.yaml#/ErrorResponse
+refreshToken:
+  post:
+    tags:
+      - Auth
+    operationId: refreshToken
+    summary: Refresh access token
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/auth.yaml#/RefreshTokenRequest
+    responses:
+      '200':
+        description: Refreshed access and refresh tokens.
+        content:
+          application/json:
+            schema:
+              $ref: ../schemas/auth.yaml#/TokenResponse
+      default:
+        description: Error response.
+        content:
+          application/json:
+            schema:
+              $ref: ../../../common/v1/schemas/error.yaml#/ErrorResponse
+changePassword:
+  put:
+    tags:
+      - Auth
+    operationId: changePassword
+    summary: Change password
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/auth.yaml#/ChangePasswordRequest
+    responses:
+      '200':
+        description: Password changed.
+        content:
+          application/json:
+            schema:
+              $ref: ../schemas/auth.yaml#/ChangePasswordResponse
+      default:
+        description: Error response.
+        content:
+          application/json:
+            schema:
+              $ref: ../../../common/v1/schemas/error.yaml#/ErrorResponse
+logout:
+  post:
+    tags:
+      - Auth
+    operationId: logout
+    summary: Logout
+    requestBody:
+      required: false
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/auth.yaml#/LogoutRequest
+    responses:
+      '200':
+        description: Logout succeeded.
+        content:
+          application/json:
+            schema:
+              $ref: ../schemas/auth.yaml#/LogoutResponse
+      default:
+        description: Error response.
+        content:
+          application/json:
+            schema:
+              $ref: ../../../common/v1/schemas/error.yaml#/ErrorResponse

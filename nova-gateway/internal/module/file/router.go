@@ -2,8 +2,10 @@ package file
 
 import "github.com/miiy/goc/gin"
 
-func (m *Module) RegisterRouter(r gin.IRouter) {
-	g := r.Group("/files")
-	g.POST("/upload", m.upload)
-	g.POST("/upload/avatar", m.avatar)
+func (m *Module) RegisterRouter(protected gin.IRouter) {
+	api := m.filesAPI
+
+	protectedGroup := protected.Group("/files")
+	protectedGroup.POST("/upload", api.UploadFile)
+	protectedGroup.POST("/upload/avatar", api.UploadAvatar)
 }

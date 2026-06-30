@@ -8,7 +8,6 @@ package userv1
 
 import (
 	_ "buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
-	_ "github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2/options"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -621,7 +620,7 @@ var File_nova_user_v1_user_proto protoreflect.FileDescriptor
 
 const file_nova_user_v1_user_proto_rawDesc = "" +
 	"\n" +
-	"\x17nova/user/v1/user.proto\x12\fnova.user.v1\x1a\x1bbuf/validate/validate.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a google/protobuf/field_mask.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\"\xc1\x03\n" +
+	"\x17nova/user/v1/user.proto\x12\fnova.user.v1\x1a\x1bbuf/validate/validate.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a google/protobuf/field_mask.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xc1\x03\n" +
 	"\x04User\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12\x1a\n" +
@@ -669,18 +668,14 @@ const file_nova_user_v1_user_proto_rawDesc = "" +
 	"UserStatus\x12\x1b\n" +
 	"\x17USER_STATUS_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12USER_STATUS_ACTIVE\x10\x01\x12\x17\n" +
-	"\x13USER_STATUS_DISABLE\x10\x022\xbd\x03\n" +
-	"\vUserService\x12b\n" +
-	"\aGetUser\x12\x1c.nova.user.v1.GetUserRequest\x1a\x1d.nova.user.v1.GetUserResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/api/v1/users/{id}\x12u\n" +
-	"\rBatchGetUsers\x12\".nova.user.v1.BatchGetUsersRequest\x1a#.nova.user.v1.BatchGetUsersResponse\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/api/v1/users/batch\x12n\n" +
+	"\x13USER_STATUS_DISABLE\x10\x022\xce\x02\n" +
+	"\vUserService\x12F\n" +
+	"\aGetUser\x12\x1c.nova.user.v1.GetUserRequest\x1a\x1d.nova.user.v1.GetUserResponse\x12X\n" +
+	"\rBatchGetUsers\x12\".nova.user.v1.BatchGetUsersRequest\x1a#.nova.user.v1.BatchGetUsersResponse\x12O\n" +
 	"\n" +
-	"UpdateUser\x12\x1f.nova.user.v1.UpdateUserRequest\x1a .nova.user.v1.UpdateUserResponse\"\x1d\x82\xd3\xe4\x93\x02\x17:\x01*\x1a\x12/api/v1/users/{id}\x12c\n" +
-	"\tListUsers\x12\x1e.nova.user.v1.ListUsersRequest\x1a\x1f.nova.user.v1.ListUsersResponse\"\x15\x82\xd3\xe4\x93\x02\x0f\x12\r/api/v1/usersB\x9b\x03\x92A\xe2\x01\x12\x98\x01\n" +
-	"\bUser API\"H\n" +
-	"\fnova project\x12&https://github.com/miiy/goc-quickstart\x1a\x10none@example.com*=\n" +
-	"\vMIT License\x12.https://github.com/miiy/goc-quickstart/LICENSE2\x031.0*\x03\x01\x02\x04r@\n" +
-	"\x0eMore about goc\x12.https://github.com/grpc-ecosystem/grpc-gateway\n" +
-	"\x10com.nova.user.v1B\tUserProtoP\x01ZDgithub.com/miiy/goc-quickstart/nova-proto/gen/go/nova/user/v1;userv1\xa2\x02\x03NUX\xaa\x02\fNova.User.V1\xca\x02\fNova\\User\\V1\xe2\x02\x18Nova\\User\\V1\\GPBMetadata\xea\x02\x0eNova::User::V1b\x06proto3"
+	"UpdateUser\x12\x1f.nova.user.v1.UpdateUserRequest\x1a .nova.user.v1.UpdateUserResponse\x12L\n" +
+	"\tListUsers\x12\x1e.nova.user.v1.ListUsersRequest\x1a\x1f.nova.user.v1.ListUsersResponseB\xbd\x01\n" +
+	"\x10com.nova.user.v1B\tUserProtoP\x01ZLgithub.com/miiy/goc-quickstart/nova-contracts/gen/go/rpc/nova/user/v1;userv1\xa2\x02\x03NUX\xaa\x02\fNova.User.V1\xca\x02\fNova\\User\\V1\xe2\x02\x18Nova\\User\\V1\\GPBMetadata\xea\x02\x0eNova::User::V1b\x06proto3"
 
 var (
 	file_nova_user_v1_user_proto_rawDescOnce sync.Once

@@ -2,6 +2,8 @@ package auth
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -19,18 +21,28 @@ import (
 // refreshSkew is how long before access-token expiry a proactive refresh is triggered.
 const refreshSkew = 5 * time.Minute
 
-// RefreshClient is the subset of client.AuthClient used for proactive refresh.
-type RefreshClient interface {
-	Refresh(ctx context.Context, refreshToken string) (*webclient.LoginResponse, error)
+// ErrInvalidRefreshToken marks a terminal refresh failure.
+var ErrInvalidRefreshToken = errors.New("invalid refresh token")
+
+// RefreshedTokens is the normalized token payload stored in the session.
+type RefreshedTokens struct {
+	AccessToken  string
+	ExpiresAt    time.Time
+	RefreshToken string
+}
+
+// TokenRefresher refreshes session tokens without exposing a transport DTO.
+type TokenRefresher interface {
+	RefreshToken(ctx context.Context, refreshToken string) (*RefreshedTokens, error)
 }
 
 // RefreshSessionToken proactively renews an expiring/expired access token via
 // the refresh token. It keeps user attachment and route protection out of this
 // middleware so those responsibilities stay in goc/sessionauth.
-func RefreshSessionToken(m *websession.Manager, client RefreshClient, log logger.Logger) gin.HandlerFunc {
+func RefreshSessionToken(m *websession.Manager, refresher TokenRefresher, log logger.Logger) gin.HandlerFunc {
 	var refreshGroup singleflight.Group
 	return func(c *gin.Context) {
-		maybeRefresh(c, m, client, log, &refreshGroup)
+		maybeRefresh(c, m, refresher, log, &refreshGroup)
 		injectAccessToken(c, m)
 		c.Next()
 	}
@@ -40,12 +52,12 @@ func RefreshSessionToken(m *websession.Manager, client RefreshClient, log logger
 //
 //   - Transient failures (network, 5xx, ...) leave the session untouched; the
 //     request proceeds with the stale token and the next request retries.
-//   - Terminal failures (refresh token invalid/expired/revoked/reused -> HTTP 401)
-//     clear the session so the user is logged out cleanly.
+//   - Terminal failures (refresh token invalid/expired/revoked/reused) clear the
+//     session so the user is logged out cleanly.
 //
 // singleflight collapses concurrent refreshes that share the same refresh token.
-func maybeRefresh(c *gin.Context, m *websession.Manager, client RefreshClient, log logger.Logger, group *singleflight.Group) {
-	if client == nil {
+func maybeRefresh(c *gin.Context, m *websession.Manager, refresher TokenRefresher, log logger.Logger, group *singleflight.Group) {
+	if refresher == nil {
 		return
 	}
 	refreshToken := m.RefreshToken(c)
@@ -54,10 +66,10 @@ func maybeRefresh(c *gin.Context, m *websession.Manager, client RefreshClient, l
 	}
 
 	v, err, _ := group.Do(refreshToken, func() (any, error) {
-		return client.Refresh(c.Request.Context(), refreshToken)
+		return refresher.RefreshToken(c.Request.Context(), refreshToken)
 	})
 	if err != nil {
-		if webclient.IsStatus(err, http.StatusUnauthorized) {
+		if errors.Is(err, ErrInvalidRefreshToken) {
 			log.Warn("session: refresh token invalid or revoked; clearing session", zap.Error(err))
 			m.Clear(c)
 		} else {
@@ -66,11 +78,11 @@ func maybeRefresh(c *gin.Context, m *websession.Manager, client RefreshClient, l
 		return
 	}
 
-	resp, _ := v.(*webclient.LoginResponse)
-	if resp == nil {
+	tokens, _ := v.(*RefreshedTokens)
+	if tokens == nil {
 		return
 	}
-	m.SaveRefreshedTokens(c, resp.AccessToken, resp.ExpiresAt, resp.RefreshToken)
+	m.SaveRefreshedTokens(c, tokens.AccessToken, formatAPITime(tokens.ExpiresAt), tokens.RefreshToken)
 }
 
 func injectAccessToken(c *gin.Context, m *websession.Manager) {
@@ -101,4 +113,42 @@ func shouldRefresh(expiresAt string) bool {
 		return false
 	}
 	return time.Now().Add(refreshSkew).After(t)
+}
+
+func formatAPITime(t time.Time) string {
+	if t.IsZero() {
+		return ""
+	}
+	return t.Format(time.RFC3339)
+}
+
+// NewAuthClientTokenRefresher adapts the generated gateway client to the
+// middleware's transport-neutral TokenRefresher contract.
+func NewAuthClientTokenRefresher(authClient *webclient.AuthClient) TokenRefresher {
+	if authClient == nil {
+		return nil
+	}
+	return &authClientTokenRefresher{authClient: authClient}
+}
+
+type authClientTokenRefresher struct {
+	authClient *webclient.AuthClient
+}
+
+func (r *authClientTokenRefresher) RefreshToken(ctx context.Context, refreshToken string) (*RefreshedTokens, error) {
+	resp, err := r.authClient.RefreshToken(ctx, refreshToken)
+	if err != nil {
+		if webclient.IsStatus(err, http.StatusUnauthorized) {
+			return nil, fmt.Errorf("%w: %v", ErrInvalidRefreshToken, err)
+		}
+		return nil, err
+	}
+	if resp == nil {
+		return nil, nil
+	}
+	return &RefreshedTokens{
+		AccessToken:  resp.AccessToken,
+		ExpiresAt:    resp.ExpiresAt,
+		RefreshToken: resp.RefreshToken,
+	}, nil
 }

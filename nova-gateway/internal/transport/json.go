@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	openapi "github.com/miiy/goc-quickstart/nova-contracts/gen/go/http/go-gin-server/go"
 	"github.com/miiy/goc/gin"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -24,15 +25,6 @@ var (
 	}
 )
 
-type ErrorResponse struct {
-	Error ErrorStatus `json:"error"`
-}
-
-type ErrorStatus struct {
-	Code    int32  `json:"code"`
-	Message string `json:"message"`
-}
-
 func BindProto(c *gin.Context, msg proto.Message) bool {
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
@@ -49,6 +41,14 @@ func BindProto(c *gin.Context, msg proto.Message) bool {
 	return true
 }
 
+func BindJSON(c *gin.Context, dst any) bool {
+	if err := c.ShouldBindJSON(dst); err != nil {
+		WriteBadRequest(c, err.Error())
+		return false
+	}
+	return true
+}
+
 func WriteProto(c *gin.Context, msg proto.Message) {
 	body, err := protoMarshalOptions.Marshal(msg)
 	if err != nil {
@@ -60,9 +60,17 @@ func WriteProto(c *gin.Context, msg proto.Message) {
 
 // WriteUnauthorized writes a 401 response with a standardized error body.
 func WriteUnauthorized(c *gin.Context, message string) {
-	c.AbortWithStatusJSON(http.StatusUnauthorized, ErrorResponse{
-		Error: ErrorStatus{
-			Code:    int32(codes.Unauthenticated),
+	WriteOpenAPIError(c, http.StatusUnauthorized, int32(codes.Unauthenticated), message)
+}
+
+func WriteBadRequest(c *gin.Context, message string) {
+	WriteOpenAPIError(c, http.StatusBadRequest, int32(codes.InvalidArgument), message)
+}
+
+func WriteOpenAPIError(c *gin.Context, httpStatus int, code int32, message string) {
+	c.AbortWithStatusJSON(httpStatus, openapi.ErrorResponse{
+		Error: openapi.ErrorStatus{
+			Code:    code,
 			Message: message,
 		},
 	})
@@ -74,12 +82,7 @@ func WriteError(c *gin.Context, err error) {
 		st = status.New(codes.Internal, err.Error())
 	}
 
-	c.AbortWithStatusJSON(grpcHTTPStatus(st.Code()), ErrorResponse{
-		Error: ErrorStatus{
-			Code:    int32(st.Code()),
-			Message: st.Message(),
-		},
-	})
+	WriteOpenAPIError(c, grpcHTTPStatus(st.Code()), int32(st.Code()), st.Message())
 }
 
 func Int64Param(c *gin.Context, name string) (int64, bool) {
@@ -92,14 +95,14 @@ func Int64Param(c *gin.Context, name string) (int64, bool) {
 	return value, true
 }
 
-func Int64Query(c *gin.Context, snakeName string, camelName string) (int64, bool) {
-	raw := QueryValue(c, snakeName, camelName)
+func Int64Query(c *gin.Context, name string) (int64, bool) {
+	raw := c.Query(name)
 	if raw == "" {
 		return 0, true
 	}
 	value, err := strconv.ParseInt(raw, 10, 64)
 	if err != nil {
-		WriteError(c, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", snakeName, err))
+		WriteError(c, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", name, err))
 		return 0, false
 	}
 	return value, true
@@ -129,27 +132,15 @@ func Int64SliceQuery(c *gin.Context, name string) ([]int64, bool) {
 	return values, true
 }
 
-func Int32Query(c *gin.Context, snakeName string, camelName string) (int32, bool) {
-	raw := QueryValue(c, snakeName, camelName)
+func Int32Query(c *gin.Context, name string) (int32, bool) {
+	raw := c.Query(name)
 	if raw == "" {
 		return 0, true
 	}
 	value, err := strconv.ParseInt(raw, 10, 32)
 	if err != nil {
-		WriteError(c, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", snakeName, err))
+		WriteError(c, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", name, err))
 		return 0, false
 	}
 	return int32(value), true
-}
-
-func QueryValue(c *gin.Context, snakeName string, camelName string) string {
-	if value, ok := c.GetQuery(snakeName); ok {
-		return value
-	}
-	if camelName != "" {
-		if value, ok := c.GetQuery(camelName); ok {
-			return value
-		}
-	}
-	return ""
 }

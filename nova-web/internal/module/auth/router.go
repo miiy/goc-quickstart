@@ -4,16 +4,18 @@ import (
 	"github.com/miiy/goc/gin"
 )
 
-func Router(r *gin.Engine) {
-	r.GET("/register", RegisterForm)
-	r.POST("/register", Register)
-	r.GET("/login", LoginForm)
-	r.POST("/login", Login)
+func (m *Module) RegisterRouter(r gin.IRouter) {
+	handler := m.handler
+
+	r.GET("/register", handler.RegisterForm)
+	r.POST("/register", handler.Register)
+	r.GET("/login", handler.LoginForm)
+	r.POST("/login", handler.Login)
 
 	g := r.Group("/auth")
 	{
-		g.GET("/logout", Logout)
-		g.POST("/logout", Logout)
+		g.GET("/logout", handler.Logout)
+		g.POST("/logout", handler.Logout)
 	}
 }
 

@@ -1,10 +1,11 @@
 package health
 
-func (m *Module) RegisterRouter() {
+import "github.com/miiy/goc/gin"
 
-	hG := m.router.Group("/health")
-	{
-		hG.GET("/liveness", livenessHandler)
-		hG.GET("/readiness", readinessHandler)
-	}
+func (m *Module) RegisterRouter(r gin.IRouter) {
+	handler := m.handler
+
+	g := r.Group("/health")
+	g.GET("/liveness", handler.liveness)
+	g.GET("/readiness", handler.readiness)
 }

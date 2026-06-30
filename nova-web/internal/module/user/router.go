@@ -2,14 +2,14 @@ package user
 
 import "github.com/miiy/goc/gin"
 
-func Router(r *gin.Engine) {
-	g := r.Group("/user")
-	{
-		g.GET("/profile", Profile)
-		g.POST("/profile", UpdateProfile)
-		g.POST("/avatar", UploadAvatar)
-		g.PUT("/password", ChangePassword)
-	}
+func (m *Module) RegisterRouter(protected gin.IRouter) {
+	handler := m.handler
+
+	protectedGroup := protected.Group("/user")
+	protectedGroup.GET("/profile", handler.Profile)
+	protectedGroup.POST("/profile", handler.UpdateProfile)
+	protectedGroup.POST("/avatar", handler.UploadAvatar)
+	protectedGroup.PUT("/password", handler.ChangePassword)
 }
 
 func Templates() map[string][]string {

@@ -1,0 +1,148 @@
+openapi: 3.0.3
+info:
+  title: Nova Gateway API
+  version: 1.0.0
+  description: HTTP API contract owned by nova-gateway.
+servers:
+  - url: /api/v1
+security:
+  - BearerAuth: []
+tags:
+  - name: Auth
+    description: Registration, authentication, and token endpoints.
+  - name: Files
+    description: File upload endpoints.
+  - name: Posts
+    description: Post publishing and query endpoints.
+  - name: Users
+    description: User profile and lookup endpoints.
+paths:
+  /auth/register:
+    $ref: ./auth/v1/paths/auth.yaml#/register
+  /auth/register/check-username:
+    $ref: ./auth/v1/paths/auth.yaml#/usernameCheck
+  /auth/register/check-email:
+    $ref: ./auth/v1/paths/auth.yaml#/emailCheck
+  /auth/register/check-phone:
+    $ref: ./auth/v1/paths/auth.yaml#/phoneCheck
+  /auth/login:
+    $ref: ./auth/v1/paths/auth.yaml#/login
+  /auth/sms/send-code:
+    $ref: ./auth/v1/paths/auth.yaml#/sendSmsCode
+  /auth/phone/login:
+    $ref: ./auth/v1/paths/auth.yaml#/phoneAuth
+  /auth/mp/login:
+    $ref: ./auth/v1/paths/auth.yaml#/mpLogin
+  /auth/token/refresh:
+    $ref: ./auth/v1/paths/auth.yaml#/refreshToken
+  /auth/password:
+    $ref: ./auth/v1/paths/auth.yaml#/changePassword
+  /auth/logout:
+    $ref: ./auth/v1/paths/auth.yaml#/logout
+  /files/upload:
+    $ref: ./file/v1/paths/file.yaml#/uploadFile
+  /files/upload/avatar:
+    $ref: ./file/v1/paths/file.yaml#/uploadAvatar
+  /posts:
+    $ref: ./post/v1/paths/post.yaml#/posts
+  /posts/{id}:
+    $ref: ./post/v1/paths/post.yaml#/postById
+  /users:
+    $ref: ./user/v1/paths/user.yaml#/users
+  /users/batch:
+    $ref: ./user/v1/paths/user.yaml#/usersBatch
+  /users/{id}:
+    $ref: ./user/v1/paths/user.yaml#/userById
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    AuthUser:
+      $ref: ./auth/v1/schemas/auth.yaml#/AuthUser
+    RegisterRequest:
+      $ref: ./auth/v1/schemas/auth.yaml#/RegisterRequest
+    RegisterResponse:
+      $ref: ./auth/v1/schemas/auth.yaml#/RegisterResponse
+    UsernameCheckRequest:
+      $ref: ./auth/v1/schemas/auth.yaml#/UsernameCheckRequest
+    UsernameCheckResponse:
+      $ref: ./auth/v1/schemas/auth.yaml#/UsernameCheckResponse
+    EmailCheckRequest:
+      $ref: ./auth/v1/schemas/auth.yaml#/EmailCheckRequest
+    EmailCheckResponse:
+      $ref: ./auth/v1/schemas/auth.yaml#/EmailCheckResponse
+    PhoneCheckRequest:
+      $ref: ./auth/v1/schemas/auth.yaml#/PhoneCheckRequest
+    PhoneCheckResponse:
+      $ref: ./auth/v1/schemas/auth.yaml#/PhoneCheckResponse
+    LoginRequest:
+      $ref: ./auth/v1/schemas/auth.yaml#/LoginRequest
+    TokenResponse:
+      $ref: ./auth/v1/schemas/auth.yaml#/TokenResponse
+    SendSmsCodeRequest:
+      $ref: ./auth/v1/schemas/auth.yaml#/SendSmsCodeRequest
+    SendSmsCodeResponse:
+      $ref: ./auth/v1/schemas/auth.yaml#/SendSmsCodeResponse
+    PhoneAuthRequest:
+      $ref: ./auth/v1/schemas/auth.yaml#/PhoneAuthRequest
+    MpLoginRequest:
+      $ref: ./auth/v1/schemas/auth.yaml#/MpLoginRequest
+    RefreshTokenRequest:
+      $ref: ./auth/v1/schemas/auth.yaml#/RefreshTokenRequest
+    ChangePasswordRequest:
+      $ref: ./auth/v1/schemas/auth.yaml#/ChangePasswordRequest
+    ChangePasswordResponse:
+      $ref: ./auth/v1/schemas/auth.yaml#/ChangePasswordResponse
+    LogoutRequest:
+      $ref: ./auth/v1/schemas/auth.yaml#/LogoutRequest
+    LogoutResponse:
+      $ref: ./auth/v1/schemas/auth.yaml#/LogoutResponse
+    File:
+      $ref: ./file/v1/schemas/file.yaml#/File
+    FileScene:
+      $ref: ./file/v1/schemas/file.yaml#/FileScene
+    FileStatus:
+      $ref: ./file/v1/schemas/file.yaml#/FileStatus
+    UploadFileResponse:
+      $ref: ./file/v1/schemas/file.yaml#/UploadFileResponse
+    Post:
+      $ref: ./post/v1/schemas/post.yaml#/Post
+    PostStatus:
+      $ref: ./post/v1/schemas/post.yaml#/PostStatus
+    CreatePostInput:
+      $ref: ./post/v1/schemas/post.yaml#/CreatePostInput
+    UpdatePostInput:
+      $ref: ./post/v1/schemas/post.yaml#/UpdatePostInput
+    CreatePostRequest:
+      $ref: ./post/v1/schemas/post.yaml#/CreatePostRequest
+    CreatePostResponse:
+      $ref: ./post/v1/schemas/post.yaml#/CreatePostResponse
+    GetPostResponse:
+      $ref: ./post/v1/schemas/post.yaml#/GetPostResponse
+    UpdatePostRequest:
+      $ref: ./post/v1/schemas/post.yaml#/UpdatePostRequest
+    UpdatePostResponse:
+      $ref: ./post/v1/schemas/post.yaml#/UpdatePostResponse
+    ListPostsResponse:
+      $ref: ./post/v1/schemas/post.yaml#/ListPostsResponse
+    DeletePostResponse:
+      $ref: ./post/v1/schemas/post.yaml#/DeletePostResponse
+    User:
+      $ref: ./user/v1/schemas/user.yaml#/User
+    UserStatus:
+      $ref: ./user/v1/schemas/user.yaml#/UserStatus
+    UserInput:
+      $ref: ./user/v1/schemas/user.yaml#/UserInput
+    GetUserResponse:
+      $ref: ./user/v1/schemas/user.yaml#/GetUserResponse
+    BatchGetUsersResponse:
+      $ref: ./user/v1/schemas/user.yaml#/BatchGetUsersResponse
+    UpdateUserRequest:
+      $ref: ./user/v1/schemas/user.yaml#/UpdateUserRequest
+    UpdateUserResponse:
+      $ref: ./user/v1/schemas/user.yaml#/UpdateUserResponse
+    ListUsersResponse:
+      $ref: ./user/v1/schemas/user.yaml#/ListUsersResponse

@@ -1,13 +1,9 @@
 package health
 
-import (
-	"net/http"
+import "github.com/miiy/goc/gin"
 
-	"github.com/miiy/goc/gin"
-)
+func (m *Module) RegisterRouter(r gin.IRouter) {
+	api := m.healthAPI
 
-func (m *Module) RegisterRouter() {
-	m.router.GET("/healthz", func(c *gin.Context) {
-		c.String(http.StatusOK, "ok")
-	})
+	r.GET("/healthz", api.Healthz)
 }

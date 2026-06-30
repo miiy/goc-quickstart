@@ -1,25 +1,11 @@
 package health
 
-import (
-	"github.com/miiy/goc/gin"
-	"github.com/miiy/goc/logger"
-)
-
 type Module struct {
-	router      *gin.Engine
-	logger      logger.Logger
-	gatewayAddr string
+	handler *HealthHandler
 }
 
-var (
-	module *Module
-)
-
-func NewModule(router *gin.Engine, logger logger.Logger, gatewayAddr string) *Module {
-	module = &Module{
-		router:      router,
-		logger:      logger,
-		gatewayAddr: gatewayAddr,
+func NewModule(gatewayAddr string) *Module {
+	return &Module{
+		handler: NewHealthHandler(gatewayAddr),
 	}
-	return module
 }

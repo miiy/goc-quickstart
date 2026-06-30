@@ -6,19 +6,12 @@ import (
 	"github.com/miiy/goc/logger"
 )
 
-type AuthModule struct {
-	logger         logger.Logger
-	authClient     *client.AuthClient
-	sessionManager *session.Manager
+type Module struct {
+	handler *AuthHandler
 }
 
-var authModule *AuthModule
-
-func NewModule(logger logger.Logger, authClient *client.AuthClient, sessionManager *session.Manager) *AuthModule {
-	authModule = &AuthModule{
-		logger:         logger,
-		authClient:     authClient,
-		sessionManager: sessionManager,
+func NewModule(log logger.Logger, authClient *client.AuthClient, sessionManager *session.Manager) *Module {
+	return &Module{
+		handler: NewAuthHandler(log, authClient, sessionManager),
 	}
-	return authModule
 }

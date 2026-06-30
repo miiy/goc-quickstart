@@ -2,20 +2,21 @@ package auth
 
 import "github.com/miiy/goc/gin"
 
-func (m *Module) RegisterPublicRouter(r *gin.Engine) {
-	g := r.Group("/api/v1/auth")
-	g.POST("/register", m.register)
-	g.POST("/register/username_check", m.usernameCheck)
-	g.POST("/register/email_check", m.emailCheck)
-	g.POST("/register/phone_check", m.phoneCheck)
-	g.POST("/login", m.login)
-	g.POST("/send_sms_code", m.sendSMSCode)
-	g.POST("/phone_auth", m.phoneAuth)
-	g.POST("/mplogin", m.mpLogin)
-	g.POST("/token/refresh", m.refreshToken)
-}
+func (m *Module) RegisterRouter(public, protected gin.IRouter) {
+	api := m.authAPI
 
-func (m *Module) RegisterProtectedRouter(r gin.IRouter) {
-	r.PUT("/auth/password", m.changePassword)
-	r.POST("/auth/logout", m.logout)
+	publicGroup := public.Group("/auth")
+	publicGroup.POST("/register", api.Register)
+	publicGroup.POST("/register/check-username", api.UsernameCheck)
+	publicGroup.POST("/register/check-email", api.EmailCheck)
+	publicGroup.POST("/register/check-phone", api.PhoneCheck)
+	publicGroup.POST("/login", api.Login)
+	publicGroup.POST("/sms/send-code", api.SendSmsCode)
+	publicGroup.POST("/phone/login", api.PhoneAuth)
+	publicGroup.POST("/mp/login", api.MpLogin)
+	publicGroup.POST("/token/refresh", api.RefreshToken)
+
+	protectedGroup := protected.Group("/auth")
+	protectedGroup.PUT("/password", api.ChangePassword)
+	protectedGroup.POST("/logout", api.Logout)
 }

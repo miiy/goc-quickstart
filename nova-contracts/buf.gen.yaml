@@ -1,0 +1,28 @@
+version: v2
+inputs:
+  - directory: proto
+managed:
+  enabled: true
+  disable:
+    # Disables all go_package changes for this module only
+    - file_option: go_package
+      module: buf.build/googleapis/googleapis
+    - file_option: go_package
+      module: buf.build/bufbuild/protovalidate
+  override:
+    - file_option: go_package_prefix
+      value: github.com/miiy/goc-quickstart/nova-contracts/gen/go/rpc
+plugins:
+  - remote: buf.build/protocolbuffers/go
+    out: gen/go/rpc
+    opt:
+      - paths=source_relative
+  - remote: buf.build/grpc/go
+    out: gen/go/rpc
+    opt:
+      - paths=source_relative
+  # - remote: buf.build/protocolbuffers/python:v26.0
+  #   out: gen/python
+  #   opt: pyi_out
+  # - remote: buf.build/grpc/python:v1.62.1
+  #   out: gen/python

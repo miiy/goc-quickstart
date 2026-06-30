@@ -1,5 +1,5 @@
 .idea
 .vscode
 .DS_Store
-gen/openapiv2
+gen/openapi
 bin

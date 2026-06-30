@@ -2,11 +2,14 @@ package client
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
 	"strings"
 	"testing"
+
+	apiclient "github.com/miiy/goc-quickstart/nova-contracts/gen/go/http/go-client"
 )
 
 type roundTripFunc func(*http.Request) (*http.Response, error)
@@ -16,11 +19,20 @@ func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 
 func newTestHTTPClient(handler func(*http.Request) (*http.Response, error)) *HTTPClient {
-	return &HTTPClient{
-		baseURL: "http://gateway.test",
-		httpClient: &http.Client{
-			Transport: roundTripFunc(handler),
+	httpClient := &http.Client{
+		Transport: roundTripFunc(handler),
+	}
+	cfg := apiclient.NewConfiguration()
+	cfg.HTTPClient = httpClient
+	cfg.Servers = apiclient.ServerConfigurations{
+		{
+			URL: "http://gateway.test/api/v1",
 		},
+	}
+	return &HTTPClient{
+		baseURL:    "http://gateway.test",
+		httpClient: httpClient,
+		api:        apiclient.NewAPIClient(cfg),
 	}
 }
 
@@ -30,6 +42,18 @@ func testResponse(statusCode int, body string) *http.Response {
 		Header:     make(http.Header),
 		Body:       io.NopCloser(strings.NewReader(body)),
 	}
+}
+
+func stringSlicesEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }
 
 func TestHTTPClientDoAddsAccessTokenFromContext(t *testing.T) {
@@ -88,7 +112,37 @@ func TestParseErrorKeepsHTTPStatus(t *testing.T) {
 	if err.Error() != "invalid auth token" {
 		t.Fatalf("message = %q, want invalid auth token", err.Error())
 	}
+	if httpErr.Response.Error.Code != 16 {
+		t.Fatalf("error code = %d, want 16", httpErr.Response.Error.Code)
+	}
 	if !IsStatus(err, http.StatusUnauthorized) {
 		t.Fatal("expected IsStatus to match unauthorized")
+	}
+
+	body, err := json.Marshal(httpErr)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(body) != `{"error":{"code":16,"message":"invalid auth token"}}` {
+		t.Fatalf("body = %s", body)
+	}
+}
+
+func TestNewHTTPErrorUsesOpenAPIErrorShape(t *testing.T) {
+	err := NewHTTPError(http.StatusUnauthorized, "unauthenticated")
+
+	if err.Error() != "unauthenticated" {
+		t.Fatalf("message = %q, want unauthenticated", err.Error())
+	}
+	if err.Response.Error.Code != http.StatusUnauthorized {
+		t.Fatalf("error code = %d, want %d", err.Response.Error.Code, http.StatusUnauthorized)
+	}
+
+	body, marshalErr := json.Marshal(err)
+	if marshalErr != nil {
+		t.Fatal(marshalErr)
+	}
+	if string(body) != `{"error":{"code":401,"message":"unauthenticated"}}` {
+		t.Fatalf("body = %s", body)
 	}
 }

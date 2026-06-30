@@ -2,6 +2,7 @@ package file
 
 import (
 	"context"
+	"encoding/json"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -23,7 +24,14 @@ type fakeFileClient struct {
 func (f *fakeFileClient) UploadFile(ctx context.Context, in *filev1.UploadFileRequest, opts ...grpc.CallOption) (*filev1.UploadFileResponse, error) {
 	f.req = in
 	return &filev1.UploadFileResponse{
-		File: &filev1.File{ObjectKey: "avatars/2026/06/avatar.png"},
+		File: &filev1.File{
+			Id:        42,
+			OwnerId:   7,
+			Scene:     in.GetScene(),
+			ObjectKey: "avatars/2026/06/avatar.png",
+			Size:      int64(len(in.GetContent())),
+			Status:    filev1.FileStatus_FILE_STATUS_ACTIVE,
+		},
 	}, nil
 }
 
@@ -53,13 +61,13 @@ func (f *fakeAvatarUserClient) ListUsers(ctx context.Context, in *userv1.ListUse
 func TestAvatarUploadsAndUpdatesCurrentUser(t *testing.T) {
 	fileClient := &fakeFileClient{}
 	userClient := &fakeAvatarUserClient{}
-	module := NewModule(fileClient, userClient)
+	api := NewFilesAPI(fileClient, userClient)
 
 	r := gin.New()
 	r.POST("/api/v1/files/upload/avatar", func(c *gin.Context) {
 		ctx := gocauth.InjectAuthenticatedUser(c.Request.Context(), &gocauth.AuthenticatedUser{ID: "7", Username: "alice"})
 		c.Request = c.Request.WithContext(ctx)
-		module.avatar(c)
+		api.UploadAvatar(c)
 	})
 
 	body := &strings.Builder{}
@@ -95,18 +103,31 @@ func TestAvatarUploadsAndUpdatesCurrentUser(t *testing.T) {
 	if !fieldMaskEqual(userClient.req.GetUpdateMask(), []string{"avatar"}) {
 		t.Fatalf("update mask = %+v", userClient.req.GetUpdateMask())
 	}
+
+	var resp struct {
+		User struct {
+			Id     int64  `json:"id"`
+			Avatar string `json:"avatar"`
+		} `json:"user"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatal(err)
+	}
+	if resp.User.Id != 7 || resp.User.Avatar != "avatars/2026/06/avatar.png" {
+		t.Fatalf("unexpected avatar response: %+v", resp.User)
+	}
 }
 
 func TestUploadPostCoverUploadsFile(t *testing.T) {
 	fileClient := &fakeFileClient{}
 	userClient := &fakeAvatarUserClient{}
-	module := NewModule(fileClient, userClient)
+	api := NewFilesAPI(fileClient, userClient)
 
 	r := gin.New()
 	r.POST("/api/v1/files/upload", func(c *gin.Context) {
 		ctx := gocauth.InjectAuthenticatedUser(c.Request.Context(), &gocauth.AuthenticatedUser{ID: "7", Username: "alice"})
 		c.Request = c.Request.WithContext(ctx)
-		module.upload(c)
+		api.UploadFile(c)
 	})
 
 	body := &strings.Builder{}
@@ -141,6 +162,26 @@ func TestUploadPostCoverUploadsFile(t *testing.T) {
 	}
 	if userClient.req != nil {
 		t.Fatalf("user update should not be called: %+v", userClient.req)
+	}
+
+	var resp struct {
+		File struct {
+			Id        int64  `json:"id"`
+			OwnerId   int64  `json:"owner_id"`
+			Scene     string `json:"scene"`
+			ObjectKey string `json:"object_key"`
+			Size      int64  `json:"size"`
+			Status    string `json:"status"`
+		} `json:"file"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
+		t.Fatal(err)
+	}
+	if resp.File.Id != 42 || resp.File.OwnerId != 7 || resp.File.Scene != "post_cover" || resp.File.Size != 4 {
+		t.Fatalf("unexpected upload response: %+v", resp.File)
+	}
+	if resp.File.ObjectKey != "avatars/2026/06/avatar.png" || resp.File.Status != "active" {
+		t.Fatalf("unexpected upload file fields: %+v", resp.File)
 	}
 }
 

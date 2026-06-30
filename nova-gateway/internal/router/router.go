@@ -5,25 +5,28 @@ import (
 	authmw "github.com/miiy/goc-quickstart/nova-gateway/internal/middleware/auth"
 	"github.com/miiy/goc-quickstart/nova-gateway/internal/module/health"
 	"github.com/miiy/goc/gin"
+	ginzap "github.com/miiy/goc/gin/middleware/zap"
 )
 
 // Router returns a function that registers all routes and middleware onto the gin engine.
 func Router(app *app.App) func(r *gin.Engine) {
 	return func(r *gin.Engine) {
-		health.NewModule(r).RegisterRouter()
+		logger := app.Logger().ZapLogger()
+		r.Use(ginzap.Ginzap(logger), ginzap.RecoveryWithZap(logger, true))
 
 		modules := app.Modules()
 		clients := app.Clients()
-		modules.Auth.RegisterPublicRouter(r)
 
-		public := r.Group("/api/v1")
-		modules.Post.RegisterPublicRouter(public)
+		health.NewModule().RegisterRouter(r)
 
-		protected := r.Group("/api/v1")
+		api := r.Group("/api/v1")
+
+		public := api.Group("")
+		protected := api.Group("")
 		protected.Use(authmw.AuthenticationMiddleware(clients.Auth))
 
-		modules.Auth.RegisterProtectedRouter(protected)
-		modules.Post.RegisterProtectedRouter(protected)
+		modules.Auth.RegisterRouter(public, protected)
+		modules.Post.RegisterRouter(public, protected)
 		modules.File.RegisterRouter(protected)
 		modules.User.RegisterRouter(protected)
 	}

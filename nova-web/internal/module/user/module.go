@@ -7,22 +7,11 @@ import (
 )
 
 type Module struct {
-	logger         logger.Logger
-	authClient     *client.AuthClient
-	userClient     *client.UserClient
-	fileClient     *client.FileClient
-	sessionManager *websession.Manager
+	handler *UserHandler
 }
 
-var userModule *Module
-
-func NewModule(logger logger.Logger, authClient *client.AuthClient, userClient *client.UserClient, fileClient *client.FileClient, sessionManager *websession.Manager) *Module {
-	userModule = &Module{
-		logger:         logger,
-		authClient:     authClient,
-		userClient:     userClient,
-		fileClient:     fileClient,
-		sessionManager: sessionManager,
+func NewModule(log logger.Logger, authClient *client.AuthClient, userClient *client.UserClient, fileClient *client.FileClient, sessionManager *websession.Manager) *Module {
+	return &Module{
+		handler: NewUserHandler(log, authClient, userClient, fileClient, sessionManager),
 	}
-	return userModule
 }

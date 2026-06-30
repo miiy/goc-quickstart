@@ -8,7 +8,6 @@ package authv1
 
 import (
 	_ "buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
-	_ "github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2/options"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -1362,7 +1361,7 @@ var File_nova_auth_v1_auth_proto protoreflect.FileDescriptor
 
 const file_nova_auth_v1_auth_proto_rawDesc = "" +
 	"\n" +
-	"\x17nova/auth/v1/auth.proto\x12\fnova.auth.v1\x1a\x1bbuf/validate/validate.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\"2\n" +
+	"\x17nova/auth/v1/auth.proto\x12\fnova.auth.v1\x1a\x1bbuf/validate/validate.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"2\n" +
 	"\x04User\x12\x1a\n" +
 	"\busername\x18\x01 \x01(\tR\busername\x12\x0e\n" +
 	"\x02id\x18\x02 \x01(\x03R\x02id\"C\n" +
@@ -1459,28 +1458,23 @@ const file_nova_auth_v1_auth_proto_rawDesc = "" +
 	"\faccess_token\x18\x01 \x01(\tR\vaccessToken\x12#\n" +
 	"\rrefresh_token\x18\x02 \x01(\tR\frefreshToken:|\xbaHy\x1aw\n" +
 	"\x15logout.token_required\x12)access_token or refresh_token is required\x1a3this.access_token != '' || this.refresh_token != ''\"\x10\n" +
-	"\x0eLogoutResponse2\xf1\n" +
-	"\n" +
+	"\x0eLogoutResponse2\xcd\a\n" +
 	"\vAuthService\x12R\n" +
-	"\vVerifyToken\x12 .nova.auth.v1.VerifyTokenRequest\x1a!.nova.auth.v1.VerifyTokenResponse\x12k\n" +
-	"\bRegister\x12\x1d.nova.auth.v1.RegisterRequest\x1a\x1e.nova.auth.v1.RegisterResponse\" \x82\xd3\xe4\x93\x02\x1a:\x01*\"\x15/api/v1/auth/register\x12\x89\x01\n" +
-	"\rUsernameCheck\x12\".nova.auth.v1.UsernameCheckRequest\x1a#.nova.auth.v1.UsernameCheckResponse\"/\x82\xd3\xe4\x93\x02):\x01*\"$/api/v1/auth/register/username_check\x12}\n" +
+	"\vVerifyToken\x12 .nova.auth.v1.VerifyTokenRequest\x1a!.nova.auth.v1.VerifyTokenResponse\x12I\n" +
+	"\bRegister\x12\x1d.nova.auth.v1.RegisterRequest\x1a\x1e.nova.auth.v1.RegisterResponse\x12X\n" +
+	"\rUsernameCheck\x12\".nova.auth.v1.UsernameCheckRequest\x1a#.nova.auth.v1.UsernameCheckResponse\x12O\n" +
 	"\n" +
-	"EmailCheck\x12\x1f.nova.auth.v1.EmailCheckRequest\x1a .nova.auth.v1.EmailCheckResponse\",\x82\xd3\xe4\x93\x02&:\x01*\"!/api/v1/auth/register/email_check\x12}\n" +
+	"EmailCheck\x12\x1f.nova.auth.v1.EmailCheckRequest\x1a .nova.auth.v1.EmailCheckResponse\x12O\n" +
 	"\n" +
-	"PhoneCheck\x12\x1f.nova.auth.v1.PhoneCheckRequest\x1a .nova.auth.v1.PhoneCheckResponse\",\x82\xd3\xe4\x93\x02&:\x01*\"!/api/v1/auth/register/phone_check\x12_\n" +
-	"\x05Login\x12\x1a.nova.auth.v1.LoginRequest\x1a\x1b.nova.auth.v1.LoginResponse\"\x1d\x82\xd3\xe4\x93\x02\x17:\x01*\"\x12/api/v1/auth/login\x12y\n" +
-	"\vSendSmsCode\x12 .nova.auth.v1.SendSmsCodeRequest\x1a!.nova.auth.v1.SendSmsCodeResponse\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/api/v1/auth/send_sms_code\x12p\n" +
-	"\tPhoneAuth\x12\x1e.nova.auth.v1.PhoneAuthRequest\x1a\x1f.nova.auth.v1.PhoneAuthResponse\"\"\x82\xd3\xe4\x93\x02\x1c:\x01*\"\x17/api/v1/auth/phone_auth\x12g\n" +
-	"\aMpLogin\x12\x1c.nova.auth.v1.MpLoginRequest\x1a\x1d.nova.auth.v1.MpLoginResponse\"\x1f\x82\xd3\xe4\x93\x02\x19:\x01*\"\x14/api/v1/auth/mplogin\x12|\n" +
-	"\fRefreshToken\x12!.nova.auth.v1.RefreshTokenRequest\x1a\".nova.auth.v1.RefreshTokenResponse\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/api/v1/auth/token/refresh\x12}\n" +
-	"\x0eChangePassword\x12#.nova.auth.v1.ChangePasswordRequest\x1a$.nova.auth.v1.ChangePasswordResponse\" \x82\xd3\xe4\x93\x02\x1a:\x01*\x1a\x15/api/v1/auth/password\x12c\n" +
-	"\x06Logout\x12\x1b.nova.auth.v1.LogoutRequest\x1a\x1c.nova.auth.v1.LogoutResponse\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/api/v1/auth/logoutB\x9b\x03\x92A\xe2\x01\x12\x98\x01\n" +
-	"\bAuth API\"H\n" +
-	"\fnova project\x12&https://github.com/miiy/goc-quickstart\x1a\x10none@example.com*=\n" +
-	"\vMIT License\x12.https://github.com/miiy/goc-quickstart/LICENSE2\x031.0*\x03\x01\x02\x04r@\n" +
-	"\x0eMore about goc\x12.https://github.com/grpc-ecosystem/grpc-gateway\n" +
-	"\x10com.nova.auth.v1B\tAuthProtoP\x01ZDgithub.com/miiy/goc-quickstart/nova-proto/gen/go/nova/auth/v1;authv1\xa2\x02\x03NAX\xaa\x02\fNova.Auth.V1\xca\x02\fNova\\Auth\\V1\xe2\x02\x18Nova\\Auth\\V1\\GPBMetadata\xea\x02\x0eNova::Auth::V1b\x06proto3"
+	"PhoneCheck\x12\x1f.nova.auth.v1.PhoneCheckRequest\x1a .nova.auth.v1.PhoneCheckResponse\x12@\n" +
+	"\x05Login\x12\x1a.nova.auth.v1.LoginRequest\x1a\x1b.nova.auth.v1.LoginResponse\x12R\n" +
+	"\vSendSmsCode\x12 .nova.auth.v1.SendSmsCodeRequest\x1a!.nova.auth.v1.SendSmsCodeResponse\x12L\n" +
+	"\tPhoneAuth\x12\x1e.nova.auth.v1.PhoneAuthRequest\x1a\x1f.nova.auth.v1.PhoneAuthResponse\x12F\n" +
+	"\aMpLogin\x12\x1c.nova.auth.v1.MpLoginRequest\x1a\x1d.nova.auth.v1.MpLoginResponse\x12U\n" +
+	"\fRefreshToken\x12!.nova.auth.v1.RefreshTokenRequest\x1a\".nova.auth.v1.RefreshTokenResponse\x12[\n" +
+	"\x0eChangePassword\x12#.nova.auth.v1.ChangePasswordRequest\x1a$.nova.auth.v1.ChangePasswordResponse\x12C\n" +
+	"\x06Logout\x12\x1b.nova.auth.v1.LogoutRequest\x1a\x1c.nova.auth.v1.LogoutResponseB\xbd\x01\n" +
+	"\x10com.nova.auth.v1B\tAuthProtoP\x01ZLgithub.com/miiy/goc-quickstart/nova-contracts/gen/go/rpc/nova/auth/v1;authv1\xa2\x02\x03NAX\xaa\x02\fNova.Auth.V1\xca\x02\fNova\\Auth\\V1\xe2\x02\x18Nova\\Auth\\V1\\GPBMetadata\xea\x02\x0eNova::Auth::V1b\x06proto3"
 
 var (
 	file_nova_auth_v1_auth_proto_rawDescOnce sync.Once

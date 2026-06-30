@@ -1,0 +1,17 @@
+{
+  "name": "nova-contracts",
+  "private": true,
+  "scripts": {
+    "openapi-generator": "openapi-generator-cli",
+    "openapi:validate": "openapi-generator-cli validate -i openapi/openapi.yaml",
+    "openapi:generate:go-gin-server": "openapi-generator-cli generate --generator-key go-gin-server",
+    "openapi:generate:go-client": "openapi-generator-cli generate --generator-key go-client",
+    "openapi:generate:swagger-json": "openapi-generator-cli generate --generator-key swagger-json && npm run openapi:copy:apidoc",
+    "openapi:fmt:go": "find gen/go/http -name '*.go' -exec gofmt -w {} +",
+    "openapi:copy:apidoc": "mkdir -p ../nova-apidoc/gen/openapi && cp gen/go/http/swagger-json/swagger.json ../nova-apidoc/gen/openapi/swagger.json",
+    "openapi:generate": "openapi-generator-cli generate --generator-key go-gin-server go-client swagger-json && npm run openapi:copy:apidoc && npm run openapi:fmt:go"
+  },
+  "devDependencies": {
+    "@openapitools/openapi-generator-cli": "^2.39.0"
+  }
+}

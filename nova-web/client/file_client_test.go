@@ -45,7 +45,7 @@ func TestFileClientUploadAvatar(t *testing.T) {
 			t.Fatalf("content = %q, want png-bytes", string(content))
 		}
 
-		resp := testResponse(http.StatusOK, `{"user":{"id":"7","username":"alice","avatar":"avatars/2026/06/a.png"}}`)
+		resp := testResponse(http.StatusOK, `{"user":{"id":7,"username":"alice","nickname":"Alice","avatar":"avatars/2026/06/a.png","email":"alice@example.com","phone":"","status":"active","created_at":"2026-01-01T00:00:00Z","updated_at":"2026-01-01T00:00:00Z"}}`)
 		resp.Header.Set("Content-Type", "application/json")
 		return resp, nil
 	})}
@@ -54,7 +54,7 @@ func TestFileClientUploadAvatar(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if int64(resp.Id) != 7 || resp.Avatar != "/uploads/avatars/2026/06/a.png" {
+	if resp.Id != 7 || resp.Avatar != "avatars/2026/06/a.png" {
 		t.Fatalf("unexpected response: %+v", resp)
 	}
 }
@@ -87,7 +87,7 @@ func TestFileClientUploadPostCover(t *testing.T) {
 			t.Fatalf("filename = %q, want cover.png", files[0].Filename)
 		}
 
-		resp := testResponse(http.StatusOK, `{"file":{"id":"9","scene":"FILE_SCENE_POST_COVER","object_key":"post-covers/2026/06/a.png","url":"/uploads/post-covers/2026/06/a.png","mime_type":"image/png","size":"9"}}`)
+		resp := testResponse(http.StatusOK, `{"file":{"id":9,"owner_id":7,"owner_type":"user","scene":"post_cover","object_key":"post-covers/2026/06/a.png","url":"","mime_type":"image/png","size":9,"checksum":"","status":"active","created_by":7,"created_at":"2026-01-01T00:00:00Z","updated_at":"2026-01-01T00:00:00Z"}}`)
 		resp.Header.Set("Content-Type", "application/json")
 		return resp, nil
 	})}
@@ -96,7 +96,7 @@ func TestFileClientUploadPostCover(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resp.URL != "/uploads/post-covers/2026/06/a.png" {
-		t.Fatalf("url = %q", resp.URL)
+	if resp.Url != "" {
+		t.Fatalf("url = %q", resp.Url)
 	}
 }

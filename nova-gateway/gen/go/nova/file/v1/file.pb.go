@@ -8,7 +8,6 @@ package filev1
 
 import (
 	_ "buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
-	_ "github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2/options"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -394,7 +393,7 @@ var File_nova_file_v1_file_proto protoreflect.FileDescriptor
 
 const file_nova_file_v1_file_proto_rawDesc = "" +
 	"\n" +
-	"\x17nova/file/v1/file.proto\x12\fnova.file.v1\x1a\x1bbuf/validate/validate.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\"\xff\x03\n" +
+	"\x17nova/file/v1/file.proto\x12\fnova.file.v1\x1a\x1bbuf/validate/validate.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xff\x03\n" +
 	"\x04File\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x19\n" +
 	"\bowner_id\x18\x02 \x01(\x03R\aownerId\x12\x1d\n" +
@@ -433,15 +432,11 @@ const file_nova_file_v1_file_proto_rawDesc = "" +
 	"FileStatus\x12\x1b\n" +
 	"\x17FILE_STATUS_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12FILE_STATUS_ACTIVE\x10\x01\x12\x17\n" +
-	"\x13FILE_STATUS_DELETED\x10\x022\x7f\n" +
-	"\vFileService\x12p\n" +
+	"\x13FILE_STATUS_DELETED\x10\x022^\n" +
+	"\vFileService\x12O\n" +
 	"\n" +
-	"UploadFile\x12\x1f.nova.file.v1.UploadFileRequest\x1a .nova.file.v1.UploadFileResponse\"\x1f\x82\xd3\xe4\x93\x02\x19:\x01*\"\x14/api/v1/files/uploadB\x9b\x03\x92A\xe2\x01\x12\x98\x01\n" +
-	"\bFile API\"H\n" +
-	"\fnova project\x12&https://github.com/miiy/goc-quickstart\x1a\x10none@example.com*=\n" +
-	"\vMIT License\x12.https://github.com/miiy/goc-quickstart/LICENSE2\x031.0*\x03\x01\x02\x04r@\n" +
-	"\x0eMore about goc\x12.https://github.com/grpc-ecosystem/grpc-gateway\n" +
-	"\x10com.nova.file.v1B\tFileProtoP\x01ZDgithub.com/miiy/goc-quickstart/nova-proto/gen/go/nova/file/v1;filev1\xa2\x02\x03NFX\xaa\x02\fNova.File.V1\xca\x02\fNova\\File\\V1\xe2\x02\x18Nova\\File\\V1\\GPBMetadata\xea\x02\x0eNova::File::V1b\x06proto3"
+	"UploadFile\x12\x1f.nova.file.v1.UploadFileRequest\x1a .nova.file.v1.UploadFileResponseB\xbd\x01\n" +
+	"\x10com.nova.file.v1B\tFileProtoP\x01ZLgithub.com/miiy/goc-quickstart/nova-contracts/gen/go/rpc/nova/file/v1;filev1\xa2\x02\x03NFX\xaa\x02\fNova.File.V1\xca\x02\fNova\\File\\V1\xe2\x02\x18Nova\\File\\V1\\GPBMetadata\xea\x02\x0eNova::File::V1b\x06proto3"
 
 var (
 	file_nova_file_v1_file_proto_rawDescOnce sync.Once

@@ -8,26 +8,19 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+
+	apiclient "github.com/miiy/goc-quickstart/nova-contracts/gen/go/http/go-client"
 )
 
 type FileClient struct {
 	*HTTPClient
 }
 
-type FileResponse struct {
-	Id        int64  `json:"id,string"`
-	Scene     string `json:"scene"`
-	ObjectKey string `json:"object_key"`
-	URL       string `json:"url"`
-	MimeType  string `json:"mime_type"`
-	Size      int64  `json:"size,string"`
-}
-
-func (c *FileClient) UploadPostCover(ctx context.Context, filename string, file io.Reader) (*FileResponse, error) {
+func (c *FileClient) UploadPostCover(ctx context.Context, filename string, file io.Reader) (*apiclient.File, error) {
 	return c.uploadFile(ctx, "post_cover", filename, file)
 }
 
-func (c *FileClient) UploadAvatar(ctx context.Context, filename string, file io.Reader) (*UserResponse, error) {
+func (c *FileClient) UploadAvatar(ctx context.Context, filename string, file io.Reader) (*apiclient.User, error) {
 	var body bytes.Buffer
 	writer := multipart.NewWriter(&body)
 	part, err := writer.CreateFormFile("avatar", filename)
@@ -63,10 +56,14 @@ func (c *FileClient) UploadAvatar(ctx context.Context, filename string, file io.
 		return nil, parseError(resp.StatusCode, respBody)
 	}
 
-	return decodeUserResponse(respBody)
+	var wrapper apiclient.UpdateUserResponse
+	if err := json.Unmarshal(respBody, &wrapper); err != nil {
+		return nil, err
+	}
+	return &wrapper.User, nil
 }
 
-func (c *FileClient) uploadFile(ctx context.Context, scene, filename string, file io.Reader) (*FileResponse, error) {
+func (c *FileClient) uploadFile(ctx context.Context, scene, filename string, file io.Reader) (*apiclient.File, error) {
 	var body bytes.Buffer
 	writer := multipart.NewWriter(&body)
 	if err := writer.WriteField("scene", scene); err != nil {
@@ -105,21 +102,9 @@ func (c *FileClient) uploadFile(ctx context.Context, scene, filename string, fil
 		return nil, parseError(resp.StatusCode, respBody)
 	}
 
-	var wrapper struct {
-		File *FileResponse `json:"file"`
-	}
+	var wrapper apiclient.UploadFileResponse
 	if err := json.Unmarshal(respBody, &wrapper); err != nil {
 		return nil, err
 	}
-	normalizeFileResponse(wrapper.File)
-	return wrapper.File, nil
-}
-
-func normalizeFileResponse(file *FileResponse) {
-	if file == nil {
-		return
-	}
-	if file.URL == "" {
-		file.URL = UploadsURL(file.ObjectKey)
-	}
+	return &wrapper.File, nil
 }

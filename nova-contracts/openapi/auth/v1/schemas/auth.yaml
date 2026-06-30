@@ -1,0 +1,200 @@
+AuthUser:
+  type: object
+  required:
+    - username
+    - id
+  properties:
+    username:
+      type: string
+    id:
+      type: integer
+      format: int64
+RegisterRequest:
+  type: object
+  required:
+    - email
+    - username
+    - password
+    - password_confirmation
+  properties:
+    email:
+      type: string
+      format: email
+      maxLength: 254
+    username:
+      type: string
+      minLength: 1
+    password:
+      type: string
+      format: password
+      minLength: 8
+      maxLength: 64
+    password_confirmation:
+      type: string
+      format: password
+      minLength: 8
+      maxLength: 64
+RegisterResponse:
+  type: object
+  required:
+    - user
+  properties:
+    user:
+      $ref: '#/AuthUser'
+UsernameCheckRequest:
+  type: object
+  required:
+    - value
+  properties:
+    value:
+      type: string
+      minLength: 1
+UsernameCheckResponse:
+  type: object
+  required:
+    - exist
+  properties:
+    exist:
+      type: boolean
+EmailCheckRequest:
+  type: object
+  required:
+    - value
+  properties:
+    value:
+      type: string
+      format: email
+      maxLength: 254
+EmailCheckResponse:
+  type: object
+  required:
+    - exist
+  properties:
+    exist:
+      type: boolean
+PhoneCheckRequest:
+  type: object
+  required:
+    - value
+  properties:
+    value:
+      type: string
+      minLength: 1
+PhoneCheckResponse:
+  type: object
+  required:
+    - exist
+  properties:
+    exist:
+      type: boolean
+LoginRequest:
+  type: object
+  required:
+    - username
+    - password
+  properties:
+    username:
+      type: string
+      minLength: 1
+    password:
+      type: string
+      format: password
+      minLength: 1
+TokenResponse:
+  type: object
+  required:
+    - token_type
+    - access_token
+    - expires_at
+    - user
+    - refresh_token
+    - refresh_expires_at
+  properties:
+    token_type:
+      type: string
+    access_token:
+      type: string
+    expires_at:
+      type: string
+      format: date-time
+    user:
+      $ref: '#/AuthUser'
+    refresh_token:
+      type: string
+    refresh_expires_at:
+      type: string
+      format: date-time
+SendSmsCodeRequest:
+  type: object
+  required:
+    - phone
+  properties:
+    phone:
+      type: string
+      minLength: 1
+SendSmsCodeResponse:
+  type: object
+  additionalProperties: false
+PhoneAuthRequest:
+  type: object
+  required:
+    - phone
+    - code
+  properties:
+    phone:
+      type: string
+      minLength: 1
+    code:
+      type: string
+      minLength: 1
+MpLoginRequest:
+  type: object
+  required:
+    - code
+  properties:
+    code:
+      type: string
+      minLength: 1
+RefreshTokenRequest:
+  type: object
+  required:
+    - refresh_token
+  properties:
+    refresh_token:
+      type: string
+      minLength: 1
+ChangePasswordRequest:
+  type: object
+  required:
+    - old_password
+    - new_password
+    - new_password_confirmation
+  properties:
+    old_password:
+      type: string
+      format: password
+      minLength: 1
+    new_password:
+      type: string
+      format: password
+      minLength: 8
+      maxLength: 64
+    new_password_confirmation:
+      type: string
+      format: password
+      minLength: 8
+      maxLength: 64
+ChangePasswordResponse:
+  type: object
+  additionalProperties: false
+LogoutRequest:
+  type: object
+  description: Either access_token or refresh_token is required. If access_token is omitted, the gateway uses the bearer token.
+  properties:
+    access_token:
+      type: string
+    refresh_token:
+      type: string
+LogoutResponse:
+  type: object
+  additionalProperties: false

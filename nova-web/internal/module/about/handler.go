@@ -5,7 +5,13 @@ import (
 	"github.com/miiy/goc/gin"
 )
 
-func indexHandler(c *gin.Context) {
+type AboutHandler struct{}
+
+func NewAboutHandler() *AboutHandler {
+	return &AboutHandler{}
+}
+
+func (h *AboutHandler) index(c *gin.Context) {
 	view := template.NewViewData(c)
 	view.PageTitle = "About"
 	c.HTML(200, "about/index", view)

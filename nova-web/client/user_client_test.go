@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestUserClientUpdateProfile(t *testing.T) {
+func TestUserClientUpdateUser(t *testing.T) {
 	client := &UserClient{HTTPClient: newTestHTTPClient(func(r *http.Request) (*http.Response, error) {
 		if r.Method != http.MethodPut {
 			t.Fatalf("method = %s, want %s", r.Method, http.MethodPut)
@@ -21,7 +21,7 @@ func TestUserClientUpdateProfile(t *testing.T) {
 				Nickname string `json:"nickname"`
 				Email    string `json:"email"`
 			} `json:"user"`
-			UpdateMask string `json:"update_mask"`
+			UpdateFields []string `json:"update_fields"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			t.Fatal(err)
@@ -29,23 +29,23 @@ func TestUserClientUpdateProfile(t *testing.T) {
 		if body.User.Nickname != "Alice" || body.User.Email != "alice@example.com" {
 			t.Fatalf("unexpected user body: %+v", body.User)
 		}
-		if body.UpdateMask != "nickname,email" {
-			t.Fatalf("update_mask = %q, want nickname,email", body.UpdateMask)
+		if want := []string{"nickname", "email"}; !stringSlicesEqual(body.UpdateFields, want) {
+			t.Fatalf("update_fields = %v, want %v", body.UpdateFields, want)
 		}
 
-		resp := testResponse(http.StatusOK, `{"user":{"id":"7","username":"alice","nickname":"Alice","avatar":"avatars/2026/06/a.png","email":"alice@example.com"}}`)
+		resp := testResponse(http.StatusOK, `{"user":{"id":7,"username":"alice","nickname":"Alice","avatar":"avatars/2026/06/a.png","email":"alice@example.com","phone":"","status":"active","created_at":"2026-01-01T00:00:00Z","updated_at":"2026-01-01T00:00:00Z"}}`)
 		resp.Header.Set("Content-Type", "application/json")
 		return resp, nil
 	})}
 
-	resp, err := client.UpdateProfile(context.Background(), 7, "Alice", "alice@example.com")
+	resp, err := client.UpdateUser(context.Background(), 7, "Alice", "alice@example.com")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if int64(resp.Id) != 7 || resp.Nickname != "Alice" || resp.Email != "alice@example.com" {
+	if resp.Id != 7 || resp.Nickname != "Alice" || resp.Email != "alice@example.com" {
 		t.Fatalf("unexpected response: %+v", resp)
 	}
-	if resp.Avatar != "/uploads/avatars/2026/06/a.png" {
+	if resp.Avatar != "avatars/2026/06/a.png" {
 		t.Fatalf("avatar = %q", resp.Avatar)
 	}
 }

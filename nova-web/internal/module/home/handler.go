@@ -11,7 +11,13 @@ type HomeView struct {
 	Content string
 }
 
-func indexHandler(c *gin.Context) {
+type HomeHandler struct{}
+
+func NewHomeHandler() *HomeHandler {
+	return &HomeHandler{}
+}
+
+func (h *HomeHandler) index(c *gin.Context) {
 	view := template.NewViewData(c)
 	view.PageTitle = "Home"
 	c.HTML(200, "home/index", HomeView{

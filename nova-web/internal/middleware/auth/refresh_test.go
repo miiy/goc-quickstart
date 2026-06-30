@@ -26,16 +26,16 @@ func init() {
 	gob.Register(map[string]any{})
 }
 
-// fakeRefreshClient is a RefreshClient stub that counts calls and can simulate
-// success, a terminal 401, or a transient 5xx / network error.
+// fakeRefreshClient is a TokenRefresher stub that counts calls and can simulate
+// success, a terminal refresh failure, or a transient 5xx / network error.
 type fakeRefreshClient struct {
 	calls int32
-	resp  *webclient.LoginResponse
+	resp  *RefreshedTokens
 	err   error
 	delay time.Duration // make concurrent calls overlap to exercise singleflight
 }
 
-func (f *fakeRefreshClient) Refresh(ctx context.Context, refreshToken string) (*webclient.LoginResponse, error) {
+func (f *fakeRefreshClient) RefreshToken(ctx context.Context, refreshToken string) (*RefreshedTokens, error) {
 	atomic.AddInt32(&f.calls, 1)
 	if f.delay > 0 {
 		select {
@@ -66,7 +66,7 @@ func (nopLogger) ZapLogger() *zap.Logger        { return zap.NewNop() }
 // newEngine builds a router with the session + refresh + session user attachment
 // middleware plus a priming /login route and a /check route that records what the
 // middleware chain injected.
-func newEngine(t *testing.T, client RefreshClient) (*gin.Engine, *captured) {
+func newEngine(t *testing.T, client TokenRefresher) (*gin.Engine, *captured) {
 	t.Helper()
 	store := gocsessions.NewCookieStore("test-secret")
 	mgr := websession.NewManager(store, "sess")
@@ -141,7 +141,7 @@ func primeAndCheck(t *testing.T, r *gin.Engine, skew string, refresh string) {
 }
 
 func TestRefreshSessionToken_NoRefreshToken_NoRefresh(t *testing.T) {
-	client := &fakeRefreshClient{resp: &webclient.LoginResponse{AccessToken: "access-new"}}
+	client := &fakeRefreshClient{resp: &RefreshedTokens{AccessToken: "access-new"}}
 	r, cap := newEngine(t, client)
 
 	primeAndCheck(t, r, "1h", "") // valid token, no refresh token stored
@@ -160,7 +160,7 @@ func TestRefreshSessionToken_NoRefreshToken_NoRefresh(t *testing.T) {
 func TestRefreshSessionToken_NoSessionUser_NoAccessTokenInjection(t *testing.T) {
 	store := gocsessions.NewCookieStore("test-secret")
 	mgr := websession.NewManager(store, "sess")
-	client := &fakeRefreshClient{resp: &webclient.LoginResponse{AccessToken: "access-new"}}
+	client := &fakeRefreshClient{resp: &RefreshedTokens{AccessToken: "access-new"}}
 
 	r := gin.New()
 	r.Use(mgr.Middleware())
@@ -199,7 +199,7 @@ func TestRefreshSessionToken_NoSessionUser_NoAccessTokenInjection(t *testing.T) 
 }
 
 func TestRefreshSessionToken_TokenStillValid_NoRefresh(t *testing.T) {
-	client := &fakeRefreshClient{resp: &webclient.LoginResponse{AccessToken: "access-new"}}
+	client := &fakeRefreshClient{resp: &RefreshedTokens{AccessToken: "access-new"}}
 	r, cap := newEngine(t, client)
 
 	primeAndCheck(t, r, "1h", "refresh-1") // expires in 1h, outside refreshSkew
@@ -213,9 +213,9 @@ func TestRefreshSessionToken_TokenStillValid_NoRefresh(t *testing.T) {
 }
 
 func TestRefreshSessionToken_ExpiringSoon_RefreshSucceeds(t *testing.T) {
-	client := &fakeRefreshClient{resp: &webclient.LoginResponse{
+	client := &fakeRefreshClient{resp: &RefreshedTokens{
 		AccessToken:  "access-new",
-		ExpiresAt:    time.Now().Add(time.Hour).UTC().Format(time.RFC3339),
+		ExpiresAt:    time.Now().Add(time.Hour).UTC(),
 		RefreshToken: "refresh-2",
 	}}
 	r, cap := newEngine(t, client)
@@ -234,7 +234,7 @@ func TestRefreshSessionToken_ExpiringSoon_RefreshSucceeds(t *testing.T) {
 }
 
 func TestRefreshSessionToken_RefreshUnauthorized_ClearsSession(t *testing.T) {
-	client := &fakeRefreshClient{err: &webclient.HTTPError{StatusCode: http.StatusUnauthorized, Message: "reuse detected"}}
+	client := &fakeRefreshClient{err: ErrInvalidRefreshToken}
 	r, cap := newEngine(t, client)
 
 	primeAndCheck(t, r, "30s", "refresh-1")
@@ -251,7 +251,7 @@ func TestRefreshSessionToken_RefreshUnauthorized_ClearsSession(t *testing.T) {
 }
 
 func TestRefreshSessionToken_RefreshTransient_KeepsSession(t *testing.T) {
-	client := &fakeRefreshClient{err: &webclient.HTTPError{StatusCode: http.StatusBadGateway, Message: "upstream"}}
+	client := &fakeRefreshClient{err: webclient.NewHTTPError(http.StatusBadGateway, "upstream")}
 	r, cap := newEngine(t, client)
 
 	primeAndCheck(t, r, "30s", "refresh-1")
@@ -269,9 +269,9 @@ func TestRefreshSessionToken_RefreshTransient_KeepsSession(t *testing.T) {
 
 func TestRefreshSessionToken_ConcurrentRefresh_Singleflight(t *testing.T) {
 	client := &fakeRefreshClient{
-		resp: &webclient.LoginResponse{
+		resp: &RefreshedTokens{
 			AccessToken:  "access-new",
-			ExpiresAt:    time.Now().Add(time.Hour).UTC().Format(time.RFC3339),
+			ExpiresAt:    time.Now().Add(time.Hour).UTC(),
 			RefreshToken: "refresh-2",
 		},
 		delay: 50 * time.Millisecond, // force overlap so calls would race without dedup

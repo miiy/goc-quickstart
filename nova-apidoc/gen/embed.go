@@ -2,5 +2,5 @@ package gen
 
 import "embed"
 
-//go:embed openapiv2
+//go:embed openapi
 var OpenAPIFS embed.FS

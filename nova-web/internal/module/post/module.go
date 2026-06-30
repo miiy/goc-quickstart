@@ -6,21 +6,12 @@ import (
 	"github.com/miiy/goc/logger"
 )
 
-type PostModule struct {
-	logger         logger.Logger
-	postClient     *client.PostClient
-	fileClient     *client.FileClient
-	sessionManager *websession.Manager
+type Module struct {
+	handler *PostsHandler
 }
 
-var postModule *PostModule
-
-func NewModule(logger logger.Logger, postClient *client.PostClient, fileClient *client.FileClient, sessionManager *websession.Manager) *PostModule {
-	postModule = &PostModule{
-		logger:         logger,
-		postClient:     postClient,
-		fileClient:     fileClient,
-		sessionManager: sessionManager,
+func NewModule(log logger.Logger, postClient *client.PostClient, fileClient *client.FileClient, sessionManager *websession.Manager) *Module {
+	return &Module{
+		handler: NewPostsHandler(log, postClient, fileClient, sessionManager),
 	}
-	return postModule
 }

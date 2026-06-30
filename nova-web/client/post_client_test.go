@@ -29,18 +29,18 @@ func TestPostClientCreatePostDoesNotSendAuthorID(t *testing.T) {
 		var decoded struct {
 			Post struct {
 				Title    string `json:"title"`
-				CoverURL string `json:"cover_url"`
+				CoverUrl string `json:"cover_url"`
 				Content  string `json:"content"`
 			} `json:"post"`
 		}
 		if err := json.Unmarshal(body, &decoded); err != nil {
 			t.Fatal(err)
 		}
-		if decoded.Post.Title != "new title" || decoded.Post.Content != "new content" || decoded.Post.CoverURL != "post-covers/2026/06/cover.png" {
+		if decoded.Post.Title != "new title" || decoded.Post.Content != "new content" || decoded.Post.CoverUrl != "post-covers/2026/06/cover.png" {
 			t.Fatalf("unexpected post body: %+v", decoded.Post)
 		}
 
-		resp := testResponse(http.StatusOK, `{"post":{"id":"42","author_id":"7","title":"new title","cover_url":"post-covers/2026/06/cover.png","content":"new content"}}`)
+		resp := testResponse(http.StatusOK, `{"post":{"id":42,"author_id":7,"author_name":"alice","title":"new title","cover_url":"post-covers/2026/06/cover.png","content":"new content","status":"published","tags":[],"category_id":0,"created_at":"2026-01-01T00:00:00Z","updated_at":"2026-01-01T00:00:00Z"}}`)
 		resp.Header.Set("Content-Type", "application/json")
 		return resp, nil
 	})}
@@ -66,22 +66,22 @@ func TestPostClientUpdatePostSendsFieldMask(t *testing.T) {
 		var body struct {
 			Post struct {
 				Title    string `json:"title"`
-				CoverURL string `json:"cover_url"`
+				CoverUrl string `json:"cover_url"`
 				Content  string `json:"content"`
 			} `json:"post"`
-			UpdateMask string `json:"update_mask"`
+			UpdateFields []string `json:"update_fields"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			t.Fatal(err)
 		}
-		if body.Post.Title != "new title" || body.Post.Content != "new content" || body.Post.CoverURL != "post-covers/2026/06/cover.png" {
+		if body.Post.Title != "new title" || body.Post.Content != "new content" || body.Post.CoverUrl != "post-covers/2026/06/cover.png" {
 			t.Fatalf("unexpected post body: %+v", body.Post)
 		}
-		if body.UpdateMask != "title,content,cover_url" {
-			t.Fatalf("update_mask = %q, want %q", body.UpdateMask, "title,content,cover_url")
+		if want := []string{"title", "content", "cover_url"}; !stringSlicesEqual(body.UpdateFields, want) {
+			t.Fatalf("update_fields = %v, want %v", body.UpdateFields, want)
 		}
 
-		resp := testResponse(http.StatusOK, `{"post":{"id":"42","author_id":"7","author_name":"alice","title":"new title","cover_url":"post-covers/2026/06/cover.png","content":"new content"}}`)
+		resp := testResponse(http.StatusOK, `{"post":{"id":42,"author_id":7,"author_name":"alice","title":"new title","cover_url":"post-covers/2026/06/cover.png","content":"new content","status":"published","tags":[],"category_id":0,"created_at":"2026-01-01T00:00:00Z","updated_at":"2026-01-01T00:00:00Z"}}`)
 		resp.Header.Set("Content-Type", "application/json")
 		return resp, nil
 	})}
@@ -97,7 +97,7 @@ func TestPostClientUpdatePostSendsFieldMask(t *testing.T) {
 	if resp.AuthorName != "alice" {
 		t.Fatalf("author name = %q, want alice", resp.AuthorName)
 	}
-	if resp.CoverURL != "/uploads/post-covers/2026/06/cover.png" {
-		t.Fatalf("cover url = %q", resp.CoverURL)
+	if resp.CoverUrl != "post-covers/2026/06/cover.png" {
+		t.Fatalf("cover url = %q", resp.CoverUrl)
 	}
 }

@@ -1,0 +1,84 @@
+FileScene:
+  type: string
+  description: Business scene for a stored file.
+  enum:
+    - unspecified
+    - avatar
+    - post_cover
+  x-enum-varnames:
+    - FILE_SCENE_UNSPECIFIED
+    - FILE_SCENE_AVATAR
+    - FILE_SCENE_POST_COVER
+FileStatus:
+  type: string
+  description: Lifecycle state of a stored file.
+  enum:
+    - unspecified
+    - active
+    - deleted
+  x-enum-varnames:
+    - FILE_STATUS_UNSPECIFIED
+    - FILE_STATUS_ACTIVE
+    - FILE_STATUS_DELETED
+File:
+  type: object
+  description: File stored by the file service.
+  required:
+    - id
+    - owner_id
+    - owner_type
+    - scene
+    - object_key
+    - url
+    - mime_type
+    - size
+    - checksum
+    - status
+    - created_by
+    - created_at
+    - updated_at
+  properties:
+    id:
+      type: integer
+      format: int64
+    owner_id:
+      type: integer
+      format: int64
+    owner_type:
+      type: string
+    scene:
+      $ref: '#/FileScene'
+    object_key:
+      type: string
+      description: Stable relative storage key, for example avatars/2026/06/a.png.
+    url:
+      type: string
+    mime_type:
+      type: string
+    size:
+      type: integer
+      format: int64
+    checksum:
+      type: string
+    status:
+      $ref: '#/FileStatus'
+    created_by:
+      type: integer
+      format: int64
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+    deleted_at:
+      type: string
+      format: date-time
+      nullable: true
+UploadFileResponse:
+  type: object
+  required:
+    - file
+  properties:
+    file:
+      $ref: '#/File'

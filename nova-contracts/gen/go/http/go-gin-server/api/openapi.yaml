@@ -1,0 +1,1638 @@
+openapi: 3.0.3
+info:
+  description: HTTP API contract owned by nova-gateway.
+  title: Nova Gateway API
+  version: 1.0.0
+servers:
+- url: /api/v1
+security:
+- BearerAuth: []
+tags:
+- description: "Registration, authentication, and token endpoints."
+  name: Auth
+- description: File upload endpoints.
+  name: Files
+- description: Post publishing and query endpoints.
+  name: Posts
+- description: User profile and lookup endpoints.
+  name: Users
+paths:
+  /auth/register:
+    post:
+      operationId: register
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegisterResponse"
+          description: Registered user identity.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Error response.
+      security: []
+      summary: Register a user
+      tags:
+      - Auth
+  /auth/register/check-username:
+    post:
+      operationId: usernameCheck
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UsernameCheckRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsernameCheckResponse"
+          description: Username existence result.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Error response.
+      security: []
+      summary: Check username availability
+      tags:
+      - Auth
+  /auth/register/check-email:
+    post:
+      operationId: emailCheck
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmailCheckRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailCheckResponse"
+          description: Email existence result.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Error response.
+      security: []
+      summary: Check email availability
+      tags:
+      - Auth
+  /auth/register/check-phone:
+    post:
+      operationId: phoneCheck
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PhoneCheckRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PhoneCheckResponse"
+          description: Phone existence result.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Error response.
+      security: []
+      summary: Check phone availability
+      tags:
+      - Auth
+  /auth/login:
+    post:
+      operationId: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+          description: Access and refresh tokens.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Error response.
+      security: []
+      summary: Login with username or email
+      tags:
+      - Auth
+  /auth/sms/send-code:
+    post:
+      operationId: sendSmsCode
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendSmsCodeRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SendSmsCodeResponse"
+          description: SMS code requested.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Error response.
+      security: []
+      summary: Send SMS code
+      tags:
+      - Auth
+  /auth/phone/login:
+    post:
+      operationId: phoneAuth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PhoneAuthRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+          description: Access and refresh tokens.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Error response.
+      security: []
+      summary: Login with phone and SMS code
+      tags:
+      - Auth
+  /auth/mp/login:
+    post:
+      operationId: mpLogin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MpLoginRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+          description: Access and refresh tokens.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Error response.
+      security: []
+      summary: Login with WeChat Mini Program code
+      tags:
+      - Auth
+  /auth/token/refresh:
+    post:
+      operationId: refreshToken
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshTokenRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+          description: Refreshed access and refresh tokens.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Error response.
+      security: []
+      summary: Refresh access token
+      tags:
+      - Auth
+  /auth/password:
+    put:
+      operationId: changePassword
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangePasswordResponse"
+          description: Password changed.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Error response.
+      summary: Change password
+      tags:
+      - Auth
+  /auth/logout:
+    post:
+      operationId: logout
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LogoutRequest"
+        required: false
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LogoutResponse"
+          description: Logout succeeded.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Error response.
+      summary: Logout
+      tags:
+      - Auth
+  /files/upload:
+    post:
+      operationId: uploadFile
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/uploadFile_request"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadFileResponse"
+          description: Stored file record.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Error response.
+      summary: Upload a file
+      tags:
+      - Files
+  /files/upload/avatar:
+    post:
+      operationId: uploadAvatar
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/uploadAvatar_request"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdateUserResponse"
+          description: Updated user with avatar.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Error response.
+      summary: Upload current user's avatar
+      tags:
+      - Files
+  /posts:
+    get:
+      operationId: listPosts
+      parameters:
+      - description: Filter by author id.
+        in: query
+        name: author_id
+        schema:
+          format: int64
+          minimum: 0
+          type: integer
+      - description: Filter by category id.
+        in: query
+        name: category_id
+        schema:
+          format: int64
+          minimum: 0
+          type: integer
+      - description: Filter by tag.
+        in: query
+        name: tag
+        schema:
+          maxLength: 64
+          type: string
+      - description: Page number.
+        in: query
+        name: page
+        schema:
+          format: int32
+          minimum: 0
+          type: integer
+      - description: Number of posts per page.
+        in: query
+        name: page_size
+        schema:
+          format: int32
+          maximum: 100
+          minimum: 0
+          type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListPostsResponse"
+          description: Posts matched by filters.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Error response.
+      security: []
+      summary: List posts
+      tags:
+      - Posts
+    post:
+      operationId: createPost
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePostRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatePostResponse"
+          description: Created post.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Error response.
+      summary: Create a post
+      tags:
+      - Posts
+  /posts/{id}:
+    delete:
+      operationId: deletePost
+      parameters:
+      - description: Post id.
+        in: path
+        name: id
+        required: true
+        schema:
+          format: int64
+          minimum: 1
+          type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeletePostResponse"
+          description: Post deleted.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Error response.
+      summary: Delete a post
+      tags:
+      - Posts
+    get:
+      operationId: getPost
+      parameters:
+      - description: Post id.
+        in: path
+        name: id
+        required: true
+        schema:
+          format: int64
+          minimum: 1
+          type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetPostResponse"
+          description: Post detail.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Error response.
+      security: []
+      summary: Get a post
+      tags:
+      - Posts
+    put:
+      operationId: updatePost
+      parameters:
+      - description: Post id.
+        in: path
+        name: id
+        required: true
+        schema:
+          format: int64
+          minimum: 1
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePostRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdatePostResponse"
+          description: Updated post.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Error response.
+      summary: Update a post
+      tags:
+      - Posts
+  /users:
+    get:
+      operationId: listUsers
+      parameters:
+      - description: Page number.
+        in: query
+        name: page
+        schema:
+          format: int32
+          minimum: 0
+          type: integer
+      - description: Number of users per page.
+        in: query
+        name: page_size
+        schema:
+          format: int32
+          maximum: 100
+          minimum: 0
+          type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListUsersResponse"
+          description: Paginated users.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Error response.
+      summary: List users
+      tags:
+      - Users
+  /users/batch:
+    get:
+      operationId: batchGetUsers
+      parameters:
+      - description: User ids. Repeated query values and comma-separated values are
+          both accepted by the gateway.
+        explode: true
+        in: query
+        name: ids
+        required: true
+        schema:
+          items:
+            format: int64
+            minimum: 1
+            type: integer
+          minItems: 1
+          type: array
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchGetUsersResponse"
+          description: Users matched by ids.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Error response.
+      summary: Batch get users
+      tags:
+      - Users
+  /users/{id}:
+    get:
+      operationId: getUser
+      parameters:
+      - description: User id.
+        in: path
+        name: id
+        required: true
+        schema:
+          format: int64
+          minimum: 1
+          type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetUserResponse"
+          description: User detail.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Error response.
+      summary: Get a user
+      tags:
+      - Users
+    put:
+      operationId: updateUser
+      parameters:
+      - description: User id.
+        in: path
+        name: id
+        required: true
+        schema:
+          format: int64
+          minimum: 1
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdateUserResponse"
+          description: Updated user.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Error response.
+      summary: Update a user
+      tags:
+      - Users
+components:
+  schemas:
+    AuthUser:
+      example:
+        username: username
+        id: 0
+      properties:
+        username:
+          type: string
+        id:
+          format: int64
+          type: integer
+      required:
+      - id
+      - username
+      type: object
+    RegisterRequest:
+      example:
+        email: email
+        username: username
+        password: password
+        password_confirmation: password_confirmation
+      properties:
+        email:
+          format: email
+          maxLength: 254
+          type: string
+        username:
+          minLength: 1
+          type: string
+        password:
+          format: password
+          maxLength: 64
+          minLength: 8
+          type: string
+        password_confirmation:
+          format: password
+          maxLength: 64
+          minLength: 8
+          type: string
+      required:
+      - email
+      - password
+      - password_confirmation
+      - username
+      type: object
+    RegisterResponse:
+      example:
+        user:
+          username: username
+          id: 0
+      properties:
+        user:
+          $ref: "#/components/schemas/AuthUser"
+      required:
+      - user
+      type: object
+    UsernameCheckRequest:
+      example:
+        value: value
+      properties:
+        value:
+          minLength: 1
+          type: string
+      required:
+      - value
+      type: object
+    UsernameCheckResponse:
+      example:
+        exist: true
+      properties:
+        exist:
+          type: boolean
+      required:
+      - exist
+      type: object
+    EmailCheckRequest:
+      example:
+        value: value
+      properties:
+        value:
+          format: email
+          maxLength: 254
+          type: string
+      required:
+      - value
+      type: object
+    EmailCheckResponse:
+      example:
+        exist: true
+      properties:
+        exist:
+          type: boolean
+      required:
+      - exist
+      type: object
+    PhoneCheckRequest:
+      example:
+        value: value
+      properties:
+        value:
+          minLength: 1
+          type: string
+      required:
+      - value
+      type: object
+    PhoneCheckResponse:
+      example:
+        exist: true
+      properties:
+        exist:
+          type: boolean
+      required:
+      - exist
+      type: object
+    LoginRequest:
+      example:
+        username: username
+        password: password
+      properties:
+        username:
+          minLength: 1
+          type: string
+        password:
+          format: password
+          minLength: 1
+          type: string
+      required:
+      - password
+      - username
+      type: object
+    TokenResponse:
+      example:
+        token_type: token_type
+        access_token: access_token
+        expires_at: 2000-01-23T04:56:07.000+00:00
+        user:
+          username: username
+          id: 0
+        refresh_token: refresh_token
+        refresh_expires_at: 2000-01-23T04:56:07.000+00:00
+      properties:
+        token_type:
+          type: string
+        access_token:
+          type: string
+        expires_at:
+          format: date-time
+          type: string
+        user:
+          $ref: "#/components/schemas/AuthUser"
+        refresh_token:
+          type: string
+        refresh_expires_at:
+          format: date-time
+          type: string
+      required:
+      - access_token
+      - expires_at
+      - refresh_expires_at
+      - refresh_token
+      - token_type
+      - user
+      type: object
+    SendSmsCodeRequest:
+      example:
+        phone: phone
+      properties:
+        phone:
+          minLength: 1
+          type: string
+      required:
+      - phone
+      type: object
+    SendSmsCodeResponse:
+      additionalProperties: false
+      type: object
+    PhoneAuthRequest:
+      example:
+        phone: phone
+        code: code
+      properties:
+        phone:
+          minLength: 1
+          type: string
+        code:
+          minLength: 1
+          type: string
+      required:
+      - code
+      - phone
+      type: object
+    MpLoginRequest:
+      example:
+        code: code
+      properties:
+        code:
+          minLength: 1
+          type: string
+      required:
+      - code
+      type: object
+    RefreshTokenRequest:
+      example:
+        refresh_token: refresh_token
+      properties:
+        refresh_token:
+          minLength: 1
+          type: string
+      required:
+      - refresh_token
+      type: object
+    ChangePasswordRequest:
+      example:
+        old_password: old_password
+        new_password: new_password
+        new_password_confirmation: new_password_confirmation
+      properties:
+        old_password:
+          format: password
+          minLength: 1
+          type: string
+        new_password:
+          format: password
+          maxLength: 64
+          minLength: 8
+          type: string
+        new_password_confirmation:
+          format: password
+          maxLength: 64
+          minLength: 8
+          type: string
+      required:
+      - new_password
+      - new_password_confirmation
+      - old_password
+      type: object
+    ChangePasswordResponse:
+      additionalProperties: false
+      type: object
+    LogoutRequest:
+      description: "Either access_token or refresh_token is required. If access_token\
+        \ is omitted, the gateway uses the bearer token."
+      example:
+        access_token: access_token
+        refresh_token: refresh_token
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+      type: object
+    LogoutResponse:
+      additionalProperties: false
+      type: object
+    File:
+      description: File stored by the file service.
+      example:
+        id: 0
+        owner_id: 6
+        owner_type: owner_type
+        scene: unspecified
+        object_key: object_key
+        url: url
+        mime_type: mime_type
+        size: 1
+        checksum: checksum
+        status: unspecified
+        created_by: 5
+        created_at: 2000-01-23T04:56:07.000+00:00
+        updated_at: 2000-01-23T04:56:07.000+00:00
+        deleted_at: 2000-01-23T04:56:07.000+00:00
+      properties:
+        id:
+          format: int64
+          type: integer
+        owner_id:
+          format: int64
+          type: integer
+        owner_type:
+          type: string
+        scene:
+          $ref: "#/components/schemas/FileScene"
+        object_key:
+          description: "Stable relative storage key, for example avatars/2026/06/a.png."
+          type: string
+        url:
+          type: string
+        mime_type:
+          type: string
+        size:
+          format: int64
+          type: integer
+        checksum:
+          type: string
+        status:
+          $ref: "#/components/schemas/FileStatus"
+        created_by:
+          format: int64
+          type: integer
+        created_at:
+          format: date-time
+          type: string
+        updated_at:
+          format: date-time
+          type: string
+        deleted_at:
+          format: date-time
+          nullable: true
+          type: string
+      required:
+      - checksum
+      - created_at
+      - created_by
+      - id
+      - mime_type
+      - object_key
+      - owner_id
+      - owner_type
+      - scene
+      - size
+      - status
+      - updated_at
+      - url
+      type: object
+    FileScene:
+      description: Business scene for a stored file.
+      enum:
+      - unspecified
+      - avatar
+      - post_cover
+      type: string
+      x-enum-varnames:
+      - FILE_SCENE_UNSPECIFIED
+      - FILE_SCENE_AVATAR
+      - FILE_SCENE_POST_COVER
+    FileStatus:
+      description: Lifecycle state of a stored file.
+      enum:
+      - unspecified
+      - active
+      - deleted
+      type: string
+      x-enum-varnames:
+      - FILE_STATUS_UNSPECIFIED
+      - FILE_STATUS_ACTIVE
+      - FILE_STATUS_DELETED
+    UploadFileResponse:
+      example:
+        file:
+          id: 0
+          owner_id: 6
+          owner_type: owner_type
+          scene: unspecified
+          object_key: object_key
+          url: url
+          mime_type: mime_type
+          size: 1
+          checksum: checksum
+          status: unspecified
+          created_by: 5
+          created_at: 2000-01-23T04:56:07.000+00:00
+          updated_at: 2000-01-23T04:56:07.000+00:00
+          deleted_at: 2000-01-23T04:56:07.000+00:00
+      properties:
+        file:
+          $ref: "#/components/schemas/File"
+      required:
+      - file
+      type: object
+    Post:
+      description: Article published by a user.
+      example:
+        id: 5
+        author_id: 2
+        title: title
+        content: content
+        status: unspecified
+        tags:
+        - tags
+        - tags
+        category_id: 7
+        created_at: 2000-01-23T04:56:07.000+00:00
+        updated_at: 2000-01-23T04:56:07.000+00:00
+        deleted_at: 2000-01-23T04:56:07.000+00:00
+        author_name: author_name
+        cover_url: cover_url
+      properties:
+        id:
+          format: int64
+          type: integer
+        author_id:
+          format: int64
+          type: integer
+        title:
+          type: string
+        content:
+          type: string
+        status:
+          $ref: "#/components/schemas/PostStatus"
+        tags:
+          items:
+            type: string
+          type: array
+        category_id:
+          format: int64
+          type: integer
+        created_at:
+          format: date-time
+          type: string
+        updated_at:
+          format: date-time
+          type: string
+        deleted_at:
+          format: date-time
+          nullable: true
+          type: string
+        author_name:
+          description: Populated by nova-gateway from nova-user for web responses.
+          type: string
+        cover_url:
+          type: string
+      required:
+      - author_id
+      - author_name
+      - category_id
+      - content
+      - cover_url
+      - created_at
+      - id
+      - status
+      - tags
+      - title
+      - updated_at
+      type: object
+    PostStatus:
+      description: Publication state of a post.
+      enum:
+      - unspecified
+      - draft
+      - published
+      type: string
+      x-enum-varnames:
+      - POST_STATUS_UNSPECIFIED
+      - POST_STATUS_DRAFT
+      - POST_STATUS_PUBLISHED
+    CreatePostInput:
+      description: Post fields accepted when creating a post.
+      example:
+        title: title
+        content: content
+        status: unspecified
+        tags:
+        - tags
+        - tags
+        category_id: 0
+        cover_url: cover_url
+      properties:
+        title:
+          minLength: 1
+          type: string
+        content:
+          type: string
+        status:
+          $ref: "#/components/schemas/PostStatus"
+        tags:
+          items:
+            type: string
+          type: array
+        category_id:
+          format: int64
+          type: integer
+        cover_url:
+          type: string
+      required:
+      - content
+      - title
+      type: object
+    UpdatePostInput:
+      description: Mutable post fields accepted when updating a post.
+      example:
+        title: title
+        content: content
+        status: unspecified
+        tags:
+        - tags
+        - tags
+        category_id: 0
+        cover_url: cover_url
+      properties:
+        title:
+          minLength: 1
+          type: string
+        content:
+          type: string
+        status:
+          $ref: "#/components/schemas/PostStatus"
+        tags:
+          items:
+            type: string
+          type: array
+        category_id:
+          format: int64
+          type: integer
+        cover_url:
+          type: string
+      type: object
+    CreatePostRequest:
+      example:
+        post:
+          title: title
+          content: content
+          status: unspecified
+          tags:
+          - tags
+          - tags
+          category_id: 0
+          cover_url: cover_url
+      properties:
+        post:
+          $ref: "#/components/schemas/CreatePostInput"
+      required:
+      - post
+      type: object
+    CreatePostResponse:
+      example:
+        post:
+          id: 5
+          author_id: 2
+          title: title
+          content: content
+          status: unspecified
+          tags:
+          - tags
+          - tags
+          category_id: 7
+          created_at: 2000-01-23T04:56:07.000+00:00
+          updated_at: 2000-01-23T04:56:07.000+00:00
+          deleted_at: 2000-01-23T04:56:07.000+00:00
+          author_name: author_name
+          cover_url: cover_url
+      properties:
+        post:
+          $ref: "#/components/schemas/Post"
+      required:
+      - post
+      type: object
+    GetPostResponse:
+      example:
+        post:
+          id: 5
+          author_id: 2
+          title: title
+          content: content
+          status: unspecified
+          tags:
+          - tags
+          - tags
+          category_id: 7
+          created_at: 2000-01-23T04:56:07.000+00:00
+          updated_at: 2000-01-23T04:56:07.000+00:00
+          deleted_at: 2000-01-23T04:56:07.000+00:00
+          author_name: author_name
+          cover_url: cover_url
+      properties:
+        post:
+          $ref: "#/components/schemas/Post"
+      required:
+      - post
+      type: object
+    UpdatePostRequest:
+      example:
+        post:
+          title: title
+          content: content
+          status: unspecified
+          tags:
+          - tags
+          - tags
+          category_id: 0
+          cover_url: cover_url
+        update_fields:
+        - title
+        - content
+        - cover_url
+      properties:
+        post:
+          $ref: "#/components/schemas/UpdatePostInput"
+        update_fields:
+          description: Mutable post fields to update.
+          example:
+          - title
+          - content
+          - cover_url
+          items:
+            enum:
+            - title
+            - content
+            - cover_url
+            - status
+            - tags
+            - category_id
+            type: string
+          type: array
+      required:
+      - post
+      type: object
+    UpdatePostResponse:
+      example:
+        post:
+          id: 5
+          author_id: 2
+          title: title
+          content: content
+          status: unspecified
+          tags:
+          - tags
+          - tags
+          category_id: 7
+          created_at: 2000-01-23T04:56:07.000+00:00
+          updated_at: 2000-01-23T04:56:07.000+00:00
+          deleted_at: 2000-01-23T04:56:07.000+00:00
+          author_name: author_name
+          cover_url: cover_url
+      properties:
+        post:
+          $ref: "#/components/schemas/Post"
+      required:
+      - post
+      type: object
+    ListPostsResponse:
+      example:
+        total: 0
+        total_pages: 6
+        page_size: 1
+        current_page: 5
+        posts:
+        - id: 5
+          author_id: 2
+          title: title
+          content: content
+          status: unspecified
+          tags:
+          - tags
+          - tags
+          category_id: 7
+          created_at: 2000-01-23T04:56:07.000+00:00
+          updated_at: 2000-01-23T04:56:07.000+00:00
+          deleted_at: 2000-01-23T04:56:07.000+00:00
+          author_name: author_name
+          cover_url: cover_url
+        - id: 5
+          author_id: 2
+          title: title
+          content: content
+          status: unspecified
+          tags:
+          - tags
+          - tags
+          category_id: 7
+          created_at: 2000-01-23T04:56:07.000+00:00
+          updated_at: 2000-01-23T04:56:07.000+00:00
+          deleted_at: 2000-01-23T04:56:07.000+00:00
+          author_name: author_name
+          cover_url: cover_url
+      properties:
+        total:
+          format: int64
+          type: integer
+        total_pages:
+          format: int32
+          type: integer
+        page_size:
+          format: int32
+          type: integer
+        current_page:
+          format: int32
+          type: integer
+        posts:
+          items:
+            $ref: "#/components/schemas/Post"
+          type: array
+      required:
+      - current_page
+      - page_size
+      - posts
+      - total
+      - total_pages
+      type: object
+    DeletePostResponse:
+      additionalProperties: false
+      type: object
+    User:
+      description: Public profile and account state for a user.
+      example:
+        id: 0
+        username: username
+        nickname: nickname
+        avatar: avatar
+        email: email
+        email_verified_time: 2000-01-23T04:56:07.000+00:00
+        phone: phone
+        status: unspecified
+        created_at: 2000-01-23T04:56:07.000+00:00
+        updated_at: 2000-01-23T04:56:07.000+00:00
+        deleted_at: 2000-01-23T04:56:07.000+00:00
+      properties:
+        id:
+          format: int64
+          type: integer
+        username:
+          type: string
+        nickname:
+          type: string
+        avatar:
+          type: string
+        email:
+          format: email
+          type: string
+        email_verified_time:
+          format: date-time
+          nullable: true
+          type: string
+        phone:
+          type: string
+        status:
+          $ref: "#/components/schemas/UserStatus"
+        created_at:
+          format: date-time
+          type: string
+        updated_at:
+          format: date-time
+          type: string
+        deleted_at:
+          format: date-time
+          nullable: true
+          type: string
+      required:
+      - avatar
+      - created_at
+      - email
+      - id
+      - nickname
+      - phone
+      - status
+      - updated_at
+      - username
+      type: object
+    UserStatus:
+      description: Lifecycle state of a user account.
+      enum:
+      - unspecified
+      - active
+      - disabled
+      type: string
+      x-enum-varnames:
+      - USER_STATUS_UNSPECIFIED
+      - USER_STATUS_ACTIVE
+      - USER_STATUS_DISABLED
+    UserInput:
+      description: Mutable user profile fields accepted by the gateway.
+      example:
+        nickname: nickname
+        avatar: avatar
+        email: email
+        phone: phone
+        status: unspecified
+      properties:
+        nickname:
+          type: string
+        avatar:
+          type: string
+        email:
+          format: email
+          type: string
+        phone:
+          type: string
+        status:
+          $ref: "#/components/schemas/UserStatus"
+      type: object
+    GetUserResponse:
+      example:
+        user:
+          id: 0
+          username: username
+          nickname: nickname
+          avatar: avatar
+          email: email
+          email_verified_time: 2000-01-23T04:56:07.000+00:00
+          phone: phone
+          status: unspecified
+          created_at: 2000-01-23T04:56:07.000+00:00
+          updated_at: 2000-01-23T04:56:07.000+00:00
+          deleted_at: 2000-01-23T04:56:07.000+00:00
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+      required:
+      - user
+      type: object
+    BatchGetUsersResponse:
+      example:
+        users:
+        - id: 0
+          username: username
+          nickname: nickname
+          avatar: avatar
+          email: email
+          email_verified_time: 2000-01-23T04:56:07.000+00:00
+          phone: phone
+          status: unspecified
+          created_at: 2000-01-23T04:56:07.000+00:00
+          updated_at: 2000-01-23T04:56:07.000+00:00
+          deleted_at: 2000-01-23T04:56:07.000+00:00
+        - id: 0
+          username: username
+          nickname: nickname
+          avatar: avatar
+          email: email
+          email_verified_time: 2000-01-23T04:56:07.000+00:00
+          phone: phone
+          status: unspecified
+          created_at: 2000-01-23T04:56:07.000+00:00
+          updated_at: 2000-01-23T04:56:07.000+00:00
+          deleted_at: 2000-01-23T04:56:07.000+00:00
+      properties:
+        users:
+          items:
+            $ref: "#/components/schemas/User"
+          type: array
+      required:
+      - users
+      type: object
+    UpdateUserRequest:
+      example:
+        user:
+          nickname: nickname
+          avatar: avatar
+          email: email
+          phone: phone
+          status: unspecified
+        update_fields:
+        - nickname
+        - avatar
+      properties:
+        user:
+          $ref: "#/components/schemas/UserInput"
+        update_fields:
+          description: Mutable user fields to update.
+          example:
+          - nickname
+          - avatar
+          items:
+            enum:
+            - nickname
+            - avatar
+            - email
+            - phone
+            - status
+            type: string
+          type: array
+      required:
+      - user
+      type: object
+    UpdateUserResponse:
+      example:
+        user:
+          id: 0
+          username: username
+          nickname: nickname
+          avatar: avatar
+          email: email
+          email_verified_time: 2000-01-23T04:56:07.000+00:00
+          phone: phone
+          status: unspecified
+          created_at: 2000-01-23T04:56:07.000+00:00
+          updated_at: 2000-01-23T04:56:07.000+00:00
+          deleted_at: 2000-01-23T04:56:07.000+00:00
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+      required:
+      - user
+      type: object
+    ListUsersResponse:
+      example:
+        total: 0
+        total_pages: 6
+        page_size: 1
+        current_page: 5
+        users:
+        - id: 0
+          username: username
+          nickname: nickname
+          avatar: avatar
+          email: email
+          email_verified_time: 2000-01-23T04:56:07.000+00:00
+          phone: phone
+          status: unspecified
+          created_at: 2000-01-23T04:56:07.000+00:00
+          updated_at: 2000-01-23T04:56:07.000+00:00
+          deleted_at: 2000-01-23T04:56:07.000+00:00
+        - id: 0
+          username: username
+          nickname: nickname
+          avatar: avatar
+          email: email
+          email_verified_time: 2000-01-23T04:56:07.000+00:00
+          phone: phone
+          status: unspecified
+          created_at: 2000-01-23T04:56:07.000+00:00
+          updated_at: 2000-01-23T04:56:07.000+00:00
+          deleted_at: 2000-01-23T04:56:07.000+00:00
+      properties:
+        total:
+          format: int64
+          type: integer
+        total_pages:
+          format: int32
+          type: integer
+        page_size:
+          format: int32
+          type: integer
+        current_page:
+          format: int32
+          type: integer
+        users:
+          items:
+            $ref: "#/components/schemas/User"
+          type: array
+      required:
+      - current_page
+      - page_size
+      - total
+      - total_pages
+      - users
+      type: object
+    ErrorResponse:
+      example:
+        error:
+          code: 6
+          message: message
+      properties:
+        error:
+          $ref: "#/components/schemas/ErrorStatus"
+      required:
+      - error
+      type: object
+    ErrorStatus:
+      example:
+        code: 6
+        message: message
+      properties:
+        code:
+          format: int32
+          type: integer
+        message:
+          type: string
+      required:
+      - code
+      - message
+      type: object
+    uploadFile_request:
+      properties:
+        scene:
+          $ref: "#/components/schemas/FileScene"
+        file:
+          format: binary
+          type: string
+      required:
+      - file
+      - scene
+      type: object
+    uploadAvatar_request:
+      properties:
+        avatar:
+          format: binary
+          type: string
+      required:
+      - avatar
+      type: object
+  securitySchemes:
+    BearerAuth:
+      bearerFormat: JWT
+      scheme: bearer
+      type: http

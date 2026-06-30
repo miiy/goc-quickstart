@@ -5,9 +5,14 @@ import (
 )
 
 type Config struct {
+	App      AppConfig                `yaml:"app"`
 	Server   ServerConfig             `yaml:"server"`
 	Services map[string]ServiceConfig `yaml:"services"`
 	TLS      TLSConfig                `yaml:"tls"`
+}
+
+type AppConfig struct {
+	Debug bool `yaml:"debug"`
 }
 
 type ServerConfig struct {

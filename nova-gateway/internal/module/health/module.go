@@ -1,11 +1,9 @@
 package health
 
-import "github.com/miiy/goc/gin"
-
 type Module struct {
-	router *gin.Engine
+	healthAPI *HealthAPI
 }
 
-func NewModule(router *gin.Engine) *Module {
-	return &Module{router: router}
+func NewModule() *Module {
+	return &Module{healthAPI: NewHealthAPI()}
 }

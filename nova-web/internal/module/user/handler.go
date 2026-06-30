@@ -4,25 +4,47 @@ import (
 	"net/http"
 	"strings"
 
+	apiclient "github.com/miiy/goc-quickstart/nova-contracts/gen/go/http/go-client"
 	"github.com/miiy/goc-quickstart/nova-web/client"
+	"github.com/miiy/goc-quickstart/nova-web/internal/media"
+	websession "github.com/miiy/goc-quickstart/nova-web/internal/session"
 	"github.com/miiy/goc-quickstart/nova-web/internal/template"
 	"github.com/miiy/goc/gin"
 	"github.com/miiy/goc/gin/authctx"
 	"github.com/miiy/goc/gin/sessions"
+	"github.com/miiy/goc/logger"
 )
+
+type UserHandler struct {
+	logger         logger.Logger
+	authClient     *client.AuthClient
+	userClient     *client.UserClient
+	fileClient     *client.FileClient
+	sessionManager *websession.Manager
+}
+
+func NewUserHandler(logger logger.Logger, authClient *client.AuthClient, userClient *client.UserClient, fileClient *client.FileClient, sessionManager *websession.Manager) *UserHandler {
+	return &UserHandler{
+		logger:         logger,
+		authClient:     authClient,
+		userClient:     userClient,
+		fileClient:     fileClient,
+		sessionManager: sessionManager,
+	}
+}
 
 type ProfileView struct {
 	template.ViewData
-	User          *client.UserResponse
+	User          *apiclient.User
 	Flashes       []sessions.Flash
 	ProfileError  string
 	PasswordError string
 }
 
-func Profile(c *gin.Context) {
-	user, err := loadCurrentProfile(c)
+func (h *UserHandler) Profile(c *gin.Context) {
+	user, err := h.loadCurrentUser(c)
 	if err != nil {
-		if handleAuthError(c, err) {
+		if h.handleAuthError(c, err) {
 			return
 		}
 		c.HTML(http.StatusBadGateway, "user/profile", ProfileView{
@@ -36,30 +58,31 @@ func Profile(c *gin.Context) {
 	if err != nil {
 		_ = c.Error(err)
 	}
-	renderProfile(c, http.StatusOK, user, flashes, "", "")
+	h.renderProfile(c, http.StatusOK, user, flashes, "", "")
 }
 
-func UpdateProfile(c *gin.Context) {
+func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	authUser, ok := authctx.CurrentUser(c)
 	if !ok {
-		c.Redirect(http.StatusFound, "/login")
+		h.handleAuthError(c, client.NewHTTPError(http.StatusUnauthorized, "unauthenticated"))
 		return
 	}
+
 	authUserID, err := authUser.Int64ID()
 	if err != nil {
-		handleAuthError(c, &client.HTTPError{StatusCode: http.StatusUnauthorized, Message: err.Error()})
+		h.handleAuthError(c, client.NewHTTPError(http.StatusUnauthorized, err.Error()))
 		return
 	}
 
 	nickname := strings.TrimSpace(c.PostForm("nickname"))
 	email := strings.TrimSpace(c.PostForm("email"))
-	_, err = userModule.userClient.UpdateProfile(c.Request.Context(), authUserID, nickname, email)
+	_, err = h.userClient.UpdateUser(c.Request.Context(), authUserID, nickname, email)
 	if err != nil {
-		if handleAuthError(c, err) {
+		if h.handleAuthError(c, err) {
 			return
 		}
-		renderProfile(c, profileErrorStatus(err), &client.UserResponse{
-			Id:       client.Int64String(authUserID),
+		h.renderProfile(c, profileErrorStatus(err), &apiclient.User{
+			Id:       authUserID,
 			Username: authUser.Username,
 			Nickname: nickname,
 			Email:    email,
@@ -75,100 +98,74 @@ func UpdateProfile(c *gin.Context) {
 	c.Redirect(http.StatusFound, "/user/profile")
 }
 
-func UploadAvatar(c *gin.Context) {
-	if _, ok := authctx.CurrentUser(c); !ok {
-		c.Redirect(http.StatusFound, "/login")
-		return
-	}
-
+func (h *UserHandler) UploadAvatar(c *gin.Context) {
 	file, header, err := c.Request.FormFile("avatar")
 	if err != nil {
-		if handleAuthError(c, err) {
+		if h.handleAuthError(c, err) {
 			return
 		}
-		user, loadErr := loadCurrentProfile(c)
-		if loadErr != nil {
-			user = nil
-		}
-		renderProfile(c, http.StatusBadRequest, user, nil, err.Error(), "")
+		h.redirectProfileWithFlash(c, sessions.FlashLevelError, err.Error())
 		return
 	}
 	defer file.Close()
 
-	if _, err := userModule.fileClient.UploadAvatar(c.Request.Context(), header.Filename, file); err != nil {
-		if handleAuthError(c, err) {
+	if _, err := h.fileClient.UploadAvatar(c.Request.Context(), header.Filename, file); err != nil {
+		if h.handleAuthError(c, err) {
 			return
 		}
-		user, loadErr := loadCurrentProfile(c)
-		if loadErr != nil {
-			user = nil
-		}
-		renderProfile(c, profileErrorStatus(err), user, nil, err.Error(), "")
+		h.redirectProfileWithFlash(c, sessions.FlashLevelError, err.Error())
 		return
 	}
 
-	if err := sessions.AddFlash(c, sessions.FlashLevelSuccess, "头像已更新"); err != nil {
-		_ = c.Error(err)
-		c.String(http.StatusInternalServerError, "保存提示信息失败")
-		return
-	}
-	c.Redirect(http.StatusFound, "/user/profile")
+	h.redirectProfileWithFlash(c, sessions.FlashLevelSuccess, "头像已更新")
 }
 
-func ChangePassword(c *gin.Context) {
-	if _, ok := authctx.CurrentUser(c); !ok {
-		c.Redirect(http.StatusFound, "/login")
-		return
-	}
-
-	err := userModule.authClient.ChangePassword(
+func (h *UserHandler) ChangePassword(c *gin.Context) {
+	err := h.authClient.ChangePassword(
 		c.Request.Context(),
 		c.PostForm("old_password"),
 		c.PostForm("new_password"),
 		c.PostForm("new_password_confirmation"),
 	)
 	if err != nil {
-		if handleAuthError(c, err) {
+		if h.handleAuthError(c, err) {
 			return
 		}
-		user, loadErr := loadCurrentProfile(c)
-		if loadErr != nil {
-			user = nil
-		}
-		renderProfile(c, profileErrorStatus(err), user, nil, "", err.Error())
+		h.redirectProfileWithFlash(c, sessions.FlashLevelError, err.Error())
 		return
 	}
 
-	if err := sessions.AddFlash(c, sessions.FlashLevelSuccess, "密码已更新"); err != nil {
-		_ = c.Error(err)
-		c.String(http.StatusInternalServerError, "保存提示信息失败")
-		return
-	}
-	c.Redirect(http.StatusFound, "/user/profile")
+	h.redirectProfileWithFlash(c, sessions.FlashLevelSuccess, "密码已更新")
 }
 
-func loadCurrentProfile(c *gin.Context) (*client.UserResponse, error) {
+func (h *UserHandler) loadCurrentUser(c *gin.Context) (*apiclient.User, error) {
 	authUser, ok := authctx.CurrentUser(c)
 	if !ok {
-		return nil, &client.HTTPError{StatusCode: http.StatusUnauthorized, Message: "unauthenticated"}
+		return nil, client.NewHTTPError(http.StatusUnauthorized, "unauthenticated")
 	}
+
 	authUserID, err := authUser.Int64ID()
 	if err != nil {
-		return nil, &client.HTTPError{StatusCode: http.StatusUnauthorized, Message: err.Error()}
+		return nil, client.NewHTTPError(http.StatusUnauthorized, err.Error())
 	}
-	return userModule.userClient.GetUser(c.Request.Context(), authUserID)
+	return h.userClient.GetUser(c.Request.Context(), authUserID)
 }
 
-func handleAuthError(c *gin.Context, err error) bool {
+func (h *UserHandler) handleAuthError(c *gin.Context, err error) bool {
 	if !client.IsStatus(err, http.StatusUnauthorized) {
 		return false
 	}
-	userModule.sessionManager.Clear(c)
+	h.sessionManager.Clear(c)
 	c.Redirect(http.StatusFound, "/login")
 	return true
 }
 
-func renderProfile(c *gin.Context, status int, user *client.UserResponse, flashes []sessions.Flash, profileError, passwordError string) {
+func (h *UserHandler) renderProfile(c *gin.Context, status int, user *apiclient.User, flashes []sessions.Flash, profileError, passwordError string) {
+	if user != nil {
+		viewUser := *user
+		viewUser.Avatar = media.UploadsURL(viewUser.Avatar)
+		user = &viewUser
+	}
 	c.HTML(status, "user/profile", ProfileView{
 		ViewData:      template.NewFormViewData(c),
 		User:          user,
@@ -176,6 +173,15 @@ func renderProfile(c *gin.Context, status int, user *client.UserResponse, flashe
 		ProfileError:  profileError,
 		PasswordError: passwordError,
 	})
+}
+
+func (h *UserHandler) redirectProfileWithFlash(c *gin.Context, level, message string) {
+	if err := sessions.AddFlash(c, level, message); err != nil {
+		_ = c.Error(err)
+		c.String(http.StatusInternalServerError, "保存提示信息失败")
+		return
+	}
+	c.Redirect(http.StatusFound, "/user/profile")
 }
 
 func profileErrorStatus(err error) int {

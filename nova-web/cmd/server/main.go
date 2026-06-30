@@ -6,8 +6,6 @@ import (
 
 	"github.com/miiy/goc-quickstart/nova-web/internal/di"
 	"github.com/miiy/goc-quickstart/nova-web/internal/router"
-	"github.com/miiy/goc/gin"
-	ginzap "github.com/miiy/goc/gin/middleware/zap"
 	httpserver "github.com/miiy/goc/http/server"
 )
 
@@ -22,17 +20,17 @@ func main() {
 	defer cleanup()
 
 	cfg := app.Config()
-	clients := app.Clients()
-	sessionManager := app.SessionManager()
 
 	log.Printf("Starting server on %s", cfg.Server.HTTP.Addr)
-	server := httpserver.New(
+	opts := []httpserver.Option{
 		httpserver.WithAddr(cfg.Server.HTTP.Addr),
 		httpserver.WithLogger(app.Logger().ZapLogger()),
-	)
-	server.Use(ginzap.Ginzap(app.Logger().ZapLogger()), ginzap.RecoveryWithZap(app.Logger().ZapLogger(), true))
-	server.RegisterRouter(func(r *gin.Engine) {
-		router.Router(r, sessionManager, cfg.App, clients.Auth, app.Logger(), cfg.Storage.Root)
-	})
+	}
+	if cfg.App.Debug {
+		opts = append(opts, httpserver.WithDebug())
+	}
+
+	server := httpserver.New(opts...)
+	server.RegisterRouter(router.Router(app))
 	server.Run()
 }

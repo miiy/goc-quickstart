@@ -7,7 +7,7 @@ import (
 )
 
 type Modules struct {
-	Post *post.PostModule
-	Auth *auth.AuthModule
+	Post *post.Module
+	Auth *auth.Module
 	User *user.Module
 }

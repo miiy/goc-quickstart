@@ -16,9 +16,9 @@
                             <label for="title" class="form-label">Title</label>
                             <input type="text" class="form-control" id="title" name="title" value="{{ if .Post }}{{ .Post.Title }}{{ end }}" required>
                         </div>
-                        {{ if and .Post .Post.CoverURL }}
+                        {{ if and .Post .Post.CoverUrl }}
                         <div class="mb-3">
-                            <img src="{{ .Post.CoverURL }}" alt="" class="img-fluid rounded">
+                            <img src="{{ .Post.CoverUrl }}" alt="" class="img-fluid rounded">
                         </div>
                         {{ end }}
                         <div class="mb-3">
