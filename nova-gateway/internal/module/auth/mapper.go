@@ -17,18 +17,18 @@ type tokenResponse interface {
 	GetRefreshExpiresAt() *timestamppb.Timestamp
 }
 
-func openapiTokenResponse(resp tokenResponse) openapi.TokenResponse {
+func protoToTokenResponse(resp tokenResponse) openapi.TokenResponse {
 	return openapi.TokenResponse{
 		TokenType:        resp.GetTokenType(),
 		AccessToken:      resp.GetAccessToken(),
 		ExpiresAt:        timestampTime(resp.GetExpiresAt()),
-		User:             openapiAuthUser(resp.GetUser()),
+		User:             protoToAuthUser(resp.GetUser()),
 		RefreshToken:     resp.GetRefreshToken(),
 		RefreshExpiresAt: timestampTime(resp.GetRefreshExpiresAt()),
 	}
 }
 
-func openapiAuthUser(user *authv1.User) openapi.AuthUser {
+func protoToAuthUser(user *authv1.User) openapi.AuthUser {
 	if user == nil {
 		return openapi.AuthUser{}
 	}

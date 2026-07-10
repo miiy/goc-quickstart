@@ -62,7 +62,7 @@ Generate one target at a time:
 
 ```bash
 make openapi-generate-go-gin-server
-make openapi-generate-go-client
+make openapi-generate-ts-client
 make openapi-generate-swagger-json
 ```
 
@@ -70,9 +70,8 @@ Generated outputs:
 
 ```text
 gen/go/http/go-gin-server/      Gin server contract, DTOs, and route interfaces
-gen/go/http/go-client/          Go HTTP client SDK
+gen/ts/http/ts-client/          TypeScript fetch frontend client
 gen/go/http/swagger-json/       bundled swagger.json
-../nova-apidoc/gen/openapi/swagger.json
 ```
 
 The OpenAPI generator version and targets are pinned in `openapitools.json`.

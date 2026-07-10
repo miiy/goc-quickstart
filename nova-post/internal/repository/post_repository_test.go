@@ -55,7 +55,7 @@ func TestPostRepositoryListBindsTagFilter(t *testing.T) {
 			"created_at",
 			"updated_at",
 			"deleted_at",
-			"author_id",
+			"user_id",
 			"title",
 			"content",
 			"status",

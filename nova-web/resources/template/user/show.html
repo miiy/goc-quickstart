@@ -1,0 +1,9 @@
+{{ define "content" }}
+<div class="app-container">
+    <div data-user-show data-username="{{ .Username }}"></div>
+</div>
+{{ end }}
+
+{{ define "head" }}
+{{ viteEntry "frontend/src/features/user/entries/show.tsx" }}
+{{ end }}

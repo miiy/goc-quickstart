@@ -17,16 +17,16 @@
           "interfaceOnly": "true"
         }
       },
-      "go-client": {
-        "generatorName": "go",
+      "ts-client": {
+        "generatorName": "typescript-fetch",
         "inputSpec": "openapi/openapi.yaml",
-        "output": "gen/go/http/go-client",
-        "gitUserId": "miiy",
-        "gitRepoId": "goc-quickstart/nova-contracts/gen/go/http/go-client",
+        "output": "gen/ts/http/ts-client",
         "additionalProperties": {
-          "packageName": "apiclient",
-          "packageVersion": "1.0.0",
-          "withGoMod": "true"
+          "supportsES6": "true",
+          "withInterfaces": "true",
+          "useSingleRequestParameter": "true",
+          "stringEnums": "true",
+          "withoutRuntimeChecks": "true"
         }
       },
       "swagger-json": {

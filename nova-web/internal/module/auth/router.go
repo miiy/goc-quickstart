@@ -1,6 +1,7 @@
 package auth
 
 import (
+	resourceTemplate "github.com/miiy/goc-quickstart/nova-web/resources/template"
 	"github.com/miiy/goc/gin"
 )
 
@@ -21,7 +22,7 @@ func (m *Module) RegisterRouter(r gin.IRouter) {
 
 func Templates() map[string][]string {
 	return map[string][]string{
-		"auth/register": {"layout/layout.html", "layout/header.html", "layout/footer.html", "auth/register.html"},
-		"auth/login":    {"layout/layout.html", "layout/header.html", "layout/footer.html", "auth/login.html"},
+		"auth/register": resourceTemplate.Layout("auth/register.html"),
+		"auth/login":    resourceTemplate.Layout("auth/login.html"),
 	}
 }

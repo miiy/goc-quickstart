@@ -5,10 +5,12 @@ FileScene:
     - unspecified
     - avatar
     - post_cover
+    - post_content
   x-enum-varnames:
     - FILE_SCENE_UNSPECIFIED
     - FILE_SCENE_AVATAR
     - FILE_SCENE_POST_COVER
+    - FILE_SCENE_POST_CONTENT
 FileStatus:
   type: string
   description: Lifecycle state of a stored file.

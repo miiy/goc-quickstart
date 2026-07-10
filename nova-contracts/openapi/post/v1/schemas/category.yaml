@@ -1,0 +1,28 @@
+Category:
+  type: object
+  description: Read-only post category.
+  required:
+    - id
+    - name
+    - parent_id
+    - path
+  properties:
+    id:
+      type: integer
+      format: int64
+    name:
+      type: string
+    parent_id:
+      type: integer
+      format: int64
+    path:
+      type: string
+ListCategoriesResponse:
+  type: object
+  required:
+    - categories
+  properties:
+    categories:
+      type: array
+      items:
+        $ref: '#/Category'

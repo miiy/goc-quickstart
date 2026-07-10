@@ -8,22 +8,26 @@ import (
 )
 
 type Config struct {
-	App     AppConfig     `yaml:"app"`
-	Redis   RedisConfig   `yaml:"redis"`
-	Session SessionConfig `yaml:"session"`
-	Server  ServerConfig  `yaml:"server"`
-	Gateway GatewayConfig `yaml:"gateway"`
-	Storage StorageConfig `yaml:"storage"`
+	App      AppConfig                `yaml:"app"`
+	Redis    RedisConfig              `yaml:"redis"`
+	Session  SessionConfig            `yaml:"session"`
+	Server   ServerConfig             `yaml:"server"`
+	Static   StaticConfig             `yaml:"static"`
+	Gateway  GatewayConfig            `yaml:"gateway"`
+	Services map[string]ServiceConfig `yaml:"services"`
+	TLS      TLSConfig                `yaml:"tls"`
+	Storage  StorageConfig            `yaml:"storage"`
 }
 
 type AppConfig struct {
 	Name            string `yaml:"name"`
+	Description     string `yaml:"description"`
 	Env             string `yaml:"env"`
 	Debug           bool   `yaml:"debug"`
+	RegisterEnabled bool   `yaml:"registerEnabled"`
 	Locale          string `yaml:"locale"`
 	Timezone        string `yaml:"timezone"`
 	Url             string `yaml:"url"`
-	FooterCopyright string `yaml:"footerCopyright"`
 }
 
 type RedisConfig struct {
@@ -35,6 +39,7 @@ type RedisConfig struct {
 type SessionConfig struct {
 	Name   string `yaml:"name"`
 	Secret string `yaml:"secret"`
+	Domain string `yaml:"domain"`
 	MaxAge int    `yaml:"maxAge"`
 	Secure bool   `yaml:"secure"`
 }
@@ -47,8 +52,25 @@ type HTTPConfig struct {
 	Addr string `yaml:"addr"`
 }
 
+// StaticConfig controls where nova-web reads frontend build artifacts from.
+type StaticConfig struct {
+	Root string `yaml:"root"`
+}
+
 type GatewayConfig struct {
 	Addr string `yaml:"addr"`
+}
+
+type ServiceConfig struct {
+	Endpoint string `yaml:"endpoint"`
+}
+
+type TLSConfig struct {
+	Enabled    bool   `yaml:"enabled"`
+	ServerName string `yaml:"serverName"`
+	CertFile   string `yaml:"certFile"`
+	KeyFile    string `yaml:"keyFile"`
+	CaFile     string `yaml:"caFile"`
 }
 
 // StorageConfig is the on-disk root nova-web serves uploaded files from
@@ -66,7 +88,9 @@ func NewConfig(fileName string) (*Config, error) {
 	var err error
 	v = viper.New()
 	v.SetConfigFile(fileName)
+	v.SetDefault("app.registerEnabled", true)
 	v.SetDefault("app.timezone", "Asia/Shanghai")
+	v.SetDefault("static.root", "dist")
 	if err = v.ReadInConfig(); err != nil {
 		return nil, err
 	}

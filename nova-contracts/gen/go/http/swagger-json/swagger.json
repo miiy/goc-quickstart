@@ -520,7 +520,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/UpdateUserResponse"
+                  "$ref" : "#/components/schemas/UpdateProfileResponse"
                 }
               }
             },
@@ -545,9 +545,9 @@
       "get" : {
         "operationId" : "listPosts",
         "parameters" : [ {
-          "description" : "Filter by author id.",
+          "description" : "Filter by user id.",
           "in" : "query",
-          "name" : "author_id",
+          "name" : "user_id",
           "schema" : {
             "format" : "int64",
             "minimum" : 0,
@@ -663,9 +663,8 @@
           "name" : "id",
           "required" : true,
           "schema" : {
-            "format" : "int64",
-            "minimum" : 1,
-            "type" : "integer"
+            "minLength" : 1,
+            "type" : "string"
           }
         } ],
         "responses" : {
@@ -701,9 +700,8 @@
           "name" : "id",
           "required" : true,
           "schema" : {
-            "format" : "int64",
-            "minimum" : 1,
-            "type" : "integer"
+            "minLength" : 1,
+            "type" : "string"
           }
         } ],
         "responses" : {
@@ -740,9 +738,8 @@
           "name" : "id",
           "required" : true,
           "schema" : {
-            "format" : "int64",
-            "minimum" : 1,
-            "type" : "integer"
+            "minLength" : 1,
+            "type" : "string"
           }
         } ],
         "requestBody" : {
@@ -778,6 +775,144 @@
           }
         },
         "summary" : "Update a post",
+        "tags" : [ "Posts" ]
+      }
+    },
+    "/users/{username}/posts" : {
+      "get" : {
+        "operationId" : "listUserPosts",
+        "parameters" : [ {
+          "description" : "Username.",
+          "in" : "path",
+          "name" : "username",
+          "required" : true,
+          "schema" : {
+            "maxLength" : 255,
+            "minLength" : 1,
+            "type" : "string"
+          }
+        }, {
+          "description" : "Page number.",
+          "in" : "query",
+          "name" : "page",
+          "schema" : {
+            "format" : "int32",
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Number of posts per page.",
+          "in" : "query",
+          "name" : "page_size",
+          "schema" : {
+            "format" : "int32",
+            "maximum" : 100,
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ListPostsResponse"
+                }
+              }
+            },
+            "description" : "Current user's posts, including drafts."
+          },
+          "default" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Error response."
+          }
+        },
+        "summary" : "List posts owned by the authenticated user",
+        "tags" : [ "Posts" ]
+      }
+    },
+    "/users/{username}/posts/{id}" : {
+      "get" : {
+        "operationId" : "getUserPost",
+        "parameters" : [ {
+          "description" : "Username.",
+          "in" : "path",
+          "name" : "username",
+          "required" : true,
+          "schema" : {
+            "maxLength" : 255,
+            "minLength" : 1,
+            "type" : "string"
+          }
+        }, {
+          "description" : "Post id.",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "minLength" : 1,
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GetPostResponse"
+                }
+              }
+            },
+            "description" : "Current user's post detail, including drafts."
+          },
+          "default" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Error response."
+          }
+        },
+        "summary" : "Get a post owned by the authenticated user",
+        "tags" : [ "Posts" ]
+      }
+    },
+    "/categories" : {
+      "get" : {
+        "operationId" : "listCategories",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ListCategoriesResponse"
+                }
+              }
+            },
+            "description" : "Read-only post categories."
+          },
+          "default" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Error response."
+          }
+        },
+        "security" : [ ],
+        "summary" : "List post categories",
         "tags" : [ "Posts" ]
       }
     },
@@ -830,64 +965,18 @@
         "tags" : [ "Users" ]
       }
     },
-    "/users/batch" : {
-      "get" : {
-        "operationId" : "batchGetUsers",
-        "parameters" : [ {
-          "description" : "User ids. Repeated query values and comma-separated values are both accepted by the gateway.",
-          "explode" : true,
-          "in" : "query",
-          "name" : "ids",
-          "required" : true,
-          "schema" : {
-            "items" : {
-              "format" : "int64",
-              "minimum" : 1,
-              "type" : "integer"
-            },
-            "minItems" : 1,
-            "type" : "array"
-          },
-          "style" : "form"
-        } ],
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/BatchGetUsersResponse"
-                }
-              }
-            },
-            "description" : "Users matched by ids."
-          },
-          "default" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorResponse"
-                }
-              }
-            },
-            "description" : "Error response."
-          }
-        },
-        "summary" : "Batch get users",
-        "tags" : [ "Users" ]
-      }
-    },
-    "/users/{id}" : {
+    "/users/{username}" : {
       "get" : {
         "operationId" : "getUser",
         "parameters" : [ {
-          "description" : "User id.",
+          "description" : "Username.",
           "in" : "path",
-          "name" : "id",
+          "name" : "username",
           "required" : true,
           "schema" : {
-            "format" : "int64",
-            "minimum" : 1,
-            "type" : "integer"
+            "maxLength" : 255,
+            "minLength" : 1,
+            "type" : "string"
           }
         } ],
         "responses" : {
@@ -899,7 +988,7 @@
                 }
               }
             },
-            "description" : "User detail."
+            "description" : "Public user detail."
           },
           "default" : {
             "content" : {
@@ -914,40 +1003,21 @@
         },
         "summary" : "Get a user",
         "tags" : [ "Users" ]
-      },
-      "put" : {
-        "operationId" : "updateUser",
-        "parameters" : [ {
-          "description" : "User id.",
-          "in" : "path",
-          "name" : "id",
-          "required" : true,
-          "schema" : {
-            "format" : "int64",
-            "minimum" : 1,
-            "type" : "integer"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/UpdateUserRequest"
-              }
-            }
-          },
-          "required" : true
-        },
+      }
+    },
+    "/profile" : {
+      "get" : {
+        "operationId" : "getProfile",
         "responses" : {
           "200" : {
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/UpdateUserResponse"
+                  "$ref" : "#/components/schemas/GetProfileResponse"
                 }
               }
             },
-            "description" : "Updated user."
+            "description" : "Current user profile."
           },
           "default" : {
             "content" : {
@@ -960,7 +1030,44 @@
             "description" : "Error response."
           }
         },
-        "summary" : "Update a user",
+        "summary" : "Get current user's profile",
+        "tags" : [ "Users" ]
+      },
+      "put" : {
+        "operationId" : "updateProfile",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateProfileRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UpdateProfileResponse"
+                }
+              }
+            },
+            "description" : "Updated current user profile."
+          },
+          "default" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description" : "Error response."
+          }
+        },
+        "summary" : "Update current user's profile",
         "tags" : [ "Users" ]
       }
     }
@@ -1266,9 +1373,9 @@
       },
       "FileScene" : {
         "description" : "Business scene for a stored file.",
-        "enum" : [ "unspecified", "avatar", "post_cover" ],
+        "enum" : [ "unspecified", "avatar", "post_cover", "post_content" ],
         "type" : "string",
-        "x-enum-varnames" : [ "FILE_SCENE_UNSPECIFIED", "FILE_SCENE_AVATAR", "FILE_SCENE_POST_COVER" ]
+        "x-enum-varnames" : [ "FILE_SCENE_UNSPECIFIED", "FILE_SCENE_AVATAR", "FILE_SCENE_POST_COVER", "FILE_SCENE_POST_CONTENT" ]
       },
       "FileStatus" : {
         "description" : "Lifecycle state of a stored file.",
@@ -1289,14 +1396,21 @@
         "description" : "Article published by a user.",
         "properties" : {
           "id" : {
+            "description" : "Public post id used in URLs.",
+            "type" : "string"
+          },
+          "user_id" : {
             "format" : "int64",
             "type" : "integer"
           },
-          "author_id" : {
-            "format" : "int64",
-            "type" : "integer"
+          "user" : {
+            "$ref" : "#/components/schemas/PostUser"
           },
           "title" : {
+            "type" : "string"
+          },
+          "summary" : {
+            "maxLength" : 512,
             "type" : "string"
           },
           "content" : {
@@ -1314,6 +1428,11 @@
           "category_id" : {
             "format" : "int64",
             "type" : "integer"
+          },
+          "published_at" : {
+            "format" : "date-time",
+            "nullable" : true,
+            "type" : "string"
           },
           "created_at" : {
             "format" : "date-time",
@@ -1328,28 +1447,71 @@
             "nullable" : true,
             "type" : "string"
           },
-          "author_name" : {
-            "description" : "Populated by nova-gateway from nova-user for web responses.",
+          "cover_url" : {
+            "description" : "Browser-readable cover image URL, for example /uploads/post-covers/2026/07/a.png.",
             "type" : "string"
           },
-          "cover_url" : {
+          "can_manage" : {
+            "description" : "Whether the authenticated caller can manage this post.",
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "category_id", "content", "cover_url", "created_at", "id", "status", "tags", "title", "updated_at", "user", "user_id" ],
+        "type" : "object"
+      },
+      "PostUser" : {
+        "description" : "User display fields populated by nova-gateway from nova-user.",
+        "properties" : {
+          "username" : {
+            "type" : "string"
+          },
+          "nickname" : {
+            "type" : "string"
+          },
+          "avatar" : {
+            "description" : "Browser-readable avatar URL, for example /uploads/avatars/2026/07/a.png.",
             "type" : "string"
           }
         },
-        "required" : [ "author_id", "author_name", "category_id", "content", "cover_url", "created_at", "id", "status", "tags", "title", "updated_at" ],
+        "required" : [ "avatar", "nickname", "username" ],
+        "type" : "object"
+      },
+      "Category" : {
+        "description" : "Read-only post category.",
+        "properties" : {
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "parent_id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "path" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "id", "name", "parent_id", "path" ],
         "type" : "object"
       },
       "PostStatus" : {
         "description" : "Publication state of a post.",
-        "enum" : [ "unspecified", "draft", "published" ],
+        "enum" : [ "unspecified", "draft", "published", "pending_review" ],
         "type" : "string",
-        "x-enum-varnames" : [ "POST_STATUS_UNSPECIFIED", "POST_STATUS_DRAFT", "POST_STATUS_PUBLISHED" ]
+        "x-enum-varnames" : [ "POST_STATUS_UNSPECIFIED", "POST_STATUS_DRAFT", "POST_STATUS_PUBLISHED", "POST_STATUS_PENDING_REVIEW" ]
       },
       "CreatePostInput" : {
         "description" : "Post fields accepted when creating a post.",
         "properties" : {
           "title" : {
             "minLength" : 1,
+            "type" : "string"
+          },
+          "summary" : {
+            "maxLength" : 512,
             "type" : "string"
           },
           "content" : {
@@ -1369,6 +1531,12 @@
             "type" : "integer"
           },
           "cover_url" : {
+            "description" : "Cover image object key or /uploads URL returned by file upload.",
+            "type" : "string"
+          },
+          "published_at" : {
+            "format" : "date-time",
+            "nullable" : true,
             "type" : "string"
           }
         },
@@ -1382,6 +1550,10 @@
             "minLength" : 1,
             "type" : "string"
           },
+          "summary" : {
+            "maxLength" : 512,
+            "type" : "string"
+          },
           "content" : {
             "type" : "string"
           },
@@ -1399,6 +1571,12 @@
             "type" : "integer"
           },
           "cover_url" : {
+            "description" : "Cover image object key or /uploads URL returned by file upload.",
+            "type" : "string"
+          },
+          "published_at" : {
+            "format" : "date-time",
+            "nullable" : true,
             "type" : "string"
           }
         },
@@ -1438,9 +1616,9 @@
           },
           "update_fields" : {
             "description" : "Mutable post fields to update.",
-            "example" : [ "title", "content", "cover_url" ],
+            "example" : [ "title", "summary", "content", "cover_url" ],
             "items" : {
-              "enum" : [ "title", "content", "cover_url", "status", "tags", "category_id" ],
+              "enum" : [ "title", "summary", "content", "cover_url", "published_at", "status", "tags", "category_id" ],
               "type" : "string"
             },
             "type" : "array"
@@ -1486,6 +1664,18 @@
         "required" : [ "current_page", "page_size", "posts", "total", "total_pages" ],
         "type" : "object"
       },
+      "ListCategoriesResponse" : {
+        "properties" : {
+          "categories" : {
+            "items" : {
+              "$ref" : "#/components/schemas/Category"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "categories" ],
+        "type" : "object"
+      },
       "DeletePostResponse" : {
         "additionalProperties" : false,
         "type" : "object"
@@ -1504,6 +1694,7 @@
             "type" : "string"
           },
           "avatar" : {
+            "description" : "Browser-readable avatar URL, for example /uploads/avatars/2026/07/a.png.",
             "type" : "string"
           },
           "email" : {
@@ -1538,6 +1729,35 @@
         "required" : [ "avatar", "created_at", "email", "id", "nickname", "phone", "status", "updated_at", "username" ],
         "type" : "object"
       },
+      "PublicUser" : {
+        "description" : "Public user profile fields safe for anonymous reads.",
+        "properties" : {
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "username" : {
+            "type" : "string"
+          },
+          "nickname" : {
+            "type" : "string"
+          },
+          "avatar" : {
+            "description" : "Browser-readable avatar URL, for example /uploads/avatars/2026/07/a.png.",
+            "type" : "string"
+          },
+          "created_at" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "updated_at" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "required" : [ "avatar", "created_at", "id", "nickname", "updated_at", "username" ],
+        "type" : "object"
+      },
       "UserStatus" : {
         "description" : "Lifecycle state of a user account.",
         "enum" : [ "unspecified", "active", "disabled" ],
@@ -1551,6 +1771,7 @@
             "type" : "string"
           },
           "avatar" : {
+            "description" : "Avatar object key or /uploads URL returned by avatar upload.",
             "type" : "string"
           },
           "email" : {
@@ -1569,25 +1790,22 @@
       "GetUserResponse" : {
         "properties" : {
           "user" : {
+            "$ref" : "#/components/schemas/PublicUser"
+          }
+        },
+        "required" : [ "user" ],
+        "type" : "object"
+      },
+      "GetProfileResponse" : {
+        "properties" : {
+          "user" : {
             "$ref" : "#/components/schemas/User"
           }
         },
         "required" : [ "user" ],
         "type" : "object"
       },
-      "BatchGetUsersResponse" : {
-        "properties" : {
-          "users" : {
-            "items" : {
-              "$ref" : "#/components/schemas/User"
-            },
-            "type" : "array"
-          }
-        },
-        "required" : [ "users" ],
-        "type" : "object"
-      },
-      "UpdateUserRequest" : {
+      "UpdateProfileRequest" : {
         "properties" : {
           "user" : {
             "$ref" : "#/components/schemas/UserInput"
@@ -1605,7 +1823,7 @@
         "required" : [ "user" ],
         "type" : "object"
       },
-      "UpdateUserResponse" : {
+      "UpdateProfileResponse" : {
         "properties" : {
           "user" : {
             "$ref" : "#/components/schemas/User"

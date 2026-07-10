@@ -9,7 +9,6 @@ import (
 	openapi "github.com/miiy/goc-quickstart/nova-contracts/gen/go/http/go-gin-server/go"
 	filev1 "github.com/miiy/goc-quickstart/nova-gateway/gen/go/nova/file/v1"
 	userv1 "github.com/miiy/goc-quickstart/nova-gateway/gen/go/nova/user/v1"
-	usermodule "github.com/miiy/goc-quickstart/nova-gateway/internal/module/user"
 	"github.com/miiy/goc-quickstart/nova-gateway/internal/transport"
 	"github.com/miiy/goc/gin"
 	"github.com/miiy/goc/gin/authctx"
@@ -83,7 +82,7 @@ func (api *FilesAPI) UploadAvatar(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, openapi.UpdateUserResponse{User: usermodule.OpenAPIUser(resp.GetUser())})
+	c.JSON(http.StatusOK, openapi.UpdateProfileResponse{User: protoToUser(resp.GetUser())})
 }
 
 func (api *FilesAPI) UploadFile(c *gin.Context) {
@@ -119,13 +118,15 @@ func (api *FilesAPI) UploadFile(c *gin.Context) {
 		transport.WriteError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, openapi.UploadFileResponse{File: openapiFile(resp.GetFile())})
+	c.JSON(http.StatusOK, openapi.UploadFileResponse{File: protoToFile(resp.GetFile())})
 }
 
 func uploadSceneFromForm(value string) (filev1.FileScene, error) {
 	switch strings.ToLower(strings.TrimSpace(value)) {
 	case string(openapi.FILE_SCENE_POST_COVER):
 		return filev1.FileScene_FILE_SCENE_POST_COVER, nil
+	case string(openapi.FILE_SCENE_POST_CONTENT):
+		return filev1.FileScene_FILE_SCENE_POST_CONTENT, nil
 	default:
 		return filev1.FileScene_FILE_SCENE_UNSPECIFIED, status.Error(codes.InvalidArgument, "unsupported file scene")
 	}
@@ -133,7 +134,7 @@ func uploadSceneFromForm(value string) (filev1.FileScene, error) {
 
 func maxUploadSizeForScene(scene filev1.FileScene) int64 {
 	switch scene {
-	case filev1.FileScene_FILE_SCENE_POST_COVER:
+	case filev1.FileScene_FILE_SCENE_POST_COVER, filev1.FileScene_FILE_SCENE_POST_CONTENT:
 		return maxPostCoverUploadSize
 	default:
 		return maxPostCoverUploadSize

@@ -6,13 +6,13 @@ posts:
     summary: List posts
     security: []
     parameters:
-      - name: author_id
+      - name: user_id
         in: query
         schema:
           type: integer
           format: int64
           minimum: 0
-        description: Filter by author id.
+        description: Filter by user id.
       - name: category_id
         in: query
         schema:
@@ -84,9 +84,8 @@ postById:
       in: path
       required: true
       schema:
-        type: integer
-        format: int64
-        minimum: 1
+        type: string
+        minLength: 1
       description: Post id.
   get:
     tags:
@@ -143,6 +142,85 @@ postById:
           application/json:
             schema:
               $ref: ../schemas/post.yaml#/DeletePostResponse
+      default:
+        description: Error response.
+        content:
+          application/json:
+            schema:
+              $ref: ../../../common/v1/schemas/error.yaml#/ErrorResponse
+userPosts:
+  parameters:
+    - name: username
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 255
+      description: Username.
+  get:
+    tags:
+      - Posts
+    operationId: listUserPosts
+    summary: List posts owned by the authenticated user
+    parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          format: int32
+          minimum: 0
+        description: Page number.
+      - name: page_size
+        in: query
+        schema:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 100
+        description: Number of posts per page.
+    responses:
+      '200':
+        description: Current user's posts, including drafts.
+        content:
+          application/json:
+            schema:
+              $ref: ../schemas/post.yaml#/ListPostsResponse
+      default:
+        description: Error response.
+        content:
+          application/json:
+            schema:
+              $ref: ../../../common/v1/schemas/error.yaml#/ErrorResponse
+userPostById:
+  parameters:
+    - name: username
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 255
+      description: Username.
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+      description: Post id.
+  get:
+    tags:
+      - Posts
+    operationId: getUserPost
+    summary: Get a post owned by the authenticated user
+    responses:
+      '200':
+        description: Current user's post detail, including drafts.
+        content:
+          application/json:
+            schema:
+              $ref: ../schemas/post.yaml#/GetPostResponse
       default:
         description: Error response.
         content:

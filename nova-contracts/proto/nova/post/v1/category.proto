@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package nova.post.v1;
+
+option go_package = "github.com/miiy/goc-quickstart/nova-post/gen/go/nova/post/v1;novapostv1";
+option java_package = "com.github.miiy.nova.post.v1";
+
+// Category describes a read-only post category.
+message Category {
+  int64 id = 1;
+  string name = 2;
+  int64 parent_id = 3;
+  string path = 4;
+}
+
+// ListCategoriesRequest carries no filters for the MVP category tree.
+message ListCategoriesRequest {}
+
+// ListCategoriesResponse returns all read-only post categories.
+message ListCategoriesResponse {
+  repeated Category categories = 1;
+}

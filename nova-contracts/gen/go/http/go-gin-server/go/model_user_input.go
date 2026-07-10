@@ -13,6 +13,7 @@ package openapi
 type UserInput struct {
 	Nickname string `json:"nickname,omitempty"`
 
+	// Avatar object key or /uploads URL returned by avatar upload.
 	Avatar string `json:"avatar,omitempty"`
 
 	Email string `json:"email,omitempty"`

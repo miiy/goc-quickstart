@@ -9,11 +9,10 @@ import (
 
 	"golang.org/x/sync/singleflight"
 
-	webclient "github.com/miiy/goc-quickstart/nova-web/client"
+	authv1 "github.com/miiy/goc-quickstart/nova-web/gen/go/nova/auth/v1"
 	websession "github.com/miiy/goc-quickstart/nova-web/internal/session"
+	"github.com/miiy/goc-quickstart/nova-web/internal/transport"
 	"github.com/miiy/goc/gin"
-	"github.com/miiy/goc/gin/middleware/sessionauth"
-	"github.com/miiy/goc/gin/sessions"
 	"github.com/miiy/goc/logger"
 	"github.com/miiy/goc/logger/zap"
 )
@@ -43,7 +42,6 @@ func RefreshSessionToken(m *websession.Manager, refresher TokenRefresher, log lo
 	var refreshGroup singleflight.Group
 	return func(c *gin.Context) {
 		maybeRefresh(c, m, refresher, log, &refreshGroup)
-		injectAccessToken(c, m)
 		c.Next()
 	}
 }
@@ -85,25 +83,6 @@ func maybeRefresh(c *gin.Context, m *websession.Manager, refresher TokenRefreshe
 	m.SaveRefreshedTokens(c, tokens.AccessToken, formatAPITime(tokens.ExpiresAt), tokens.RefreshToken)
 }
 
-func injectAccessToken(c *gin.Context, m *websession.Manager) {
-	if !hasSessionUser(c) {
-		return
-	}
-	if token := m.AccessToken(c); token != "" {
-		c.Request = c.Request.WithContext(webclient.WithAccessToken(c.Request.Context(), token))
-	}
-}
-
-func hasSessionUser(c *gin.Context) bool {
-	values, ok := sessions.Default(c).Get(sessionauth.SessionKeyUser).(map[string]any)
-	if !ok {
-		return false
-	}
-	id, _ := values["id"].(string)
-	username, _ := values["username"].(string)
-	return id != "" && username != ""
-}
-
 func shouldRefresh(expiresAt string) bool {
 	if expiresAt == "" {
 		return false
@@ -122,9 +101,9 @@ func formatAPITime(t time.Time) string {
 	return t.Format(time.RFC3339)
 }
 
-// NewAuthClientTokenRefresher adapts the generated gateway client to the
+// NewAuthServiceRefresher adapts the generated auth RPC client to the
 // middleware's transport-neutral TokenRefresher contract.
-func NewAuthClientTokenRefresher(authClient *webclient.AuthClient) TokenRefresher {
+func NewAuthServiceRefresher(authClient authv1.AuthServiceClient) TokenRefresher {
 	if authClient == nil {
 		return nil
 	}
@@ -132,13 +111,14 @@ func NewAuthClientTokenRefresher(authClient *webclient.AuthClient) TokenRefreshe
 }
 
 type authClientTokenRefresher struct {
-	authClient *webclient.AuthClient
+	authClient authv1.AuthServiceClient
 }
 
 func (r *authClientTokenRefresher) RefreshToken(ctx context.Context, refreshToken string) (*RefreshedTokens, error) {
-	resp, err := r.authClient.RefreshToken(ctx, refreshToken)
+	resp, err := r.authClient.RefreshToken(ctx, &authv1.RefreshTokenRequest{RefreshToken: refreshToken})
 	if err != nil {
-		if webclient.IsStatus(err, http.StatusUnauthorized) {
+		err = transport.FromGRPCError(err)
+		if transport.IsStatus(err, http.StatusUnauthorized) {
 			return nil, fmt.Errorf("%w: %v", ErrInvalidRefreshToken, err)
 		}
 		return nil, err
@@ -147,8 +127,8 @@ func (r *authClientTokenRefresher) RefreshToken(ctx context.Context, refreshToke
 		return nil, nil
 	}
 	return &RefreshedTokens{
-		AccessToken:  resp.AccessToken,
-		ExpiresAt:    resp.ExpiresAt,
-		RefreshToken: resp.RefreshToken,
+		AccessToken:  resp.GetAccessToken(),
+		ExpiresAt:    resp.GetExpiresAt().AsTime(),
+		RefreshToken: resp.GetRefreshToken(),
 	}, nil
 }

@@ -32,6 +32,7 @@ User:
       type: string
     avatar:
       type: string
+      description: Browser-readable avatar URL, for example /uploads/avatars/2026/07/a.png.
     email:
       type: string
       format: email
@@ -53,6 +54,33 @@ User:
       type: string
       format: date-time
       nullable: true
+PublicUser:
+  type: object
+  description: Public user profile fields safe for anonymous reads.
+  required:
+    - id
+    - username
+    - nickname
+    - avatar
+    - created_at
+    - updated_at
+  properties:
+    id:
+      type: integer
+      format: int64
+    username:
+      type: string
+    nickname:
+      type: string
+    avatar:
+      type: string
+      description: Browser-readable avatar URL, for example /uploads/avatars/2026/07/a.png.
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
 UserInput:
   type: object
   description: Mutable user profile fields accepted by the gateway.
@@ -61,6 +89,7 @@ UserInput:
       type: string
     avatar:
       type: string
+      description: Avatar object key or /uploads URL returned by avatar upload.
     email:
       type: string
       format: email
@@ -74,17 +103,15 @@ GetUserResponse:
     - user
   properties:
     user:
-      $ref: '#/User'
-BatchGetUsersResponse:
+      $ref: '#/PublicUser'
+GetProfileResponse:
   type: object
   required:
-    - users
+    - user
   properties:
-    users:
-      type: array
-      items:
-        $ref: '#/User'
-UpdateUserRequest:
+    user:
+      $ref: '#/User'
+UpdateProfileRequest:
   type: object
   required:
     - user
@@ -105,7 +132,7 @@ UpdateUserRequest:
       example:
         - nickname
         - avatar
-UpdateUserResponse:
+UpdateProfileResponse:
   type: object
   required:
     - user

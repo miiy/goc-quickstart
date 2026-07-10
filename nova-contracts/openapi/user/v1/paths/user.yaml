@@ -33,49 +33,16 @@ users:
           application/json:
             schema:
               $ref: ../../../common/v1/schemas/error.yaml#/ErrorResponse
-usersBatch:
-  get:
-    tags:
-      - Users
-    operationId: batchGetUsers
-    summary: Batch get users
-    parameters:
-      - name: ids
-        in: query
-        required: true
-        schema:
-          type: array
-          minItems: 1
-          items:
-            type: integer
-            format: int64
-            minimum: 1
-        style: form
-        explode: true
-        description: User ids. Repeated query values and comma-separated values are both accepted by the gateway.
-    responses:
-      '200':
-        description: Users matched by ids.
-        content:
-          application/json:
-            schema:
-              $ref: ../schemas/user.yaml#/BatchGetUsersResponse
-      default:
-        description: Error response.
-        content:
-          application/json:
-            schema:
-              $ref: ../../../common/v1/schemas/error.yaml#/ErrorResponse
-userById:
+userByUsername:
   parameters:
-    - name: id
+    - name: username
       in: path
       required: true
       schema:
-        type: integer
-        format: int64
-        minimum: 1
-      description: User id.
+        type: string
+        minLength: 1
+        maxLength: 255
+      description: Username.
   get:
     tags:
       - Users
@@ -83,7 +50,7 @@ userById:
     summary: Get a user
     responses:
       '200':
-        description: User detail.
+        description: Public user detail.
         content:
           application/json:
             schema:
@@ -94,24 +61,43 @@ userById:
           application/json:
             schema:
               $ref: ../../../common/v1/schemas/error.yaml#/ErrorResponse
+profile:
+  get:
+    tags:
+      - Users
+    operationId: getProfile
+    summary: Get current user's profile
+    responses:
+      '200':
+        description: Current user profile.
+        content:
+          application/json:
+            schema:
+              $ref: ../schemas/user.yaml#/GetProfileResponse
+      default:
+        description: Error response.
+        content:
+          application/json:
+            schema:
+              $ref: ../../../common/v1/schemas/error.yaml#/ErrorResponse
   put:
     tags:
       - Users
-    operationId: updateUser
-    summary: Update a user
+    operationId: updateProfile
+    summary: Update current user's profile
     requestBody:
       required: true
       content:
         application/json:
           schema:
-            $ref: ../schemas/user.yaml#/UpdateUserRequest
+            $ref: ../schemas/user.yaml#/UpdateProfileRequest
     responses:
       '200':
-        description: Updated user.
+        description: Updated current user profile.
         content:
           application/json:
             schema:
-              $ref: ../schemas/user.yaml#/UpdateUserResponse
+              $ref: ../schemas/user.yaml#/UpdateProfileResponse
       default:
         description: Error response.
         content:

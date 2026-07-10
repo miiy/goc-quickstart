@@ -3,12 +3,15 @@ module github.com/miiy/goc-quickstart/nova-web
 go 1.26.0
 
 require (
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.11-20260415201107-50325440f8f2.1
 	github.com/google/wire v0.7.0
 	github.com/miiy/goc v0.1.1
-	github.com/miiy/goc-quickstart/nova-contracts/gen/go/http/go-client v0.0.0
 	github.com/spf13/viper v1.20.1
 	github.com/unknwon/paginater v0.0.0-20200328080006-042474bd0eae
 	golang.org/x/sync v0.20.0
+	google.golang.org/genproto/googleapis/api v0.0.0-20260523011958-0a33c5d7ca68
+	google.golang.org/grpc v1.81.1
+	google.golang.org/protobuf v1.36.11
 )
 
 require (
@@ -49,6 +52,7 @@ require (
 	github.com/spf13/afero v1.12.0 // indirect
 	github.com/spf13/cast v1.7.1 // indirect
 	github.com/spf13/pflag v1.0.6 // indirect
+	github.com/sqids/sqids-go v0.4.1 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.3.1 // indirect
@@ -60,10 +64,8 @@ require (
 	golang.org/x/net v0.55.0 // indirect
 	golang.org/x/sys v0.45.0 // indirect
 	golang.org/x/text v0.37.0 // indirect
-	google.golang.org/protobuf v1.36.11 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260523011958-0a33c5d7ca68 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 replace github.com/miiy/goc => ../../goc
-
-replace github.com/miiy/goc-quickstart/nova-contracts/gen/go/http/go-client => ../nova-contracts/gen/go/http/go-client

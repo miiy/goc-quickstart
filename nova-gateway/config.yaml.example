@@ -1,5 +1,20 @@
 app:
   debug: true
+redis:
+  addr: 127.0.0.1:6379
+  password:
+  db: 0
+session:
+  name: COOKIE_SESSION
+  secret: secret
+  domain:
+  maxAge: 604800
+  secure: false
+cors:
+  allowOrigins:
+    - http://localhost:8081
+    - http://127.0.0.1:8081
+  allowCredentials: true
 server:
   http:
     addr: 0.0.0.0:8080

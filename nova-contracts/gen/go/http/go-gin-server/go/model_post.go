@@ -15,11 +15,17 @@ import (
 
 // Post - Article published by a user.
 type Post struct {
-	Id int64 `json:"id"`
 
-	AuthorId int64 `json:"author_id"`
+	// Public post id used in URLs.
+	Id string `json:"id"`
+
+	UserId int64 `json:"user_id"`
+
+	User PostUser `json:"user"`
 
 	Title string `json:"title"`
+
+	Summary string `json:"summary,omitempty"`
 
 	Content string `json:"content"`
 
@@ -29,14 +35,17 @@ type Post struct {
 
 	CategoryId int64 `json:"category_id"`
 
+	PublishedAt *time.Time `json:"published_at,omitempty"`
+
 	CreatedAt time.Time `json:"created_at"`
 
 	UpdatedAt time.Time `json:"updated_at"`
 
 	DeletedAt *time.Time `json:"deleted_at,omitempty"`
 
-	// Populated by nova-gateway from nova-user for web responses.
-	AuthorName string `json:"author_name"`
-
+	// Browser-readable cover image URL, for example /uploads/post-covers/2026/07/a.png.
 	CoverUrl string `json:"cover_url"`
+
+	// Whether the authenticated caller can manage this post.
+	CanManage bool `json:"can_manage,omitempty"`
 }

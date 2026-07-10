@@ -1,7 +1,6 @@
 package template
 
 import (
-	"html/template"
 	"net/http"
 	"time"
 
@@ -15,9 +14,11 @@ import (
 // SiteData is the public, display-safe site metadata available to templates.
 type SiteData struct {
 	Name            string
+	Description     string
 	URL             string
 	Locale          string
-	FooterCopyright template.HTML
+	RegisterEnabled bool
+	LiveReload      bool
 }
 
 // AuthData is the authenticated request identity available to templates.
@@ -50,16 +51,12 @@ func NewViewData(c *gin.Context) ViewData {
 		view.Auth.IsLoggedIn = true
 		view.Auth.CurrentUser = user
 	}
-	if view.Auth.IsLoggedIn {
-		view.CSRFToken = csrf.Token(c)
-	}
+	view.CSRFToken = csrf.Token(c)
 	return view
 }
 
 func NewFormViewData(c *gin.Context) ViewData {
-	view := NewViewData(c)
-	view.CSRFToken = csrf.Token(c)
-	return view
+	return NewViewData(c)
 }
 
 func NotFound(c *gin.Context) {
@@ -81,11 +78,11 @@ func NewFormatTimeFunc(timezone string) func(any) string {
 	}
 }
 
-// FlashLevelClass maps flash levels to Bootstrap alert CSS classes.
+// FlashLevelClass maps flash levels to alert CSS class suffixes.
 func FlashLevelClass(level string) string {
 	switch level {
 	case "error":
-		return "danger"
+		return "error"
 	default:
 		return level
 	}

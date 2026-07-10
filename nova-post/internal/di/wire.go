@@ -7,7 +7,7 @@ import (
 	"github.com/google/wire"
 	"github.com/miiy/goc-quickstart/nova-post/internal/app"
 	"github.com/miiy/goc-quickstart/nova-post/internal/config"
-	postRepo "github.com/miiy/goc-quickstart/nova-post/internal/repository"
+	"github.com/miiy/goc-quickstart/nova-post/internal/repository"
 	postSrv "github.com/miiy/goc-quickstart/nova-post/internal/service"
 	"github.com/miiy/goc/db"
 	"github.com/miiy/goc/db/gorm"
@@ -22,7 +22,7 @@ func InitApp(conf string) (*app.App, func(), error) {
 		wire.NewSet(logger.NewLogger, provideLoggerOption, provideZap),
 		wire.NewSet(db.NewDB, provideDBConfig, provideDBOption, provideGorm),
 		wire.NewSet(redis.NewRedis, provideRedisOptions),
-		wire.NewSet(postRepo.NewPostRepository, postSrv.NewPostServiceServer),
+		wire.NewSet(repository.NewPostRepository, repository.NewCategoryRepository, postSrv.NewPostServiceServer),
 		app.NewApp,
 	))
 }

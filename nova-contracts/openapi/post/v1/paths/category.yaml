@@ -1,0 +1,20 @@
+postCategories:
+  get:
+    tags:
+      - Posts
+    operationId: listCategories
+    summary: List post categories
+    security: []
+    responses:
+      '200':
+        description: Read-only post categories.
+        content:
+          application/json:
+            schema:
+              $ref: ../schemas/category.yaml#/ListCategoriesResponse
+      default:
+        description: Error response.
+        content:
+          application/json:
+            schema:
+              $ref: ../../../common/v1/schemas/error.yaml#/ErrorResponse

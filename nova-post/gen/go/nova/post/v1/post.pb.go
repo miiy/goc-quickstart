@@ -29,9 +29,10 @@ const (
 type PostStatus int32
 
 const (
-	PostStatus_POST_STATUS_UNSPECIFIED PostStatus = 0
-	PostStatus_POST_STATUS_DRAFT       PostStatus = 1
-	PostStatus_POST_STATUS_PUBLISHED   PostStatus = 2
+	PostStatus_POST_STATUS_UNSPECIFIED    PostStatus = 0
+	PostStatus_POST_STATUS_DRAFT          PostStatus = 1
+	PostStatus_POST_STATUS_PUBLISHED      PostStatus = 2
+	PostStatus_POST_STATUS_PENDING_REVIEW PostStatus = 3
 )
 
 // Enum value maps for PostStatus.
@@ -40,11 +41,13 @@ var (
 		0: "POST_STATUS_UNSPECIFIED",
 		1: "POST_STATUS_DRAFT",
 		2: "POST_STATUS_PUBLISHED",
+		3: "POST_STATUS_PENDING_REVIEW",
 	}
 	PostStatus_value = map[string]int32{
-		"POST_STATUS_UNSPECIFIED": 0,
-		"POST_STATUS_DRAFT":       1,
-		"POST_STATUS_PUBLISHED":   2,
+		"POST_STATUS_UNSPECIFIED":    0,
+		"POST_STATUS_DRAFT":          1,
+		"POST_STATUS_PUBLISHED":      2,
+		"POST_STATUS_PENDING_REVIEW": 3,
 	}
 )
 
@@ -79,13 +82,15 @@ func (PostStatus) EnumDescriptor() ([]byte, []int) {
 type Post struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	AuthorId      int64                  `protobuf:"varint,2,opt,name=author_id,json=authorId,proto3" json:"author_id,omitempty"`
+	UserId        int64                  `protobuf:"varint,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	Title         string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
+	Summary       string                 `protobuf:"bytes,13,opt,name=summary,proto3" json:"summary,omitempty"`
 	Content       string                 `protobuf:"bytes,4,opt,name=content,proto3" json:"content,omitempty"`
 	Status        PostStatus             `protobuf:"varint,5,opt,name=status,proto3,enum=nova.post.v1.PostStatus" json:"status,omitempty"`
 	Tags          []string               `protobuf:"bytes,6,rep,name=tags,proto3" json:"tags,omitempty"`
 	CategoryId    int64                  `protobuf:"varint,7,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
 	CoverUrl      string                 `protobuf:"bytes,12,opt,name=cover_url,json=coverUrl,proto3" json:"cover_url,omitempty"`
+	PublishedAt   *timestamppb.Timestamp `protobuf:"bytes,14,opt,name=published_at,json=publishedAt,proto3" json:"published_at,omitempty"`
 	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	DeletedAt     *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=deleted_at,json=deletedAt,proto3" json:"deleted_at,omitempty"`
@@ -130,9 +135,9 @@ func (x *Post) GetId() int64 {
 	return 0
 }
 
-func (x *Post) GetAuthorId() int64 {
+func (x *Post) GetUserId() int64 {
 	if x != nil {
-		return x.AuthorId
+		return x.UserId
 	}
 	return 0
 }
@@ -140,6 +145,13 @@ func (x *Post) GetAuthorId() int64 {
 func (x *Post) GetTitle() string {
 	if x != nil {
 		return x.Title
+	}
+	return ""
+}
+
+func (x *Post) GetSummary() string {
+	if x != nil {
+		return x.Summary
 	}
 	return ""
 }
@@ -177,6 +189,13 @@ func (x *Post) GetCoverUrl() string {
 		return x.CoverUrl
 	}
 	return ""
+}
+
+func (x *Post) GetPublishedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.PublishedAt
+	}
+	return nil
 }
 
 func (x *Post) GetCreatedAt() *timestamppb.Timestamp {
@@ -571,11 +590,12 @@ func (*DeletePostResponse) Descriptor() ([]byte, []int) {
 // ListPostsRequest carries filters and pagination options for posts.
 type ListPostsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	AuthorId      int64                  `protobuf:"varint,1,opt,name=author_id,json=authorId,proto3" json:"author_id,omitempty"`
+	UserId        int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	CategoryId    int64                  `protobuf:"varint,2,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
 	Tag           string                 `protobuf:"bytes,3,opt,name=tag,proto3" json:"tag,omitempty"`
 	Page          int32                  `protobuf:"varint,4,opt,name=page,proto3" json:"page,omitempty"`
 	PageSize      int32                  `protobuf:"varint,5,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	Status        PostStatus             `protobuf:"varint,6,opt,name=status,proto3,enum=nova.post.v1.PostStatus" json:"status,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -610,9 +630,9 @@ func (*ListPostsRequest) Descriptor() ([]byte, []int) {
 	return file_nova_post_v1_post_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *ListPostsRequest) GetAuthorId() int64 {
+func (x *ListPostsRequest) GetUserId() int64 {
 	if x != nil {
-		return x.AuthorId
+		return x.UserId
 	}
 	return 0
 }
@@ -643,6 +663,13 @@ func (x *ListPostsRequest) GetPageSize() int32 {
 		return x.PageSize
 	}
 	return 0
+}
+
+func (x *ListPostsRequest) GetStatus() PostStatus {
+	if x != nil {
+		return x.Status
+	}
+	return PostStatus_POST_STATUS_UNSPECIFIED
 }
 
 // ListPostsResponse returns a paginated list of posts.
@@ -726,17 +753,19 @@ var File_nova_post_v1_post_proto protoreflect.FileDescriptor
 
 const file_nova_post_v1_post_proto_rawDesc = "" +
 	"\n" +
-	"\x17nova/post/v1/post.proto\x12\fnova.post.v1\x1a\x1bbuf/validate/validate.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a google/protobuf/field_mask.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xab\x03\n" +
+	"\x17nova/post/v1/post.proto\x12\fnova.post.v1\x1a\x1bbuf/validate/validate.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a google/protobuf/field_mask.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bnova/post/v1/category.proto\"\x80\x04\n" +
 	"\x04Post\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1b\n" +
-	"\tauthor_id\x18\x02 \x01(\x03R\bauthorId\x12\x14\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\x03R\x06userId\x12\x14\n" +
 	"\x05title\x18\x03 \x01(\tR\x05title\x12\x18\n" +
+	"\asummary\x18\r \x01(\tR\asummary\x12\x18\n" +
 	"\acontent\x18\x04 \x01(\tR\acontent\x120\n" +
 	"\x06status\x18\x05 \x01(\x0e2\x18.nova.post.v1.PostStatusR\x06status\x12\x12\n" +
 	"\x04tags\x18\x06 \x03(\tR\x04tags\x12\x1f\n" +
 	"\vcategory_id\x18\a \x01(\x03R\n" +
 	"categoryId\x12\x1b\n" +
-	"\tcover_url\x18\f \x01(\tR\bcoverUrl\x129\n" +
+	"\tcover_url\x18\f \x01(\tR\bcoverUrl\x12=\n" +
+	"\fpublished_at\x18\x0e \x01(\v2\x1a.google.protobuf.TimestampR\vpublishedAt\x129\n" +
 	"\n" +
 	"created_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
@@ -764,26 +793,28 @@ const file_nova_post_v1_post_proto_rawDesc = "" +
 	"\x11DeletePostRequest\x12\x1a\n" +
 	"\x02id\x18\x01 \x01(\x03B\n" +
 	"\xe0A\x02\xbaH\x04\"\x02 \x00R\x02id\"\x14\n" +
-	"\x12DeletePostResponse\"\xc2\x01\n" +
-	"\x10ListPostsRequest\x12$\n" +
-	"\tauthor_id\x18\x01 \x01(\x03B\a\xbaH\x04\"\x02(\x00R\bauthorId\x12(\n" +
+	"\x12DeletePostResponse\"\xfa\x01\n" +
+	"\x10ListPostsRequest\x12 \n" +
+	"\auser_id\x18\x01 \x01(\x03B\a\xbaH\x04\"\x02(\x00R\x06userId\x12(\n" +
 	"\vcategory_id\x18\x02 \x01(\x03B\a\xbaH\x04\"\x02(\x00R\n" +
 	"categoryId\x12\x19\n" +
 	"\x03tag\x18\x03 \x01(\tB\a\xbaH\x04r\x02\x18@R\x03tag\x12\x1b\n" +
 	"\x04page\x18\x04 \x01(\x05B\a\xbaH\x04\x1a\x02(\x00R\x04page\x12&\n" +
-	"\tpage_size\x18\x05 \x01(\x05B\t\xbaH\x06\x1a\x04\x18d(\x00R\bpageSize\"\xb4\x01\n" +
+	"\tpage_size\x18\x05 \x01(\x05B\t\xbaH\x06\x1a\x04\x18d(\x00R\bpageSize\x12:\n" +
+	"\x06status\x18\x06 \x01(\x0e2\x18.nova.post.v1.PostStatusB\b\xbaH\x05\x82\x01\x02\x10\x01R\x06status\"\xb4\x01\n" +
 	"\x11ListPostsResponse\x12\x14\n" +
 	"\x05total\x18\x01 \x01(\x03R\x05total\x12\x1f\n" +
 	"\vtotal_pages\x18\x02 \x01(\x05R\n" +
 	"totalPages\x12\x1b\n" +
 	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\x12!\n" +
 	"\fcurrent_page\x18\x04 \x01(\x05R\vcurrentPage\x12(\n" +
-	"\x05posts\x18\x05 \x03(\v2\x12.nova.post.v1.PostR\x05posts*[\n" +
+	"\x05posts\x18\x05 \x03(\v2\x12.nova.post.v1.PostR\x05posts*{\n" +
 	"\n" +
 	"PostStatus\x12\x1b\n" +
 	"\x17POST_STATUS_UNSPECIFIED\x10\x00\x12\x15\n" +
 	"\x11POST_STATUS_DRAFT\x10\x01\x12\x19\n" +
-	"\x15POST_STATUS_PUBLISHED\x10\x022\x96\x03\n" +
+	"\x15POST_STATUS_PUBLISHED\x10\x02\x12\x1e\n" +
+	"\x1aPOST_STATUS_PENDING_REVIEW\x10\x032\xf3\x03\n" +
 	"\vPostService\x12F\n" +
 	"\aGetPost\x12\x1c.nova.post.v1.GetPostRequest\x1a\x1d.nova.post.v1.GetPostResponse\x12O\n" +
 	"\n" +
@@ -792,7 +823,8 @@ const file_nova_post_v1_post_proto_rawDesc = "" +
 	"UpdatePost\x12\x1f.nova.post.v1.UpdatePostRequest\x1a .nova.post.v1.UpdatePostResponse\x12O\n" +
 	"\n" +
 	"DeletePost\x12\x1f.nova.post.v1.DeletePostRequest\x1a .nova.post.v1.DeletePostResponse\x12L\n" +
-	"\tListPosts\x12\x1e.nova.post.v1.ListPostsRequest\x1a\x1f.nova.post.v1.ListPostsResponseB\xbd\x01\n" +
+	"\tListPosts\x12\x1e.nova.post.v1.ListPostsRequest\x1a\x1f.nova.post.v1.ListPostsResponse\x12[\n" +
+	"\x0eListCategories\x12#.nova.post.v1.ListCategoriesRequest\x1a$.nova.post.v1.ListCategoriesResponseB\xbd\x01\n" +
 	"\x10com.nova.post.v1B\tPostProtoP\x01ZLgithub.com/miiy/goc-quickstart/nova-contracts/gen/go/rpc/nova/post/v1;postv1\xa2\x02\x03NPX\xaa\x02\fNova.Post.V1\xca\x02\fNova\\Post\\V1\xe2\x02\x18Nova\\Post\\V1\\GPBMetadata\xea\x02\x0eNova::Post::V1b\x06proto3"
 
 var (
@@ -810,48 +842,54 @@ func file_nova_post_v1_post_proto_rawDescGZIP() []byte {
 var file_nova_post_v1_post_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_nova_post_v1_post_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_nova_post_v1_post_proto_goTypes = []any{
-	(PostStatus)(0),               // 0: nova.post.v1.PostStatus
-	(*Post)(nil),                  // 1: nova.post.v1.Post
-	(*GetPostRequest)(nil),        // 2: nova.post.v1.GetPostRequest
-	(*GetPostResponse)(nil),       // 3: nova.post.v1.GetPostResponse
-	(*CreatePostRequest)(nil),     // 4: nova.post.v1.CreatePostRequest
-	(*CreatePostResponse)(nil),    // 5: nova.post.v1.CreatePostResponse
-	(*UpdatePostRequest)(nil),     // 6: nova.post.v1.UpdatePostRequest
-	(*UpdatePostResponse)(nil),    // 7: nova.post.v1.UpdatePostResponse
-	(*DeletePostRequest)(nil),     // 8: nova.post.v1.DeletePostRequest
-	(*DeletePostResponse)(nil),    // 9: nova.post.v1.DeletePostResponse
-	(*ListPostsRequest)(nil),      // 10: nova.post.v1.ListPostsRequest
-	(*ListPostsResponse)(nil),     // 11: nova.post.v1.ListPostsResponse
-	(*timestamppb.Timestamp)(nil), // 12: google.protobuf.Timestamp
-	(*fieldmaskpb.FieldMask)(nil), // 13: google.protobuf.FieldMask
+	(PostStatus)(0),                // 0: nova.post.v1.PostStatus
+	(*Post)(nil),                   // 1: nova.post.v1.Post
+	(*GetPostRequest)(nil),         // 2: nova.post.v1.GetPostRequest
+	(*GetPostResponse)(nil),        // 3: nova.post.v1.GetPostResponse
+	(*CreatePostRequest)(nil),      // 4: nova.post.v1.CreatePostRequest
+	(*CreatePostResponse)(nil),     // 5: nova.post.v1.CreatePostResponse
+	(*UpdatePostRequest)(nil),      // 6: nova.post.v1.UpdatePostRequest
+	(*UpdatePostResponse)(nil),     // 7: nova.post.v1.UpdatePostResponse
+	(*DeletePostRequest)(nil),      // 8: nova.post.v1.DeletePostRequest
+	(*DeletePostResponse)(nil),     // 9: nova.post.v1.DeletePostResponse
+	(*ListPostsRequest)(nil),       // 10: nova.post.v1.ListPostsRequest
+	(*ListPostsResponse)(nil),      // 11: nova.post.v1.ListPostsResponse
+	(*timestamppb.Timestamp)(nil),  // 12: google.protobuf.Timestamp
+	(*fieldmaskpb.FieldMask)(nil),  // 13: google.protobuf.FieldMask
+	(*ListCategoriesRequest)(nil),  // 14: nova.post.v1.ListCategoriesRequest
+	(*ListCategoriesResponse)(nil), // 15: nova.post.v1.ListCategoriesResponse
 }
 var file_nova_post_v1_post_proto_depIdxs = []int32{
 	0,  // 0: nova.post.v1.Post.status:type_name -> nova.post.v1.PostStatus
-	12, // 1: nova.post.v1.Post.created_at:type_name -> google.protobuf.Timestamp
-	12, // 2: nova.post.v1.Post.updated_at:type_name -> google.protobuf.Timestamp
-	12, // 3: nova.post.v1.Post.deleted_at:type_name -> google.protobuf.Timestamp
-	1,  // 4: nova.post.v1.GetPostResponse.post:type_name -> nova.post.v1.Post
-	1,  // 5: nova.post.v1.CreatePostRequest.post:type_name -> nova.post.v1.Post
-	1,  // 6: nova.post.v1.CreatePostResponse.post:type_name -> nova.post.v1.Post
-	1,  // 7: nova.post.v1.UpdatePostRequest.post:type_name -> nova.post.v1.Post
-	13, // 8: nova.post.v1.UpdatePostRequest.update_mask:type_name -> google.protobuf.FieldMask
-	1,  // 9: nova.post.v1.UpdatePostResponse.post:type_name -> nova.post.v1.Post
-	1,  // 10: nova.post.v1.ListPostsResponse.posts:type_name -> nova.post.v1.Post
-	2,  // 11: nova.post.v1.PostService.GetPost:input_type -> nova.post.v1.GetPostRequest
-	4,  // 12: nova.post.v1.PostService.CreatePost:input_type -> nova.post.v1.CreatePostRequest
-	6,  // 13: nova.post.v1.PostService.UpdatePost:input_type -> nova.post.v1.UpdatePostRequest
-	8,  // 14: nova.post.v1.PostService.DeletePost:input_type -> nova.post.v1.DeletePostRequest
-	10, // 15: nova.post.v1.PostService.ListPosts:input_type -> nova.post.v1.ListPostsRequest
-	3,  // 16: nova.post.v1.PostService.GetPost:output_type -> nova.post.v1.GetPostResponse
-	5,  // 17: nova.post.v1.PostService.CreatePost:output_type -> nova.post.v1.CreatePostResponse
-	7,  // 18: nova.post.v1.PostService.UpdatePost:output_type -> nova.post.v1.UpdatePostResponse
-	9,  // 19: nova.post.v1.PostService.DeletePost:output_type -> nova.post.v1.DeletePostResponse
-	11, // 20: nova.post.v1.PostService.ListPosts:output_type -> nova.post.v1.ListPostsResponse
-	16, // [16:21] is the sub-list for method output_type
-	11, // [11:16] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	12, // 1: nova.post.v1.Post.published_at:type_name -> google.protobuf.Timestamp
+	12, // 2: nova.post.v1.Post.created_at:type_name -> google.protobuf.Timestamp
+	12, // 3: nova.post.v1.Post.updated_at:type_name -> google.protobuf.Timestamp
+	12, // 4: nova.post.v1.Post.deleted_at:type_name -> google.protobuf.Timestamp
+	1,  // 5: nova.post.v1.GetPostResponse.post:type_name -> nova.post.v1.Post
+	1,  // 6: nova.post.v1.CreatePostRequest.post:type_name -> nova.post.v1.Post
+	1,  // 7: nova.post.v1.CreatePostResponse.post:type_name -> nova.post.v1.Post
+	1,  // 8: nova.post.v1.UpdatePostRequest.post:type_name -> nova.post.v1.Post
+	13, // 9: nova.post.v1.UpdatePostRequest.update_mask:type_name -> google.protobuf.FieldMask
+	1,  // 10: nova.post.v1.UpdatePostResponse.post:type_name -> nova.post.v1.Post
+	0,  // 11: nova.post.v1.ListPostsRequest.status:type_name -> nova.post.v1.PostStatus
+	1,  // 12: nova.post.v1.ListPostsResponse.posts:type_name -> nova.post.v1.Post
+	2,  // 13: nova.post.v1.PostService.GetPost:input_type -> nova.post.v1.GetPostRequest
+	4,  // 14: nova.post.v1.PostService.CreatePost:input_type -> nova.post.v1.CreatePostRequest
+	6,  // 15: nova.post.v1.PostService.UpdatePost:input_type -> nova.post.v1.UpdatePostRequest
+	8,  // 16: nova.post.v1.PostService.DeletePost:input_type -> nova.post.v1.DeletePostRequest
+	10, // 17: nova.post.v1.PostService.ListPosts:input_type -> nova.post.v1.ListPostsRequest
+	14, // 18: nova.post.v1.PostService.ListCategories:input_type -> nova.post.v1.ListCategoriesRequest
+	3,  // 19: nova.post.v1.PostService.GetPost:output_type -> nova.post.v1.GetPostResponse
+	5,  // 20: nova.post.v1.PostService.CreatePost:output_type -> nova.post.v1.CreatePostResponse
+	7,  // 21: nova.post.v1.PostService.UpdatePost:output_type -> nova.post.v1.UpdatePostResponse
+	9,  // 22: nova.post.v1.PostService.DeletePost:output_type -> nova.post.v1.DeletePostResponse
+	11, // 23: nova.post.v1.PostService.ListPosts:output_type -> nova.post.v1.ListPostsResponse
+	15, // 24: nova.post.v1.PostService.ListCategories:output_type -> nova.post.v1.ListCategoriesResponse
+	19, // [19:25] is the sub-list for method output_type
+	13, // [13:19] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_nova_post_v1_post_proto_init() }
@@ -859,6 +897,7 @@ func file_nova_post_v1_post_proto_init() {
 	if File_nova_post_v1_post_proto != nil {
 		return
 	}
+	file_nova_post_v1_category_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

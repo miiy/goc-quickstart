@@ -57,7 +57,7 @@ uploadAvatar:
         content:
           application/json:
             schema:
-              $ref: ../../../user/v1/schemas/user.yaml#/UpdateUserResponse
+              $ref: ../../../user/v1/schemas/user.yaml#/UpdateProfileResponse
       default:
         description: Error response.
         content:

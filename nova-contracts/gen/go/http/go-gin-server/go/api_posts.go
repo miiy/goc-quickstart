@@ -27,9 +27,21 @@ type PostsAPI interface {
 	// Get a post
 	GetPost(c *gin.Context)
 
+	// GetUserPost Get /api/v1/users/:username/posts/:id
+	// Get a post owned by the authenticated user
+	GetUserPost(c *gin.Context)
+
+	// ListCategories Get /api/v1/categories
+	// List post categories
+	ListCategories(c *gin.Context)
+
 	// ListPosts Get /api/v1/posts
 	// List posts
 	ListPosts(c *gin.Context)
+
+	// ListUserPosts Get /api/v1/users/:username/posts
+	// List posts owned by the authenticated user
+	ListUserPosts(c *gin.Context)
 
 	// UpdatePost Put /api/v1/posts/:id
 	// Update a post

@@ -1,0 +1,17 @@
+@reference "../../../styles/globals.css";
+
+@layer components {
+  /* Profile tabs */
+  .user-show-tab-link {
+    @apply relative block px-5 py-3 text-sm font-medium text-slate-700 no-underline hover:bg-slate-50 hover:text-slate-950 hover:no-underline;
+  }
+
+  .user-show-tab-link-active {
+    @apply bg-brand-50 text-brand-800;
+  }
+
+  .user-show-tab-link-active::before {
+    @apply absolute left-0 top-0 h-full w-1 bg-brand-700;
+    content: "";
+  }
+}

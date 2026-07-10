@@ -1,46 +1,38 @@
-
-
 {{ define "content" }}
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-5">
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="mb-0">注册</h4>
+<div class="app-container-form">
+    <div class="ui-card">
+        <div class="ui-card-header">
+            <h1 class="ui-title">注册</h1>
+        </div>
+        <div class="ui-card-body">
+            {{range .Flashes}}
+            <div class="ui-alert-{{.Level | alertType}}" role="alert">{{.Message}}</div>
+            {{end}}
+            <form action="/register" method="POST" class="space-y-4">
+                <input type="hidden" name="_csrf" value="{{ .CSRFToken }}">
+                <div>
+                    <label for="email" class="ui-label">Email</label>
+                    <input type="email" name="email" id="email" class="ui-input" value="{{ .Email }}" required />
                 </div>
-                <div class="card-body">
-                    {{range .Flashes}}
-                    <div class="alert alert-{{.Level | alertType}}" role="alert">{{.Message}}</div>
-                    {{end}}
-                    <form action="/register" method="POST">
-                        <input type="hidden" name="_csrf" value="{{ .CSRFToken }}">
-                        <div class="mb-3">
-                            <label for="email" class="form-label">Email</label>
-                            <input type="email" name="email" id="email" class="form-control" value="{{ .Email }}" required />
-                        </div>
-                        <div class="mb-3">
-                            <label for="username" class="form-label">用户名</label>
-                            <input type="text" name="username" id="username" class="form-control" value="{{ .Username }}" required minlength="3" maxlength="20" />
-                            <div class="form-text">用户名需要 3-20 个字符。</div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="password" class="form-label">密码</label>
-                            <input type="password" name="password" id="password" class="form-control" required minlength="8" maxlength="64" />
-                            <div class="form-text">密码需要 8-64 个字符，且必须同时包含字母和数字。</div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="password_confirmation" class="form-label">确认密码</label>
-                            <input type="password" name="password_confirmation" id="password_confirmation" class="form-control" required />
-                        </div>
-                        <div class="d-grid gap-2">
-                            <button class="btn btn-primary" type="submit">注册</button>
-                        </div>
-                    </form>
-                    <div class="mt-3 text-center">
-                        <span class="text-body-secondary">已有账号？</span>
-                        <a href="/login">登录</a>
-                    </div>
+                <div>
+                    <label for="username" class="ui-label">用户名</label>
+                    <input type="text" name="username" id="username" class="ui-input" value="{{ .Username }}" required minlength="3" maxlength="20" />
+                    <div class="ui-help">用户名需要 3-20 个字符。</div>
                 </div>
+                <div>
+                    <label for="password" class="ui-label">密码</label>
+                    <input type="password" name="password" id="password" class="ui-input" required minlength="8" maxlength="64" />
+                    <div class="ui-help">密码需要 8-64 个字符，且必须同时包含字母和数字。</div>
+                </div>
+                <div>
+                    <label for="password_confirmation" class="ui-label">确认密码</label>
+                    <input type="password" name="password_confirmation" id="password_confirmation" class="ui-input" required />
+                </div>
+                <button class="ui-button-primary w-full" type="submit">注册</button>
+            </form>
+            <div class="mt-4 text-center text-sm">
+                <span class="text-slate-500">已有账号？</span>
+                <a href="/login">登录</a>
             </div>
         </div>
     </div>
@@ -48,33 +40,36 @@
 {{ end }}
 
 {{ define "head" }}
-<style>
-</style>
 <script>
-var password = document.getElementById('password')
-var password_confirmation = document.getElementById('password_confirmation')
+document.addEventListener('DOMContentLoaded', function () {
+    var password = document.getElementById('password')
+    var passwordConfirmation = document.getElementById('password_confirmation')
 
-function validatePasswordStrength() {
-    var val = password.value
-    if (val.length > 0 && (!/[a-zA-Z]/.test(val) || !/[0-9]/.test(val))) {
-        password.setCustomValidity('密码必须同时包含字母和数字')
-    } else {
-        password.setCustomValidity('')
+    if (!password || !passwordConfirmation) {
+        return
     }
-}
 
-function validatePassword() {
-    if (password_confirmation.value.length > 0 && password.value !== password_confirmation.value) {
-        password_confirmation.setCustomValidity('两次输入的密码不一致')
-    } else {
-        password_confirmation.setCustomValidity('')
+    function validatePasswordStrength() {
+        var val = password.value
+        if (val.length > 0 && (!/[a-zA-Z]/.test(val) || !/[0-9]/.test(val))) {
+            password.setCustomValidity('密码必须同时包含字母和数字')
+        } else {
+            password.setCustomValidity('')
+        }
     }
-}
 
-password.addEventListener('change', validatePasswordStrength)
-password.addEventListener('keyup', validatePasswordStrength)
-password.addEventListener('change', validatePassword)
-password_confirmation.addEventListener('keyup', validatePassword)
+    function validatePassword() {
+        if (passwordConfirmation.value.length > 0 && password.value !== passwordConfirmation.value) {
+            passwordConfirmation.setCustomValidity('两次输入的密码不一致')
+        } else {
+            passwordConfirmation.setCustomValidity('')
+        }
+    }
+
+    password.addEventListener('change', validatePasswordStrength)
+    password.addEventListener('keyup', validatePasswordStrength)
+    password.addEventListener('change', validatePassword)
+    passwordConfirmation.addEventListener('keyup', validatePassword)
+})
 </script>
-
 {{ end }}

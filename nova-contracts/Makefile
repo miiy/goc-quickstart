@@ -4,7 +4,9 @@ ROOT_DIR := $(abspath ..)
 
 GO_RPC_GEN_DIR := gen/go/rpc
 GO_HTTP_GEN_DIR := gen/go/http
+TS_HTTP_GEN_DIR := gen/ts/http
 APIDOC_OPENAPI_DIR := $(ROOT_DIR)/nova-apidoc/gen/openapi
+WEB_CLIENT_DIR := $(ROOT_DIR)/nova-web/frontend/src/api/generated
 
 # Each backend service only needs its OWN proto package; the gateway needs all.
 # BASE is the whole `<svc>/gen/go/nova` tree — wiping it on every copy makes
@@ -15,19 +17,22 @@ POST_BASE    := $(ROOT_DIR)/nova-post/gen/go/nova
 USER_BASE    := $(ROOT_DIR)/nova-user/gen/go/nova
 FILE_BASE    := $(ROOT_DIR)/nova-file/gen/go/nova
 GATEWAY_BASE := $(ROOT_DIR)/nova-gateway/gen/go/nova
+WEB_BASE     := $(ROOT_DIR)/nova-web/gen/go/nova
 
 AUTH_DST := $(AUTH_BASE)/auth/v1
 POST_DST := $(POST_BASE)/post/v1
 USER_DST := $(USER_BASE)/user/v1
 FILE_DST := $(FILE_BASE)/file/v1
 GATEWAY_DST := $(GATEWAY_BASE)
+WEB_DST := $(WEB_BASE)
 
 .DEFAULT_GOAL := help
 
 .PHONY: help proto deps generate copy copy-go copy-auth copy-post copy-user copy-file \
-	copy-gateway openapi openapi-deps openapi-validate openapi-generate \
-	openapi-generate-go-gin-server openapi-generate-go-client openapi-generate-swagger-json \
-	openapi-copy-apidoc openapi-fmt openapi-clean lint format clean clean-copies clean-all
+	copy-gateway copy-web openapi openapi-deps openapi-validate openapi-generate \
+	openapi-generate-go-gin-server openapi-generate-ts-client \
+	openapi-generate-swagger-json openapi-copy-apidoc openapi-copy-web-client \
+	openapi-fmt openapi-clean lint format clean clean-copies clean-all
 
 help:
 	@echo "Usage: make <target>"
@@ -40,8 +45,10 @@ help:
 	@echo "  openapi        Validate and generate OpenAPI outputs"
 	@echo "  openapi-deps   Install OpenAPI generator npm dependencies"
 	@echo "  openapi-validate Validate openapi/openapi.yaml"
-	@echo "  openapi-generate Generate OpenAPI Go server/client and swagger.json"
+	@echo "  openapi-generate Generate OpenAPI Go server, TypeScript client, and swagger.json"
+	@echo "  openapi-generate-ts-client Generate TypeScript frontend client and copy it to nova-web"
 	@echo "  openapi-copy-apidoc Copy swagger.json to nova-apidoc"
+	@echo "  openapi-copy-web-client Copy TypeScript frontend client to nova-web"
 	@echo "  openapi-clean  Remove gen/go/http and copied nova-apidoc OpenAPI files"
 	@echo "  clean          Remove nova-contracts/gen/go/rpc"
 	@echo "  clean-copies   Remove copied generated files from services"
@@ -59,7 +66,7 @@ generate:
 
 copy: copy-go
 
-copy-go: copy-auth copy-post copy-user copy-file copy-gateway
+copy-go: copy-auth copy-post copy-user copy-file copy-gateway copy-web
 
 copy-auth:
 	@rm -rf "$(AUTH_BASE)"
@@ -86,6 +93,11 @@ copy-gateway:
 	@mkdir -p "$(GATEWAY_DST)"
 	cp -R "$(GO_RPC_GEN_DIR)/nova/." "$(GATEWAY_DST)/"
 
+copy-web:
+	@rm -rf "$(WEB_DST)"
+	@mkdir -p "$(WEB_DST)"
+	cp -R "$(GO_RPC_GEN_DIR)/nova/." "$(WEB_DST)/"
+
 openapi: openapi-validate openapi-generate
 
 openapi-deps:
@@ -101,9 +113,9 @@ openapi-generate-go-gin-server:
 	$(NPM) run openapi:generate:go-gin-server
 	$(MAKE) openapi-fmt
 
-openapi-generate-go-client:
-	$(NPM) run openapi:generate:go-client
-	$(MAKE) openapi-fmt
+openapi-generate-ts-client:
+	$(NPM) run openapi:generate:ts-client
+	$(MAKE) openapi-copy-web-client
 
 openapi-generate-swagger-json:
 	$(NPM) run openapi:generate:swagger-json
@@ -111,11 +123,14 @@ openapi-generate-swagger-json:
 openapi-copy-apidoc:
 	$(NPM) run openapi:copy:apidoc
 
+openapi-copy-web-client:
+	$(NPM) run openapi:copy:web-client
+
 openapi-fmt:
 	$(NPM) run openapi:fmt:go
 
 openapi-clean:
-	rm -rf "$(GO_HTTP_GEN_DIR)" "$(APIDOC_OPENAPI_DIR)"
+	rm -rf "$(GO_HTTP_GEN_DIR)" "$(TS_HTTP_GEN_DIR)" "$(APIDOC_OPENAPI_DIR)" "$(WEB_CLIENT_DIR)"
 
 lint:
 	$(BUF) lint
@@ -128,6 +143,6 @@ clean:
 	rm -rf "$(GO_RPC_GEN_DIR)"
 
 clean-copies:
-	rm -rf "$(AUTH_BASE)" "$(POST_BASE)" "$(USER_BASE)" "$(FILE_BASE)" "$(GATEWAY_DST)"
+	rm -rf "$(AUTH_BASE)" "$(POST_BASE)" "$(USER_BASE)" "$(FILE_BASE)" "$(GATEWAY_DST)" "$(WEB_DST)"
 
 clean-all: clean clean-copies

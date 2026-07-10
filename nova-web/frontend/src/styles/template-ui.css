@@ -1,0 +1,98 @@
+@reference "./globals.css";
+
+@layer components {
+  /* Surfaces */
+  .ui-card {
+    @apply overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm;
+  }
+
+  .ui-panel {
+    @apply rounded-lg border border-slate-200 bg-white shadow-sm;
+  }
+
+  .ui-card-header {
+    @apply border-b border-slate-200 bg-slate-50 px-5 py-4;
+  }
+
+  .ui-card-body {
+    @apply px-5 py-5;
+  }
+
+  .ui-title {
+    @apply text-xl font-semibold text-slate-950;
+  }
+
+  /* Forms */
+  .ui-label {
+    @apply mb-1.5 block text-sm font-medium text-slate-700;
+  }
+
+  .ui-input {
+    @apply block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-600/20 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500;
+  }
+
+  .ui-help {
+    @apply mt-1 text-sm text-slate-500;
+  }
+
+  .ui-checkbox {
+    @apply h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-600;
+  }
+
+  /* Actions */
+  .ui-button-primary {
+    @apply inline-flex items-center justify-center rounded-md border border-brand-700 bg-brand-700 px-4 py-2 text-sm font-medium text-white no-underline shadow-sm transition hover:bg-brand-800 hover:text-white hover:no-underline focus:outline-none focus:ring-2 focus:ring-brand-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .ui-button-sm {
+    @apply px-3 py-1.5 text-sm;
+  }
+
+  .ui-link-muted {
+    @apply text-slate-600 no-underline hover:text-slate-950 hover:underline;
+  }
+
+  /* Pagination */
+  .ui-pagination {
+    @apply inline-flex overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm;
+  }
+
+  .ui-page-link {
+    @apply -ml-px inline-flex min-w-10 items-center justify-center border-l border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 no-underline first:ml-0 first:border-l-0 hover:bg-slate-50 hover:text-slate-950 hover:no-underline;
+  }
+
+  .ui-page-link-active {
+    @apply bg-brand-50 text-brand-800 hover:bg-brand-50 hover:text-brand-800;
+  }
+
+  .ui-page-link-disabled {
+    @apply pointer-events-none text-slate-400;
+  }
+
+  /* Alerts */
+  .ui-alert-error,
+  .ui-alert-danger {
+    @apply mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800;
+  }
+
+  .ui-alert-success {
+    @apply mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800;
+  }
+
+  .ui-alert-warning {
+    @apply mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800;
+  }
+
+  .ui-alert-info {
+    @apply mb-4 rounded-md border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800;
+  }
+
+  /* Lists */
+  .ui-list {
+    @apply divide-y divide-slate-200;
+  }
+
+  .ui-list-item {
+    @apply px-5 py-4;
+  }
+}

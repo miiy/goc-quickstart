@@ -171,10 +171,28 @@ func getRoutes(handleFunctions ApiHandleFunctions) []Route {
 			handleFunctions.PostsAPI.GetPost,
 		},
 		{
+			"GetUserPost",
+			http.MethodGet,
+			"/api/v1/users/:username/posts/:id",
+			handleFunctions.PostsAPI.GetUserPost,
+		},
+		{
+			"ListCategories",
+			http.MethodGet,
+			"/api/v1/categories",
+			handleFunctions.PostsAPI.ListCategories,
+		},
+		{
 			"ListPosts",
 			http.MethodGet,
 			"/api/v1/posts",
 			handleFunctions.PostsAPI.ListPosts,
+		},
+		{
+			"ListUserPosts",
+			http.MethodGet,
+			"/api/v1/users/:username/posts",
+			handleFunctions.PostsAPI.ListUserPosts,
 		},
 		{
 			"UpdatePost",
@@ -183,15 +201,15 @@ func getRoutes(handleFunctions ApiHandleFunctions) []Route {
 			handleFunctions.PostsAPI.UpdatePost,
 		},
 		{
-			"BatchGetUsers",
+			"GetProfile",
 			http.MethodGet,
-			"/api/v1/users/batch",
-			handleFunctions.UsersAPI.BatchGetUsers,
+			"/api/v1/profile",
+			handleFunctions.UsersAPI.GetProfile,
 		},
 		{
 			"GetUser",
 			http.MethodGet,
-			"/api/v1/users/:id",
+			"/api/v1/users/:username",
 			handleFunctions.UsersAPI.GetUser,
 		},
 		{
@@ -201,10 +219,10 @@ func getRoutes(handleFunctions ApiHandleFunctions) []Route {
 			handleFunctions.UsersAPI.ListUsers,
 		},
 		{
-			"UpdateUser",
+			"UpdateProfile",
 			http.MethodPut,
-			"/api/v1/users/:id",
-			handleFunctions.UsersAPI.UpdateUser,
+			"/api/v1/profile",
+			handleFunctions.UsersAPI.UpdateProfile,
 		},
 	}
 }

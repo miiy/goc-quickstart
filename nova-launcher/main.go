@@ -45,21 +45,25 @@ import (
 	"time"
 )
 
-// service describes one backend process the supervisor manages.
+// service describes one local development process the supervisor manages.
 type service struct {
 	name string // short name, used in logs
 	dir  string // service root, relative to repo root
 	port string // tcp port for the (best-effort) readiness probe
+	cmd  string // executable; empty means `go`
+	args []string
+	env  []string
 }
 
-// Ordered so dependencies start first: auth/user/post/file, then gateway, then web.
+// Ordered so dependencies start first: auth/user/post/file, gateway, web, then Vite.
 var allServices = []service{
 	{name: "nova-auth", dir: "nova-auth", port: "50051"},
 	{name: "nova-user", dir: "nova-user", port: "50052"},
 	{name: "nova-post", dir: "nova-post", port: "50053"},
 	{name: "nova-file", dir: "nova-file", port: "50054"},
 	{name: "nova-gateway", dir: "nova-gateway", port: "8080"},
-	{name: "nova-web", dir: "nova-web", port: "8081"},
+	{name: "nova-web", dir: "nova-web", port: "8081", env: []string{"VITE_PORT=5173"}},
+	{name: "nova-web-vite", dir: "nova-web", port: "5173", cmd: "npm", args: []string{"run", "dev"}, env: []string{"VITE_PORT=5173"}},
 }
 
 // goRunArgs is the `go run` invocation each service is launched with. Each
@@ -74,6 +78,7 @@ var palette = []string{
 	"\x1b[32m", // nova-file    green
 	"\x1b[34m", // nova-gateway blue
 	"\x1b[95m", // nova-web     bright magenta
+	"\x1b[96m", // nova-web-vite bright cyan
 }
 
 const (
@@ -255,8 +260,12 @@ func (s *supervisor) start(svcs []service) <-chan exit {
 }
 
 func (s *supervisor) startOne(svc service, idx int) (*managedProc, error) {
-	cmd := exec.Command("go", goRunArgs...)
+	name, args := svc.command()
+	cmd := exec.Command(name, args...)
 	cmd.Dir = filepath.Join(s.repoRoot, svc.dir)
+	if len(svc.env) > 0 {
+		cmd.Env = append(os.Environ(), svc.env...)
+	}
 	// Each child leads its own process group => pgid == pid, so we can signal
 	// the whole group (go-run parent + compiled binary, plus any descendants)
 	// via syscall.Kill(-pid, ...). This is what makes `go run` orphan-free.
@@ -269,8 +278,21 @@ func (s *supervisor) startOne(svc service, idx int) (*managedProc, error) {
 		_ = out.Close()
 		return nil, err
 	}
-	s.out.launcher("started %s via `go run` (pid %d)", svc.name, cmd.Process.Pid)
+	s.out.launcher("started %s via `%s` (pid %d)", svc.name, svc.commandLine(), cmd.Process.Pid)
 	return &managedProc{svc: svc, cmd: cmd, out: out}, nil
+}
+
+func (svc service) command() (string, []string) {
+	if svc.cmd != "" {
+		return svc.cmd, svc.args
+	}
+	return "go", goRunArgs
+}
+
+func (svc service) commandLine() string {
+	name, args := svc.command()
+	parts := append([]string{name}, args...)
+	return strings.Join(parts, " ")
 }
 
 // shutdown sends SIGTERM to every process group in reverse startup order,

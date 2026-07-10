@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/miiy/goc-quickstart/nova-web/client"
+	"github.com/miiy/goc-quickstart/nova-web/internal/client"
 	"github.com/miiy/goc-quickstart/nova-web/internal/config"
 	"github.com/miiy/goc-quickstart/nova-web/internal/module"
 	"github.com/miiy/goc-quickstart/nova-web/internal/session"

@@ -18,9 +18,10 @@ type PostRepository interface {
 }
 
 type ListFilter struct {
-	AuthorId   int64
+	UserId     int64
 	CategoryId int64
 	Tag        string
+	Status     int64
 }
 
 type postRepository struct {
@@ -53,14 +54,17 @@ func (r *postRepository) List(ctx context.Context, filter *ListFilter, page, pag
 	}
 
 	// filter
-	if filter.AuthorId > 0 {
-		db = db.Where("author_id = ?", filter.AuthorId)
+	if filter.UserId > 0 {
+		db = db.Where("user_id = ?", filter.UserId)
 	}
 	if filter.CategoryId > 0 {
 		db = db.Where("category_id = ?", filter.CategoryId)
 	}
 	if filter.Tag != "" {
 		db = db.Where("tags LIKE ?", "%"+filter.Tag+"%")
+	}
+	if filter.Status > 0 {
+		db = db.Where("status = ?", filter.Status)
 	}
 
 	// count

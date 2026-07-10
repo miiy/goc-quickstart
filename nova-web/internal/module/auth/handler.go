@@ -5,25 +5,28 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/miiy/goc-quickstart/nova-web/client"
+	authv1 "github.com/miiy/goc-quickstart/nova-web/gen/go/nova/auth/v1"
 	"github.com/miiy/goc-quickstart/nova-web/internal/session"
 	"github.com/miiy/goc-quickstart/nova-web/internal/template"
+	"github.com/miiy/goc-quickstart/nova-web/internal/transport"
 	"github.com/miiy/goc/gin"
 	"github.com/miiy/goc/gin/sessions"
 	"github.com/miiy/goc/logger"
 )
 
 type AuthHandler struct {
-	logger         logger.Logger
-	authClient     *client.AuthClient
-	sessionManager *session.Manager
+	logger          logger.Logger
+	authClient      authv1.AuthServiceClient
+	sessionManager  *session.Manager
+	registerEnabled bool
 }
 
-func NewAuthHandler(logger logger.Logger, authClient *client.AuthClient, sessionManager *session.Manager) *AuthHandler {
+func NewAuthHandler(logger logger.Logger, authClient authv1.AuthServiceClient, sessionManager *session.Manager, registerEnabled bool) *AuthHandler {
 	return &AuthHandler{
-		logger:         logger,
-		authClient:     authClient,
-		sessionManager: sessionManager,
+		logger:          logger,
+		authClient:      authClient,
+		sessionManager:  sessionManager,
+		registerEnabled: registerEnabled,
 	}
 }
 
@@ -35,6 +38,10 @@ type AuthFormView struct {
 }
 
 func (h *AuthHandler) RegisterForm(c *gin.Context) {
+	if h.rejectDisabledRegister(c) {
+		return
+	}
+
 	flashes, err := sessions.Flashes(c)
 	if err != nil {
 		_ = c.Error(err)
@@ -47,13 +54,23 @@ func (h *AuthHandler) RegisterForm(c *gin.Context) {
 }
 
 func (h *AuthHandler) Register(c *gin.Context) {
+	if h.rejectDisabledRegister(c) {
+		return
+	}
+
 	email := c.PostForm("email")
 	username := c.PostForm("username")
 	password := c.PostForm("password")
 	passwordConfirmation := c.PostForm("password_confirmation")
 
-	_, err := h.authClient.Register(c.Request.Context(), email, username, password, passwordConfirmation)
+	_, err := h.authClient.Register(c.Request.Context(), &authv1.RegisterRequest{
+		Email:                email,
+		Username:             username,
+		Password:             password,
+		PasswordConfirmation: passwordConfirmation,
+	})
 	if err != nil {
+		err = transport.FromGRPCError(err)
 		c.HTML(http.StatusBadRequest, "auth/register", AuthFormView{
 			ViewData: template.NewFormViewData(c),
 			Flashes: []sessions.Flash{
@@ -73,6 +90,19 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	c.Redirect(http.StatusFound, "/login")
 }
 
+func (h *AuthHandler) rejectDisabledRegister(c *gin.Context) bool {
+	if h.registerEnabled {
+		return false
+	}
+	if err := sessions.AddFlash(c, sessions.FlashLevelError, "注册暂未开放"); err != nil {
+		_ = c.Error(err)
+		c.String(http.StatusInternalServerError, "保存提示信息失败")
+		return true
+	}
+	c.Redirect(http.StatusFound, "/login")
+	return true
+}
+
 func (h *AuthHandler) LoginForm(c *gin.Context) {
 	flashes, err := sessions.Flashes(c)
 	if err != nil {
@@ -89,7 +119,10 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	username := c.PostForm("username")
 	password := c.PostForm("password")
 
-	resp, err := h.authClient.Login(c.Request.Context(), username, password)
+	resp, err := h.authClient.Login(c.Request.Context(), &authv1.LoginRequest{
+		Username: username,
+		Password: password,
+	})
 	if err != nil {
 		c.HTML(http.StatusBadRequest, "auth/login", AuthFormView{
 			ViewData: template.NewFormViewData(c),
@@ -101,14 +134,14 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	sessionUsername := resp.User.Username
+	sessionUsername := resp.GetUser().GetUsername()
 	if sessionUsername == "" {
 		sessionUsername = username
 	}
 	if err := h.sessionManager.SaveLoginSession(c, map[string]any{
-		"id":       strconv.FormatInt(resp.User.Id, 10),
+		"id":       strconv.FormatInt(resp.GetUser().GetId(), 10),
 		"username": sessionUsername,
-	}, resp.AccessToken, formatAPITime(resp.ExpiresAt), resp.RefreshToken); err != nil {
+	}, resp.GetAccessToken(), formatAPITime(resp.GetExpiresAt().AsTime()), resp.GetRefreshToken()); err != nil {
 		_ = c.Error(err)
 		c.String(http.StatusInternalServerError, "保存会话失败")
 		return
@@ -125,7 +158,10 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 
 	accessToken, refreshToken := h.sessionManager.Tokens(c)
 	if accessToken != "" || refreshToken != "" {
-		_ = h.authClient.Logout(c.Request.Context(), accessToken, refreshToken)
+		_, _ = h.authClient.Logout(c.Request.Context(), &authv1.LogoutRequest{
+			AccessToken:  accessToken,
+			RefreshToken: refreshToken,
+		})
 	}
 	h.sessionManager.Clear(c)
 

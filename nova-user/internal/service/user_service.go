@@ -20,8 +20,8 @@ import (
 
 type UserService struct {
 	pb.UnimplementedUserServiceServer
-	logger *zap.Logger
-	repo   repository.UserRepository
+	logger   *zap.Logger
+	userRepo repository.UserRepository
 }
 
 var (
@@ -30,10 +30,10 @@ var (
 	ErrPermissionDenied = errors.New("permission denied")
 )
 
-func NewUserServiceServer(logger *zap.Logger, repo repository.UserRepository) pb.UserServiceServer {
+func NewUserServiceServer(logger *zap.Logger, userRepo repository.UserRepository) pb.UserServiceServer {
 	return &UserService{
-		logger: logger,
-		repo:   repo,
+		logger:   logger,
+		userRepo: userRepo,
 	}
 }
 
@@ -45,16 +45,37 @@ func (s *UserService) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.
 		return nil, err
 	}
 
-	user, err := s.repo.First(ctx, req.Id)
+	user, err := s.userRepo.First(ctx, req.Id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, status.Error(codes.NotFound, ErrUserNotFound.Error())
 		}
-		s.logger.Error("repo.First", zap.Error(err))
+		s.logger.Error("userRepo.First", zap.Error(err))
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	return &pb.GetUserResponse{User: entityToProto(user)}, nil
+}
+
+func (s *UserService) GetUserByUsername(ctx context.Context, req *pb.GetUserByUsernameRequest) (*pb.GetUserByUsernameResponse, error) {
+	if err := protovalidate.Validate(req); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	username := strings.TrimSpace(req.GetUsername())
+	if username == "" {
+		return nil, status.Error(codes.InvalidArgument, "username is required")
+	}
+
+	user, err := s.userRepo.FindByUsername(ctx, username, "id", "username", "nickname", "avatar", "created_at", "updated_at")
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, status.Error(codes.NotFound, ErrUserNotFound.Error())
+		}
+		s.logger.Error("userRepo.FindByUsername", zap.Error(err))
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &pb.GetUserByUsernameResponse{User: publicUserToProto(user)}, nil
 }
 
 func (s *UserService) BatchGetUsers(ctx context.Context, req *pb.BatchGetUsersRequest) (*pb.BatchGetUsersResponse, error) {
@@ -63,9 +84,9 @@ func (s *UserService) BatchGetUsers(ctx context.Context, req *pb.BatchGetUsersRe
 	}
 	ids := normalizedUserIDs(req.GetIds())
 
-	users, err := s.repo.FindByIDs(ctx, ids, "id", "username", "nickname", "avatar")
+	users, err := s.userRepo.FindByIDs(ctx, ids, "id", "username", "nickname", "avatar")
 	if err != nil {
-		s.logger.Error("repo.FindByIDs", zap.Error(err))
+		s.logger.Error("userRepo.FindByIDs", zap.Error(err))
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -86,12 +107,12 @@ func (s *UserService) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest)
 		return nil, err
 	}
 
-	_, err := s.repo.First(ctx, req.Id)
+	_, err := s.userRepo.First(ctx, req.Id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, status.Error(codes.NotFound, ErrUserNotFound.Error())
 		}
-		s.logger.Error("repo.First", zap.Error(err))
+		s.logger.Error("userRepo.First", zap.Error(err))
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -108,18 +129,18 @@ func (s *UserService) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest)
 		columns = protoPathsToDBColumns(req.UpdateMask.Paths)
 	}
 
-	rowsAffected, err := s.repo.Update(ctx, req.Id, user, columns...)
+	rowsAffected, err := s.userRepo.Update(ctx, req.Id, user, columns...)
 	if err != nil {
-		s.logger.Error("repo.Update", zap.Error(err))
+		s.logger.Error("userRepo.Update", zap.Error(err))
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	if rowsAffected == 0 {
 		return nil, status.Error(codes.NotFound, ErrUserNotFound.Error())
 	}
 
-	updated, err := s.repo.First(ctx, req.Id)
+	updated, err := s.userRepo.First(ctx, req.Id)
 	if err != nil {
-		s.logger.Error("repo.First after update", zap.Error(err))
+		s.logger.Error("userRepo.First after update", zap.Error(err))
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -162,19 +183,6 @@ func requireSelf(ctx context.Context, id int64) error {
 	return nil
 }
 
-func normalizedUserIDs(ids []int64) []int64 {
-	seen := make(map[int64]struct{}, len(ids))
-	result := make([]int64, 0, len(ids))
-	for _, id := range ids {
-		if _, ok := seen[id]; ok {
-			continue
-		}
-		seen[id] = struct{}{}
-		result = append(result, id)
-	}
-	return result
-}
-
 func normalizeAvatarObjectKey(value string) string {
 	value = strings.TrimSpace(value)
 	if value == "" {
@@ -196,12 +204,27 @@ func isUploadsPath(value string) bool {
 	return value == "/uploads" || strings.HasPrefix(value, "/uploads/")
 }
 
+func normalizedUserIDs(ids []int64) []int64 {
+	seen := make(map[int64]struct{}, len(ids))
+	result := make([]int64, 0, len(ids))
+	for _, id := range ids {
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		result = append(result, id)
+	}
+	return result
+}
+
 func publicUserToProto(u *entity.User) *pb.User {
 	return &pb.User{
-		Id:       u.ID,
-		Username: u.Username,
-		Nickname: u.Nickname,
-		Avatar:   u.Avatar,
+		Id:        u.ID,
+		Username:  u.Username,
+		Nickname:  u.Nickname,
+		Avatar:    u.Avatar,
+		CreatedAt: timestamppb.New(u.CreatedAt),
+		UpdatedAt: timestamppb.New(u.UpdatedAt),
 	}
 }
 

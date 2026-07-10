@@ -5,14 +5,15 @@ import (
 
 	openapi "github.com/miiy/goc-quickstart/nova-contracts/gen/go/http/go-gin-server/go"
 	userv1 "github.com/miiy/goc-quickstart/nova-gateway/gen/go/nova/user/v1"
+	"github.com/miiy/goc-quickstart/nova-gateway/internal/media"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func protoUserInput(input openapi.UserInput) (*userv1.User, error) {
-	userStatus, err := protoUserStatus(input.Status)
+func openapiToProtoUser(input openapi.UserInput) (*userv1.User, error) {
+	userStatus, err := openapiToProtoUserStatus(input.Status)
 	if err != nil {
 		return nil, err
 	}
@@ -26,7 +27,7 @@ func protoUserInput(input openapi.UserInput) (*userv1.User, error) {
 	}, nil
 }
 
-func protoUserStatus(value openapi.UserStatus) (userv1.UserStatus, error) {
+func openapiToProtoUserStatus(value openapi.UserStatus) (userv1.UserStatus, error) {
 	switch value {
 	case "", openapi.USER_STATUS_UNSPECIFIED:
 		return userv1.UserStatus_USER_STATUS_UNSPECIFIED, nil
@@ -39,7 +40,7 @@ func protoUserStatus(value openapi.UserStatus) (userv1.UserStatus, error) {
 	}
 }
 
-func openapiUserStatus(value userv1.UserStatus) openapi.UserStatus {
+func protoToUserStatus(value userv1.UserStatus) openapi.UserStatus {
 	switch value {
 	case userv1.UserStatus_USER_STATUS_ACTIVE:
 		return openapi.USER_STATUS_ACTIVE
@@ -50,7 +51,7 @@ func openapiUserStatus(value userv1.UserStatus) openapi.UserStatus {
 	}
 }
 
-func protoUpdateMask(fields []string) (*fieldmaskpb.FieldMask, error) {
+func openapiToProtoUpdateMask(fields []string) (*fieldmaskpb.FieldMask, error) {
 	if len(fields) == 0 {
 		return nil, nil
 	}
@@ -86,15 +87,15 @@ func normalizeUpdateMaskPath(path string) (string, bool) {
 	}
 }
 
-func openapiUsers(users []*userv1.User) []openapi.User {
+func protoToUsers(users []*userv1.User) []openapi.User {
 	result := make([]openapi.User, 0, len(users))
 	for _, user := range users {
-		result = append(result, OpenAPIUser(user))
+		result = append(result, protoToUser(user))
 	}
 	return result
 }
 
-func OpenAPIUser(user *userv1.User) openapi.User {
+func protoToUser(user *userv1.User) openapi.User {
 	if user == nil {
 		return openapi.User{Status: openapi.USER_STATUS_UNSPECIFIED}
 	}
@@ -102,14 +103,28 @@ func OpenAPIUser(user *userv1.User) openapi.User {
 		Id:                user.GetId(),
 		Username:          user.GetUsername(),
 		Nickname:          user.GetNickname(),
-		Avatar:            user.GetAvatar(),
+		Avatar:            media.UploadsURL(user.GetAvatar()),
 		Email:             user.GetEmail(),
 		EmailVerifiedTime: timestampTime(user.GetEmailVerifiedTime()),
 		Phone:             user.GetPhone(),
-		Status:            openapiUserStatus(user.GetStatus()),
+		Status:            protoToUserStatus(user.GetStatus()),
 		CreatedAt:         requiredTimestampTime(user.GetCreatedAt()),
 		UpdatedAt:         requiredTimestampTime(user.GetUpdatedAt()),
 		DeletedAt:         timestampTime(user.GetDeletedAt()),
+	}
+}
+
+func protoToPublicUser(user *userv1.User) openapi.PublicUser {
+	if user == nil {
+		return openapi.PublicUser{}
+	}
+	return openapi.PublicUser{
+		Id:        user.GetId(),
+		Username:  user.GetUsername(),
+		Nickname:  user.GetNickname(),
+		Avatar:    media.UploadsURL(user.GetAvatar()),
+		CreatedAt: requiredTimestampTime(user.GetCreatedAt()),
+		UpdatedAt: requiredTimestampTime(user.GetUpdatedAt()),
 	}
 }
 

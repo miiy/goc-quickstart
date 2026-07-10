@@ -9,9 +9,15 @@
 
 package openapi
 
+import (
+	"time"
+)
+
 // CreatePostInput - Post fields accepted when creating a post.
 type CreatePostInput struct {
 	Title string `json:"title"`
+
+	Summary string `json:"summary,omitempty"`
 
 	Content string `json:"content"`
 
@@ -21,5 +27,8 @@ type CreatePostInput struct {
 
 	CategoryId int64 `json:"category_id,omitempty"`
 
+	// Cover image object key or /uploads URL returned by file upload.
 	CoverUrl string `json:"cover_url,omitempty"`
+
+	PublishedAt *time.Time `json:"published_at,omitempty"`
 }

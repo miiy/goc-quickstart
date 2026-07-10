@@ -7,8 +7,11 @@
 package di
 
 import (
-	"github.com/miiy/goc-quickstart/nova-web/client"
+	"github.com/miiy/goc-quickstart/nova-web/gen/go/nova/auth/v1"
+	"github.com/miiy/goc-quickstart/nova-web/gen/go/nova/post/v1"
+	"github.com/miiy/goc-quickstart/nova-web/gen/go/nova/user/v1"
 	"github.com/miiy/goc-quickstart/nova-web/internal/app"
+	"github.com/miiy/goc-quickstart/nova-web/internal/client"
 	"github.com/miiy/goc-quickstart/nova-web/internal/config"
 	"github.com/miiy/goc-quickstart/nova-web/internal/module"
 	"github.com/miiy/goc-quickstart/nova-web/internal/module/auth"
@@ -43,11 +46,10 @@ func InitApp(conf string) (*app.App, func(), error) {
 		return nil, nil, err
 	}
 	manager := provideSessionManager(store, configConfig)
-	postClient := providePostClient(clients)
-	authClient := provideAuthClient(clients)
-	userClient := provideUserClient(clients)
-	fileClient := provideFileClient(clients)
-	modules := provideModules(loggerLogger, postClient, authClient, userClient, fileClient, manager)
+	postServiceClient := providePostService(clients)
+	authServiceClient := provideAuthService(clients)
+	userServiceClient := provideUserService(clients)
+	modules := provideModules(configConfig, loggerLogger, postServiceClient, authServiceClient, userServiceClient, manager)
 	appApp := app.NewApp(configConfig, loggerLogger, clients, manager, modules)
 	return appApp, func() {
 		cleanup()
@@ -61,28 +63,25 @@ func provideLoggerOption() []logger.Option {
 }
 
 func provideClients(config2 *config.Config) (*client.Clients, func(), error) {
-	return client.NewClients(config2.Gateway.Addr)
+	return client.NewClients(config2)
 }
 
-func providePostClient(clients *client.Clients) *client.PostClient {
+func providePostService(clients *client.Clients) postv1.PostServiceClient {
 	return clients.Post
 }
 
-func provideAuthClient(clients *client.Clients) *client.AuthClient {
+func provideAuthService(clients *client.Clients) authv1.AuthServiceClient {
 	return clients.Auth
 }
 
-func provideUserClient(clients *client.Clients) *client.UserClient {
+func provideUserService(clients *client.Clients) userv1.UserServiceClient {
 	return clients.User
-}
-
-func provideFileClient(clients *client.Clients) *client.FileClient {
-	return clients.File
 }
 
 func provideSessionOptions(config2 *config.Config) sessions.Options {
 	return sessions.Options{
 		Path:     "/",
+		Domain:   config2.Session.Domain,
 		MaxAge:   config2.Session.MaxAge,
 		Secure:   config2.Session.Secure,
 		HttpOnly: true,
@@ -108,20 +107,20 @@ func provideSessionStore(config2 *config.Config, options sessions.Options) (sess
 }
 
 func provideSessionManager(store sessions.Store, config2 *config.Config) *session.Manager {
-	return session.NewManager(store, config2.Session.Name)
+	return session.NewManager(store, config2.Session.Name, provideSessionOptions(config2))
 }
 
 func provideModules(
+	cfg *config.Config,
 	log logger.Logger,
-	postClient *client.PostClient,
-	authClient *client.AuthClient,
-	userClient *client.UserClient,
-	fileClient *client.FileClient,
+	postClient postv1.PostServiceClient,
+	authClient authv1.AuthServiceClient,
+	userClient userv1.UserServiceClient,
 	sessionManager *session.Manager,
 ) *module.Modules {
 	return &module.Modules{
-		Post: post.NewModule(log, postClient, fileClient, sessionManager),
-		Auth: auth.NewModule(log, authClient, sessionManager),
-		User: user.NewModule(log, authClient, userClient, fileClient, sessionManager),
+		Post: post.NewModule(postClient, userClient),
+		Auth: auth.NewModule(log, authClient, sessionManager, cfg.App.RegisterEnabled),
+		User: user.NewModule(userClient, sessionManager),
 	}
 }

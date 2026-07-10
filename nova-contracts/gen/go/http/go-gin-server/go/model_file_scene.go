@@ -14,7 +14,8 @@ type FileScene string
 
 // List of FileScene
 const (
-	FILE_SCENE_UNSPECIFIED FileScene = "unspecified"
-	FILE_SCENE_AVATAR      FileScene = "avatar"
-	FILE_SCENE_POST_COVER  FileScene = "post_cover"
+	FILE_SCENE_UNSPECIFIED  FileScene = "unspecified"
+	FILE_SCENE_AVATAR       FileScene = "avatar"
+	FILE_SCENE_POST_COVER   FileScene = "post_cover"
+	FILE_SCENE_POST_CONTENT FileScene = "post_content"
 )

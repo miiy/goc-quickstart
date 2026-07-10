@@ -1,10 +1,13 @@
 package router
 
 import (
-	htmltemplate "html/template"
+	"io/fs"
 	"net/http"
+	"os"
+	"path/filepath"
 
 	"github.com/miiy/goc-quickstart/nova-web/internal/app"
+	"github.com/miiy/goc-quickstart/nova-web/internal/dev"
 	authmw "github.com/miiy/goc-quickstart/nova-web/internal/middleware/auth"
 	"github.com/miiy/goc-quickstart/nova-web/internal/module/about"
 	"github.com/miiy/goc-quickstart/nova-web/internal/module/auth"
@@ -14,7 +17,6 @@ import (
 	"github.com/miiy/goc-quickstart/nova-web/internal/module/post"
 	"github.com/miiy/goc-quickstart/nova-web/internal/module/user"
 	"github.com/miiy/goc-quickstart/nova-web/internal/template"
-	"github.com/miiy/goc-quickstart/nova-web/resources/static"
 	resourceTemplate "github.com/miiy/goc-quickstart/nova-web/resources/template"
 	"github.com/miiy/goc/gin"
 	"github.com/miiy/goc/gin/middleware/csrf"
@@ -33,12 +35,27 @@ func Router(app *app.App) func(r *gin.Engine) {
 
 		health.NewModule(cfg.Gateway.Addr).RegisterRouter(r)
 
+		// live reload for template and static files in debug mode
+		var templateFS fs.FS = resourceTemplate.FS
+		if cfg.App.Debug {
+			templateFS = os.DirFS("resources/template")
+			dev.NewLiveReload("resources/template", "resources/static").RegisterRouter(r)
+		}
+
 		// assets
-		r.StaticFS("/static", http.FS(static.FS))
+		staticRoot := cfg.Static.Root
+		if cfg.App.Debug && staticRoot == "dist" {
+			staticRoot = "resources/static"
+		}
+		if staticRoot == "" {
+			staticRoot = "dist"
+		}
+		staticFS := http.Dir(staticRoot)
+		r.StaticFS("/static", staticFS)
 
 		// favicon
 		faviconHandler := func(c *gin.Context) {
-			c.FileFromFS("favicon.ico", http.FS(static.FS))
+			c.FileFromFS("favicon.ico", staticFS)
 		}
 		r.HEAD("/favicon.ico", faviconHandler)
 		r.GET("/favicon.ico", faviconHandler)
@@ -56,9 +73,9 @@ func Router(app *app.App) func(r *gin.Engine) {
 
 		r.Use(csrf.Middleware())
 
-		// Proactively refresh an expiring access token, then bridge the session-backed
-		// identity into the gin/template + request contexts for downstream handlers.
-		r.Use(authmw.RefreshSessionToken(sessionManager, authmw.NewAuthClientTokenRefresher(app.Clients().Auth), logger))
+		// Proactively refresh an expiring access token, then load the session-backed
+		// identity for downstream handlers.
+		r.Use(authmw.RefreshSessionToken(sessionManager, authmw.NewAuthServiceRefresher(app.Clients().Auth), logger))
 		r.Use(sessionauth.LoadSessionUser())
 
 		public := r.Group("")
@@ -69,20 +86,33 @@ func Router(app *app.App) func(r *gin.Engine) {
 		// template
 		template.SetDefaultSite(template.SiteData{
 			Name:            cfg.App.Name,
+			Description:     cfg.App.Description,
 			URL:             cfg.App.Url,
 			Locale:          cfg.App.Locale,
-			FooterCopyright: htmltemplate.HTML(cfg.App.FooterCopyright),
+			RegisterEnabled: cfg.App.RegisterEnabled,
+			LiveReload:      cfg.App.Debug,
 		})
 
 		t := pkgTemplate.NewTemplate()
 		t.AddFunc("alertType", template.FlashLevelClass)
 		t.AddFunc("formatTime", template.NewFormatTimeFunc(cfg.App.Timezone))
-		t.AddTemplate(resourceTemplate.FS, about.Templates())
-		t.AddTemplate(resourceTemplate.FS, home.Templates())
-		t.AddTemplate(resourceTemplate.FS, post.Templates())
-		t.AddTemplate(resourceTemplate.FS, auth.Templates())
-		t.AddTemplate(resourceTemplate.FS, user.Templates())
-		t.AddTemplate(resourceTemplate.FS, page.Templates())
+		viteAssets, err := template.NewViteAssets(template.ViteAssetsConfig{
+			Dev:          cfg.App.Debug,
+			DevServerURL: os.Getenv("VITE_DEV_SERVER_URL"),
+			ManifestPath: filepath.Join(staticRoot, ".vite", "manifest.json"),
+			StaticPrefix: "/static/",
+		})
+		if err != nil {
+			panic(err)
+		}
+		t.AddFunc("viteClient", viteAssets.Client)
+		t.AddFunc("viteEntry", viteAssets.Entry)
+		t.AddTemplate(templateFS, about.Templates())
+		t.AddTemplate(templateFS, home.Templates())
+		t.AddTemplate(templateFS, post.Templates())
+		t.AddTemplate(templateFS, auth.Templates())
+		t.AddTemplate(templateFS, user.Templates())
+		t.AddTemplate(templateFS, page.Templates())
 
 		r.HTMLRender = t.Render
 
@@ -95,6 +125,6 @@ func Router(app *app.App) func(r *gin.Engine) {
 		home.RegisterRouter(r)
 		modules.Post.RegisterRouter(public, protected)
 		modules.Auth.RegisterRouter(r)
-		modules.User.RegisterRouter(protected)
+		modules.User.RegisterRouter(public, protected)
 	}
 }

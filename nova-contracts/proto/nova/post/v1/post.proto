@@ -6,6 +6,7 @@ import "buf/validate/validate.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/field_mask.proto";
 import "google/protobuf/timestamp.proto";
+import "nova/post/v1/category.proto";
 
 option go_package = "github.com/miiy/goc-quickstart/nova-post/gen/go/nova/post/v1;novapostv1";
 option java_package = "com.github.miiy.nova.post.v1";
@@ -15,18 +16,21 @@ enum PostStatus {
   POST_STATUS_UNSPECIFIED = 0;
   POST_STATUS_DRAFT = 1;
   POST_STATUS_PUBLISHED = 2;
+  POST_STATUS_PENDING_REVIEW = 3;
 }
 
 // Post describes an article published by a user.
 message Post {
   int64 id = 1;
-  int64 author_id = 2;
+  int64 user_id = 2;
   string title = 3;
+  string summary = 13;
   string content = 4;
   PostStatus status = 5;
   repeated string tags = 6;
   int64 category_id = 7;
   string cover_url = 12;
+  google.protobuf.Timestamp published_at = 14;
   google.protobuf.Timestamp created_at = 8;
   google.protobuf.Timestamp updated_at = 9;
   google.protobuf.Timestamp deleted_at = 10;
@@ -92,7 +96,7 @@ message DeletePostResponse {}
 
 // ListPostsRequest carries filters and pagination options for posts.
 message ListPostsRequest {
-  int64 author_id = 1 [(buf.validate.field).int64.gte = 0];
+  int64 user_id = 1 [(buf.validate.field).int64.gte = 0];
   int64 category_id = 2 [(buf.validate.field).int64.gte = 0];
   string tag = 3 [(buf.validate.field).string.max_len = 64];
   int32 page = 4 [(buf.validate.field).int32.gte = 0];
@@ -100,6 +104,7 @@ message ListPostsRequest {
     gte: 0
     lte: 100
   }];
+  PostStatus status = 6 [(buf.validate.field).enum.defined_only = true];
 }
 
 // ListPostsResponse returns a paginated list of posts.
@@ -127,4 +132,7 @@ service PostService {
 
   // ListPosts returns posts matched by filters and pagination.
   rpc ListPosts(ListPostsRequest) returns (ListPostsResponse);
+
+  // ListCategories returns read-only post categories.
+  rpc ListCategories(ListCategoriesRequest) returns (ListCategoriesResponse);
 }

@@ -1,11 +1,12 @@
 app:
   name: nova-web
+  description: 一个基于 Go 微服务与 SSR 的内容站点
   env: local
   debug: true
+  registerEnabled: true
   locale: zh-CN
   timezone: Asia/Shanghai
   url: localhost
-  footerCopyright: <p class="text-center">&copy; 2024</p>
 redis:
   addr: 127.0.0.1:6379
   password:
@@ -13,12 +14,30 @@ redis:
 session:
   name: COOKIE_SESSION
   secret: secret
+  domain:
   maxAge: 604800
-  secure: true
+  secure: false
 server:
   http:
     addr: 0.0.0.0:8081
+static:
+  root: dist
 gateway:
   addr: 127.0.0.1:8080
+services:
+  auth:
+    endpoint: 127.0.0.1:50051
+  user:
+    endpoint: 127.0.0.1:50052
+  post:
+    endpoint: 127.0.0.1:50053
+  file:
+    endpoint: 127.0.0.1:50054
+tls:
+  enabled: false
+  serverName:
+  certFile:
+  keyFile:
+  caFile:
 storage:
   root: ../nova-file/storage/uploads

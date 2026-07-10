@@ -1,41 +1,40 @@
 package post
 
 import (
-	"errors"
-	"mime/multipart"
+	"context"
 	"net/http"
 	"strconv"
+	"strings"
+	"time"
 
-	apiclient "github.com/miiy/goc-quickstart/nova-contracts/gen/go/http/go-client"
-	"github.com/miiy/goc-quickstart/nova-web/client"
+	postv1 "github.com/miiy/goc-quickstart/nova-web/gen/go/nova/post/v1"
+	userv1 "github.com/miiy/goc-quickstart/nova-web/gen/go/nova/user/v1"
 	"github.com/miiy/goc-quickstart/nova-web/internal/media"
-	websession "github.com/miiy/goc-quickstart/nova-web/internal/session"
 	"github.com/miiy/goc-quickstart/nova-web/internal/template"
+	"github.com/miiy/goc-quickstart/nova-web/internal/transport"
 	"github.com/miiy/goc/gin"
 	"github.com/miiy/goc/gin/authctx"
-	"github.com/miiy/goc/logger"
+	"github.com/miiy/goc/sqids"
 	"github.com/unknwon/paginater"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type PostsHandler struct {
-	logger         logger.Logger
-	postClient     *client.PostClient
-	fileClient     *client.FileClient
-	sessionManager *websession.Manager
+	postClient postv1.PostServiceClient
+	userClient userv1.UserServiceClient
 }
 
-func NewPostsHandler(logger logger.Logger, postClient *client.PostClient, fileClient *client.FileClient, sessionManager *websession.Manager) *PostsHandler {
+func NewPostsHandler(postClient postv1.PostServiceClient, userClient userv1.UserServiceClient) *PostsHandler {
 	return &PostsHandler{
-		logger:         logger,
-		postClient:     postClient,
-		fileClient:     fileClient,
-		sessionManager: sessionManager,
+		postClient: postClient,
+		userClient: userClient,
 	}
 }
 
 type PostListViewData struct {
 	template.ViewData
-	Posts       []apiclient.Post
+	Posts       []PostView
 	Total       int64
 	CurrentPage int32
 	TotalPages  int32
@@ -46,319 +45,255 @@ type PostListViewData struct {
 
 type PostDetailViewData struct {
 	template.ViewData
-	Post      *apiclient.Post
+	Post      *PostView
 	CanManage bool
-	Error     string
 }
 
-type PostFormData struct {
-	template.ViewData
-	Post  *apiclient.Post
-	Error string
+type PostView struct {
+	Id        string
+	UserId    int64
+	User      PostUserView
+	Title     string
+	Summary   string
+	Content   string
+	CoverUrl  string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
-func (h *PostsHandler) index(c *gin.Context) {
-	page, _ := strconv.ParseInt(c.DefaultQuery("page", "1"), 10, 32)
-	pageSize, _ := strconv.ParseInt(c.DefaultQuery("page_size", "10"), 10, 32)
+type PostUserView struct {
+	Username string
+	Nickname string
+	Avatar   string
+}
 
-	resp, err := h.postClient.ListPosts(c.Request.Context(), int32(page), int32(pageSize))
+func (h *PostsHandler) list(c *gin.Context) {
+	page := int32Param(c.DefaultQuery("page", "1"), 1)
+	if pathPage := strings.TrimSpace(c.Param("page")); pathPage != "" {
+		page = int32Param(pathPage, 1)
+	}
+	pageSize := int32Param(c.DefaultQuery("page_size", "10"), 10)
+	if pageSize > 100 {
+		pageSize = 100
+	}
+
+	if h.postClient == nil {
+		template.InternalError(c)
+		return
+	}
+
+	resp, err := h.postClient.ListPosts(c.Request.Context(), &postv1.ListPostsRequest{
+		Page:     page,
+		PageSize: pageSize,
+		Status:   postv1.PostStatus_POST_STATUS_PUBLISHED,
+	})
 	if err != nil {
 		template.InternalError(c)
 		return
 	}
 
-	c.HTML(http.StatusOK, "post/list", newPostListViewData(c, resp, int32(page), int32(pageSize)))
-}
-
-func (h *PostsHandler) pages(c *gin.Context) {
-	page, _ := strconv.ParseInt(c.Param("page"), 10, 32)
-	if page < 1 {
-		page = 1
-	}
-	pageSize := int32(10)
-
-	resp, err := h.postClient.ListPosts(c.Request.Context(), int32(page), pageSize)
-	if err != nil {
-		template.InternalError(c)
-		return
-	}
-
-	c.HTML(http.StatusOK, "post/list", newPostListViewData(c, resp, int32(page), pageSize))
-}
-
-func newPostListViewData(c *gin.Context, resp *apiclient.ListPostsResponse, page, pageSize int32) PostListViewData {
 	view := PostListViewData{
 		ViewData:    template.NewViewData(c),
 		CurrentPage: page,
 		PageSize:    pageSize,
 		Pager:       paginater.New(0, int(pageSize), int(page), 5),
 	}
-	if resp != nil {
-		view.Posts = postsForView(resp.Posts)
-		view.Total = resp.Total
-		view.CurrentPage = resp.CurrentPage
-		view.TotalPages = resp.TotalPages
-		view.PageSize = resp.PageSize
-		view.Pager = paginater.New(int(resp.Total), int(resp.PageSize), int(resp.CurrentPage), 5)
+	if resp == nil {
+		c.HTML(http.StatusOK, "post/list", view)
+		return
 	}
-	return view
+
+	usersByID, err := h.postUsersByID(c.Request.Context(), resp.GetPosts()...)
+	if err != nil {
+		view.Error = err.Error()
+		c.HTML(http.StatusOK, "post/list", view)
+		return
+	}
+
+	currentPage := resp.GetCurrentPage()
+	if currentPage < 1 {
+		currentPage = page
+	}
+	respPageSize := resp.GetPageSize()
+	if respPageSize < 1 {
+		respPageSize = pageSize
+	}
+
+	view.Posts = postsForView(resp.GetPosts(), usersByID)
+	view.Total = resp.GetTotal()
+	view.CurrentPage = currentPage
+	view.TotalPages = resp.GetTotalPages()
+	view.PageSize = respPageSize
+	view.Pager = paginater.New(int(resp.GetTotal()), int(respPageSize), int(currentPage), 5)
+	c.HTML(http.StatusOK, "post/list", view)
 }
 
 func (h *PostsHandler) show(c *gin.Context) {
-	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
-
-	p, err := h.postClient.GetPost(c.Request.Context(), id)
+	id, err := decodePostID(c.Param("id"))
 	if err != nil {
 		template.NotFound(c)
 		return
 	}
-
-	viewData := template.NewViewData(c)
-	if _, ok := authctx.CurrentUser(c); ok {
-		viewData = template.NewFormViewData(c)
+	if h.postClient == nil {
+		template.InternalError(c)
+		return
 	}
-	c.HTML(http.StatusOK, "post/detail", PostDetailViewData{
-		ViewData:  viewData,
-		Post:      postForView(p),
-		CanManage: h.canManagePost(c, p),
-	})
-}
 
-func (h *PostsHandler) create(c *gin.Context) {
-	c.HTML(http.StatusOK, "post/create", PostFormData{
-		ViewData: template.NewFormViewData(c),
-	})
-}
-
-func (h *PostsHandler) store(c *gin.Context) {
-	title := c.PostForm("title")
-	content := c.PostForm("content")
-
-	coverURL, err := h.uploadPostCoverIfPresent(c)
+	resp, err := h.postClient.GetPost(c.Request.Context(), &postv1.GetPostRequest{Id: id})
 	if err != nil {
-		if h.handleAuthError(c, err) {
-			return
-		}
-		h.renderCreateFormError(c, title, content, err)
-		return
-	}
-
-	_, err = h.postClient.CreatePost(c.Request.Context(), title, content, coverURL)
-	if err != nil {
-		if h.handleAuthError(c, err) {
-			return
-		}
-		h.renderCreateFormErrorWithCover(c, title, content, coverURL, err)
-		return
-	}
-
-	c.Redirect(http.StatusFound, "/posts")
-}
-
-func (h *PostsHandler) edit(c *gin.Context) {
-	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
-
-	p, err := h.postClient.GetPost(c.Request.Context(), id)
-	if err != nil {
-		template.NotFound(c)
-		return
-	}
-	if !h.canManagePost(c, p) {
-		c.Status(http.StatusForbidden)
-		return
-	}
-
-	c.HTML(http.StatusOK, "post/edit", PostFormData{
-		ViewData: template.NewFormViewData(c),
-		Post:     postForView(p),
-	})
-}
-
-func (h *PostsHandler) update(c *gin.Context) {
-	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
-	title := c.PostForm("title")
-	content := c.PostForm("content")
-
-	p, err := h.postClient.GetPost(c.Request.Context(), id)
-	if err != nil {
-		template.NotFound(c)
-		return
-	}
-	if !h.canManagePost(c, p) {
-		c.Status(http.StatusForbidden)
-		return
-	}
-
-	coverURL, err := h.uploadPostCoverIfPresent(c)
-	if err != nil {
-		if h.handleAuthError(c, err) {
-			return
-		}
-		p.Title = title
-		p.Content = content
-		h.renderEditFormError(c, p, err)
-		return
-	}
-
-	// nil keeps cover_url out of the update mask when no new cover is uploaded.
-	var coverURLPtr *string
-	if coverURL != "" {
-		coverURLPtr = &coverURL
-	}
-
-	_, err = h.postClient.UpdatePost(c.Request.Context(), id, title, content, coverURLPtr)
-	if err != nil {
-		if h.handleAuthError(c, err) {
-			return
-		}
-		p.Title = title
-		p.Content = content
-		if coverURLPtr != nil {
-			p.CoverUrl = *coverURLPtr
-		}
-		h.renderEditFormError(c, p, err)
-		return
-	}
-
-	c.Redirect(http.StatusFound, "/posts/"+c.Param("id"))
-}
-
-func (h *PostsHandler) post(c *gin.Context) {
-	switch c.PostForm("_method") {
-	case "PUT":
-		h.update(c)
-	case "DELETE":
-		h.destroy(c)
-	default:
-		c.Status(http.StatusMethodNotAllowed)
-	}
-}
-
-func (h *PostsHandler) destroy(c *gin.Context) {
-	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
-
-	p, err := h.postClient.GetPost(c.Request.Context(), id)
-	if err != nil {
-		template.NotFound(c)
-		return
-	}
-	if !h.canManagePost(c, p) {
-		c.Status(http.StatusForbidden)
-		return
-	}
-
-	err = h.postClient.DeletePost(c.Request.Context(), id)
-	if err != nil {
-		if h.handleAuthError(c, err) {
+		if transport.IsStatus(transport.FromGRPCError(err), http.StatusNotFound) {
+			template.NotFound(c)
 			return
 		}
 		template.InternalError(c)
 		return
 	}
-
-	c.Redirect(http.StatusFound, "/posts")
-}
-
-func (h *PostsHandler) canManagePost(c *gin.Context, post *apiclient.Post) bool {
-	if post == nil || post.AuthorId <= 0 {
-		return false
+	if !publicPostVisible(resp.GetPost()) {
+		template.NotFound(c)
+		return
 	}
-	userID, ok := authctx.CurrentUserInt64ID(c)
-	return ok && userID == post.AuthorId
-}
 
-func (h *PostsHandler) handleAuthError(c *gin.Context, err error) bool {
-	if !client.IsStatus(err, http.StatusUnauthorized) {
-		return false
+	usersByID, err := h.postUsersByID(c.Request.Context(), resp.GetPost())
+	if err != nil {
+		template.InternalError(c)
+		return
 	}
-	h.sessionManager.Clear(c)
-	c.Redirect(http.StatusFound, "/login")
-	return true
-}
 
-func (h *PostsHandler) renderCreateFormError(c *gin.Context, title, content string, err error) {
-	h.renderCreateFormErrorWithCover(c, title, content, "", err)
-}
-
-func (h *PostsHandler) renderCreateFormErrorWithCover(c *gin.Context, title, content, coverURL string, err error) {
-	c.HTML(postFormErrorStatus(err), "post/create", PostFormData{
-		ViewData: template.NewFormViewData(c),
-		Post: &apiclient.Post{
-			Title:    title,
-			CoverUrl: media.UploadsURL(coverURL),
-			Content:  content,
-		},
-		Error: err.Error(),
+	post := postForView(resp.GetPost(), usersByID)
+	canManage := false
+	if post != nil && post.UserId > 0 {
+		userID, ok := authctx.CurrentUserInt64ID(c)
+		canManage = ok && userID == post.UserId
+	}
+	c.HTML(http.StatusOK, "post/detail", PostDetailViewData{
+		ViewData:  template.NewViewData(c),
+		Post:      post,
+		CanManage: canManage,
 	})
 }
 
-func (h *PostsHandler) renderEditFormError(c *gin.Context, post *apiclient.Post, err error) {
-	c.HTML(postFormErrorStatus(err), "post/edit", PostFormData{
-		ViewData: template.NewFormViewData(c),
-		Post:     postForView(post),
-		Error:    err.Error(),
-	})
+func (h *PostsHandler) create(c *gin.Context) {
+	c.HTML(http.StatusOK, "post/create", template.NewFormViewData(c))
 }
 
-func postsForView(posts []apiclient.Post) []apiclient.Post {
+func (h *PostsHandler) edit(c *gin.Context) {
+	if strings.TrimSpace(c.Param("id")) == "" {
+		template.NotFound(c)
+		return
+	}
+	c.HTML(http.StatusOK, "post/edit", template.NewFormViewData(c))
+}
+
+func (h *PostsHandler) postUsersByID(ctx context.Context, posts ...*postv1.Post) (map[int64]PostUserView, error) {
+	seen := make(map[int64]struct{}, len(posts))
+	ids := make([]int64, 0, len(posts))
+	for _, post := range posts {
+		if post == nil || post.GetUserId() <= 0 {
+			continue
+		}
+		id := post.GetUserId()
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		ids = append(ids, id)
+	}
+	if len(ids) == 0 || h.userClient == nil {
+		return nil, nil
+	}
+
+	resp, err := h.userClient.BatchGetUsers(ctx, &userv1.BatchGetUsersRequest{Ids: ids})
+	if err != nil {
+		return nil, transport.FromGRPCError(err)
+	}
+
+	users := make(map[int64]PostUserView, len(resp.GetUsers()))
+	for _, user := range resp.GetUsers() {
+		if user == nil {
+			continue
+		}
+		nickname := strings.TrimSpace(user.GetNickname())
+		if nickname == "" {
+			nickname = strings.TrimSpace(user.GetUsername())
+		}
+		users[user.GetId()] = PostUserView{
+			Username: strings.TrimSpace(user.GetUsername()),
+			Nickname: nickname,
+			Avatar:   media.UploadsURL(strings.TrimSpace(user.GetAvatar())),
+		}
+	}
+	return users, nil
+}
+
+func postsForView(posts []*postv1.Post, usersByID map[int64]PostUserView) []PostView {
 	if len(posts) == 0 {
-		return posts
+		return nil
 	}
-	viewPosts := append([]apiclient.Post(nil), posts...)
-	for i := range viewPosts {
-		viewPosts[i].CoverUrl = media.UploadsURL(viewPosts[i].CoverUrl)
+	viewPosts := make([]PostView, 0, len(posts))
+	for _, post := range posts {
+		if !publicPostVisible(post) {
+			continue
+		}
+		viewPosts = append(viewPosts, *postForView(post, usersByID))
 	}
 	return viewPosts
 }
 
-func postForView(post *apiclient.Post) *apiclient.Post {
+func postForView(post *postv1.Post, usersByID map[int64]PostUserView) *PostView {
 	if post == nil {
 		return nil
 	}
-	viewPost := *post
-	viewPost.CoverUrl = media.UploadsURL(viewPost.CoverUrl)
-	return &viewPost
+	createdAt := time.Time{}
+	if post.GetCreatedAt() != nil {
+		createdAt = post.GetCreatedAt().AsTime()
+	}
+	updatedAt := time.Time{}
+	if post.GetUpdatedAt() != nil {
+		updatedAt = post.GetUpdatedAt().AsTime()
+	}
+	return &PostView{
+		Id:        encodePostID(post.GetId()),
+		UserId:    post.GetUserId(),
+		User:      usersByID[post.GetUserId()],
+		Title:     post.GetTitle(),
+		Summary:   post.GetSummary(),
+		Content:   post.GetContent(),
+		CoverUrl:  media.UploadsURL(post.GetCoverUrl()),
+		CreatedAt: createdAt,
+		UpdatedAt: updatedAt,
+	}
 }
 
-func (h *PostsHandler) uploadPostCoverIfPresent(c *gin.Context) (string, error) {
-	file, header, err := c.Request.FormFile("cover")
-	if err != nil {
-		if errors.Is(err, http.ErrMissingFile) {
-			return "", nil
-		}
-		if errors.Is(err, multipart.ErrMessageTooLarge) {
-			return "", client.NewHTTPError(http.StatusRequestEntityTooLarge, "cover image is too large")
-		}
-		return "", err
-	}
-	defer file.Close()
-	if header == nil || header.Filename == "" {
-		return "", nil
-	}
-	if h.fileClient == nil {
-		return "", client.NewHTTPError(http.StatusBadGateway, "file service not configured")
-	}
-
-	resp, err := h.fileClient.UploadPostCover(c.Request.Context(), header.Filename, file)
-	if err != nil {
-		return "", err
-	}
-	if resp == nil {
-		return "", client.NewHTTPError(http.StatusBadGateway, "empty file object key")
-	}
-	if resp.ObjectKey == "" {
-		return "", client.NewHTTPError(http.StatusBadGateway, "empty file object key")
-	}
-	return resp.ObjectKey, nil
+func publicPostVisible(post *postv1.Post) bool {
+	return post != nil && post.GetStatus() == postv1.PostStatus_POST_STATUS_PUBLISHED
 }
 
-func postFormErrorStatus(err error) int {
-	switch {
-	case client.IsStatus(err, http.StatusBadRequest):
-		return http.StatusBadRequest
-	case client.IsStatus(err, http.StatusForbidden):
-		return http.StatusForbidden
-	default:
-		return http.StatusBadGateway
+func int32Param(raw string, fallback int32) int32 {
+	parsed, err := strconv.ParseInt(strings.TrimSpace(raw), 10, 32)
+	if err != nil || parsed < 1 {
+		return fallback
 	}
+	return int32(parsed)
+}
+
+var postIDEncoder = sqids.MustNew()
+
+func encodePostID(id int64) string {
+	if id <= 0 {
+		return ""
+	}
+	return postIDEncoder.MustEncode(id)
+}
+
+func decodePostID(raw string) (int64, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return 0, status.Error(codes.InvalidArgument, "invalid post id")
+	}
+
+	id, err := postIDEncoder.Decode(raw)
+	if err != nil || id <= 0 {
+		return 0, status.Error(codes.InvalidArgument, "invalid post id")
+	}
+	return id, nil
 }

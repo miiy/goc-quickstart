@@ -45,6 +45,22 @@ message GetUserResponse {
   User user = 1;
 }
 
+// GetUserByUsernameRequest identifies a public user by username.
+message GetUserByUsernameRequest {
+  string username = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string = {
+      min_len: 1
+      max_len: 255
+    }
+  ];
+}
+
+// GetUserByUsernameResponse returns a public user matched by username.
+message GetUserByUsernameResponse {
+  User user = 1;
+}
+
 // BatchGetUsersRequest identifies multiple users by id.
 message BatchGetUsersRequest {
   repeated int64 ids = 1 [
@@ -103,6 +119,9 @@ message ListUsersResponse {
 service UserService {
   // GetUser returns a single user by id.
   rpc GetUser(GetUserRequest) returns (GetUserResponse);
+
+  // GetUserByUsername returns public user fields by username.
+  rpc GetUserByUsername(GetUserByUsernameRequest) returns (GetUserByUsernameResponse);
 
   // BatchGetUsers returns multiple users by ids.
   rpc BatchGetUsers(BatchGetUsersRequest) returns (BatchGetUsersResponse);

@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	webclient "github.com/miiy/goc-quickstart/nova-web/client"
 	websession "github.com/miiy/goc-quickstart/nova-web/internal/session"
+	"github.com/miiy/goc-quickstart/nova-web/internal/transport"
 	"github.com/miiy/goc/gin"
 	"github.com/miiy/goc/gin/authctx"
 	"github.com/miiy/goc/gin/middleware/sessionauth"
@@ -47,8 +47,8 @@ func (f *fakeRefreshClient) RefreshToken(ctx context.Context, refreshToken strin
 }
 
 type captured struct {
-	hasUser bool
-	token   string
+	hasUser     bool
+	accessToken string
 }
 
 type nopLogger struct{}
@@ -64,8 +64,8 @@ func (nopLogger) Fatal(string, ...logger.Field) {}
 func (nopLogger) ZapLogger() *zap.Logger        { return zap.NewNop() }
 
 // newEngine builds a router with the session + refresh + session user attachment
-// middleware plus a priming /login route and a /check route that records what the
-// middleware chain injected.
+// middleware plus a priming /login route and a /check route that records the
+// resulting session state.
 func newEngine(t *testing.T, client TokenRefresher) (*gin.Engine, *captured) {
 	t.Helper()
 	store := gocsessions.NewCookieStore("test-secret")
@@ -94,7 +94,7 @@ func newEngine(t *testing.T, client TokenRefresher) (*gin.Engine, *captured) {
 
 	r.GET("/check", func(c *gin.Context) {
 		_, cap.hasUser = authctx.CurrentUser(c)
-		cap.token, _ = webclient.AccessTokenFromContext(c.Request.Context())
+		cap.accessToken = mgr.AccessToken(c)
 		c.Status(http.StatusOK)
 	})
 
@@ -152,49 +152,8 @@ func TestRefreshSessionToken_NoRefreshToken_NoRefresh(t *testing.T) {
 	if !cap.hasUser {
 		t.Fatal("expected session user")
 	}
-	if cap.token != "access-old" {
-		t.Fatalf("expected access-old, got %q", cap.token)
-	}
-}
-
-func TestRefreshSessionToken_NoSessionUser_NoAccessTokenInjection(t *testing.T) {
-	store := gocsessions.NewCookieStore("test-secret")
-	mgr := websession.NewManager(store, "sess")
-	client := &fakeRefreshClient{resp: &RefreshedTokens{AccessToken: "access-new"}}
-
-	r := gin.New()
-	r.Use(mgr.Middleware())
-	r.Use(RefreshSessionToken(mgr, client, nopLogger{}))
-	r.Use(sessionauth.LoadSessionUser())
-
-	r.POST("/prime", func(c *gin.Context) {
-		mgr.SaveRefreshedTokens(c, "access-orphan", time.Now().Add(time.Hour).UTC().Format(time.RFC3339), "refresh-1")
-		c.Status(http.StatusOK)
-	})
-	r.GET("/check", func(c *gin.Context) {
-		if _, ok := webclient.AccessTokenFromContext(c.Request.Context()); ok {
-			t.Fatal("expected no access token without session user")
-		}
-		if _, ok := authctx.CurrentUser(c); ok {
-			t.Fatal("expected no session user")
-		}
-		c.Status(http.StatusOK)
-	})
-
-	wPrime := httptest.NewRecorder()
-	r.ServeHTTP(wPrime, httptest.NewRequest(http.MethodPost, "/prime", nil))
-	if wPrime.Code != http.StatusOK {
-		t.Fatalf("prime: got %d", wPrime.Code)
-	}
-
-	wCheck := httptest.NewRecorder()
-	reqCheck := httptest.NewRequest(http.MethodGet, "/check", nil)
-	if h := sessionCookieHeader(wPrime, "sess"); h != "" {
-		reqCheck.Header.Set("Cookie", h)
-	}
-	r.ServeHTTP(wCheck, reqCheck)
-	if wCheck.Code != http.StatusOK {
-		t.Fatalf("GET /check: got %d", wCheck.Code)
+	if cap.accessToken != "access-old" {
+		t.Fatalf("expected access-old, got %q", cap.accessToken)
 	}
 }
 
@@ -207,8 +166,8 @@ func TestRefreshSessionToken_TokenStillValid_NoRefresh(t *testing.T) {
 	if client.calls != 0 {
 		t.Fatalf("expected no refresh call, got %d", client.calls)
 	}
-	if cap.token != "access-old" {
-		t.Fatalf("expected original access-old, got %q", cap.token)
+	if cap.accessToken != "access-old" {
+		t.Fatalf("expected original access-old, got %q", cap.accessToken)
 	}
 }
 
@@ -225,8 +184,8 @@ func TestRefreshSessionToken_ExpiringSoon_RefreshSucceeds(t *testing.T) {
 	if client.calls != 1 {
 		t.Fatalf("expected 1 refresh call, got %d", client.calls)
 	}
-	if cap.token != "access-new" {
-		t.Fatalf("expected refreshed access-new, got %q", cap.token)
+	if cap.accessToken != "access-new" {
+		t.Fatalf("expected refreshed access-new, got %q", cap.accessToken)
 	}
 	if !cap.hasUser {
 		t.Fatal("expected session user after refresh")
@@ -245,13 +204,13 @@ func TestRefreshSessionToken_RefreshUnauthorized_ClearsSession(t *testing.T) {
 	if cap.hasUser {
 		t.Fatal("expected no session user after terminal refresh failure")
 	}
-	if cap.token != "" {
-		t.Fatalf("expected no token injected after clear, got %q", cap.token)
+	if cap.accessToken != "" {
+		t.Fatalf("expected no session access token after clear, got %q", cap.accessToken)
 	}
 }
 
 func TestRefreshSessionToken_RefreshTransient_KeepsSession(t *testing.T) {
-	client := &fakeRefreshClient{err: webclient.NewHTTPError(http.StatusBadGateway, "upstream")}
+	client := &fakeRefreshClient{err: transport.NewHTTPError(http.StatusBadGateway, "upstream")}
 	r, cap := newEngine(t, client)
 
 	primeAndCheck(t, r, "30s", "refresh-1")
@@ -259,8 +218,8 @@ func TestRefreshSessionToken_RefreshTransient_KeepsSession(t *testing.T) {
 	if client.calls != 1 {
 		t.Fatalf("expected 1 refresh call, got %d", client.calls)
 	}
-	if cap.token != "access-old" {
-		t.Fatalf("expected stale access-old kept, got %q", cap.token)
+	if cap.accessToken != "access-old" {
+		t.Fatalf("expected stale access-old kept, got %q", cap.accessToken)
 	}
 	if !cap.hasUser {
 		t.Fatal("expected session user kept on transient failure")

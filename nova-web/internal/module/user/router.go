@@ -1,19 +1,23 @@
 package user
 
-import "github.com/miiy/goc/gin"
+import (
+	resourceTemplate "github.com/miiy/goc-quickstart/nova-web/resources/template"
+	"github.com/miiy/goc/gin"
+)
 
-func (m *Module) RegisterRouter(protected gin.IRouter) {
+func (m *Module) RegisterRouter(_ gin.IRouter, protected gin.IRouter) {
 	handler := m.handler
 
-	protectedGroup := protected.Group("/user")
-	protectedGroup.GET("/profile", handler.Profile)
-	protectedGroup.POST("/profile", handler.UpdateProfile)
-	protectedGroup.POST("/avatar", handler.UploadAvatar)
-	protectedGroup.PUT("/password", handler.ChangePassword)
+	protectedUsers := protected.Group("/users")
+	protectedUsers.GET("/:username", handler.Show)
+
+	protectedProfile := protected.Group("/profile")
+	protectedProfile.GET("", handler.Profile)
 }
 
 func Templates() map[string][]string {
 	return map[string][]string{
-		"user/profile": {"layout/layout.html", "layout/header.html", "layout/footer.html", "user/profile.html"},
+		"user/profile": resourceTemplate.Layout("user/profile.html"),
+		"user/show":    resourceTemplate.Layout("user/show.html"),
 	}
 }

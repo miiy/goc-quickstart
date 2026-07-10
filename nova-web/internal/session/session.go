@@ -17,14 +17,20 @@ const (
 )
 
 type Manager struct {
-	store sessions.Store
-	name  string
+	store        sessions.Store
+	name         string
+	clearOptions sessions.Options
 }
 
-func NewManager(store sessions.Store, name string) *Manager {
+func NewManager(store sessions.Store, name string, options ...sessions.Options) *Manager {
+	clearOptions := sessions.Options{Path: "/"}
+	if len(options) > 0 {
+		clearOptions = options[0]
+	}
 	return &Manager{
-		store: store,
-		name:  name,
+		store:        store,
+		name:         name,
+		clearOptions: clearOptions,
 	}
 }
 
@@ -100,7 +106,9 @@ func (m *Manager) Clear(c *gin.Context) {
 	session := sessions.Default(c)
 	session.Clear()
 	// MaxAge < 0 tells the browser to delete the cookie.
-	session.Options(sessions.Options{Path: "/", MaxAge: -1})
+	options := m.clearOptions
+	options.MaxAge = -1
+	session.Options(options)
 	_ = session.Save()
 }
 

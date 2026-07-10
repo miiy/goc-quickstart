@@ -6,7 +6,7 @@ go/api_files.go
 go/api_posts.go
 go/api_users.go
 go/model_auth_user.go
-go/model_batch_get_users_response.go
+go/model_category.go
 go/model_change_password_request.go
 go/model_create_post_input.go
 go/model_create_post_request.go
@@ -19,7 +19,9 @@ go/model_file.go
 go/model_file_scene.go
 go/model_file_status.go
 go/model_get_post_response.go
+go/model_get_profile_response.go
 go/model_get_user_response.go
+go/model_list_categories_response.go
 go/model_list_posts_response.go
 go/model_list_users_response.go
 go/model_login_request.go
@@ -30,6 +32,8 @@ go/model_phone_check_request.go
 go/model_phone_check_response.go
 go/model_post.go
 go/model_post_status.go
+go/model_post_user.go
+go/model_public_user.go
 go/model_refresh_token_request.go
 go/model_register_request.go
 go/model_register_response.go
@@ -38,8 +42,8 @@ go/model_token_response.go
 go/model_update_post_input.go
 go/model_update_post_request.go
 go/model_update_post_response.go
-go/model_update_user_request.go
-go/model_update_user_response.go
+go/model_update_profile_request.go
+go/model_update_profile_response.go
 go/model_upload_file_response.go
 go/model_user.go
 go/model_user_input.go

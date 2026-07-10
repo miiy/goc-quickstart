@@ -6,20 +6,30 @@
     <title>{{ .PageTitle }}</title>
     <meta name="keywords" content="{{ .Keywords }}"/>
     <meta name="description" content="{{ .Description }}"/>
-    <link type="text/css" rel="stylesheet" href="/static/bootstrap-5.3.8/css/bootstrap.min.css" />
-    <link type="text/css" rel="stylesheet" href="/static/css/common.css" />
-    <script src="/static/js/jquery-4.0.0.min.js"></script>
-    <script src="/static/bootstrap-5.3.8/js/bootstrap.bundle.min.js"></script>
-    <script src="/static/js/common.js"></script>
+    <meta name="csrf-token" content="{{ .CSRFToken }}"/>
+    {{ viteClient }}
+    {{ viteEntry "frontend/src/app.ts" }}
+    {{ if .Site.LiveReload }}
+    <script>
+    (function () {
+        var source = new EventSource('/__dev/livereload')
+        source.addEventListener('reload', function () {
+            window.location.reload()
+        })
+    })()
+    </script>
+    {{ end }}
     {{ block "head" . }}
     {{ end }}
 </head>
-<body class="d-flex flex-column min-vh-100">
-    {{ template "header" . }}
-    <main class="flex-shrink-0 py-4">
-        {{ block "content" . }}
-        {{ end }}
-    </main>
-    {{ template "footer" . }}
+<body>
+    <div class="site-layout">
+        {{ template "header" . }}
+        <main class="site-main">
+            {{ block "content" . }}
+            {{ end }}
+        </main>
+        {{ template "footer" . }}
+    </div>
 </body>
 </html>

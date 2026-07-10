@@ -26,12 +26,13 @@ import (
 )
 
 const (
-	defaultStorageRoot        = "./storage/uploads"
-	defaultPublicURL          = "/uploads"
-	defaultMaxAvatarSize      = 2 << 20
-	defaultMaxPostCoverSize   = 5 << 20
-	avatarObjectKeyPattern    = "avatars/%04d/%02d/%s.%s"
-	postCoverObjectKeyPattern = "post-covers/%04d/%02d/%s.%s"
+	defaultStorageRoot          = "./storage/uploads"
+	defaultPublicURL            = "/uploads"
+	defaultMaxAvatarSize        = 2 << 20
+	defaultMaxPostCoverSize     = 5 << 20
+	avatarObjectKeyPattern      = "avatars/%04d/%02d/%s.%s"
+	postCoverObjectKeyPattern   = "post-covers/%04d/%02d/%s.%s"
+	postContentObjectKeyPattern = "post-content/%04d/%02d/%s.%s"
 )
 
 var (
@@ -154,6 +155,7 @@ type uploadScene struct {
 	objectKeyPattern string
 }
 
+// Each upload scene controls both object key partitioning and size limits.
 func (s *FileService) uploadSceneFor(scene pb.FileScene) (uploadScene, error) {
 	switch scene {
 	case pb.FileScene_FILE_SCENE_AVATAR:
@@ -165,6 +167,11 @@ func (s *FileService) uploadSceneFor(scene pb.FileScene) (uploadScene, error) {
 		return uploadScene{
 			maxSize:          s.storage.MaxPostCoverSize,
 			objectKeyPattern: postCoverObjectKeyPattern,
+		}, nil
+	case pb.FileScene_FILE_SCENE_POST_CONTENT:
+		return uploadScene{
+			maxSize:          s.storage.MaxPostCoverSize,
+			objectKeyPattern: postContentObjectKeyPattern,
 		}, nil
 	default:
 		return uploadScene{}, status.Error(codes.InvalidArgument, ErrInvalidArgument.Error())

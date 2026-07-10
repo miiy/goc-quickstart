@@ -6,10 +6,10 @@ DOCKER_COMPOSE ?= docker-compose
 .DEFAULT_GOAL := help
 
 .PHONY: help proto proto-deps proto-generate proto-copy proto-clean openapi openapi-deps \
-	openapi-validate openapi-generate openapi-generate-go-gin-server openapi-generate-go-client \
-	openapi-generate-swagger-json openapi-copy-apidoc openapi-clean wire build test lint fmt clean \
-	docker-up docker-down docker-build dev dev-auth dev-auth-client dev-user dev-post dev-file \
-	dev-gateway dev-web dev-apidoc
+	openapi-validate openapi-generate openapi-generate-go-gin-server openapi-generate-ts-client \
+	openapi-generate-swagger-json openapi-copy-apidoc openapi-copy-web-client openapi-clean \
+	wire build test lint fmt clean docker-up docker-down docker-build dev dev-auth \
+	dev-auth-client dev-user dev-post dev-file dev-gateway dev-web dev-apidoc
 
 help:
 	@echo "Usage: make <target>"
@@ -23,8 +23,10 @@ help:
 	@echo "  openapi        Validate and generate OpenAPI outputs"
 	@echo "  openapi-deps   Install OpenAPI generator npm dependencies"
 	@echo "  openapi-validate Validate nova-contracts/openapi/openapi.yaml"
-	@echo "  openapi-generate Generate OpenAPI Go server/client and swagger.json"
+	@echo "  openapi-generate Generate OpenAPI Go server, TypeScript client, and swagger.json"
+	@echo "  openapi-generate-ts-client Generate TypeScript frontend client and copy it to nova-web"
 	@echo "  openapi-copy-apidoc Copy swagger.json to nova-apidoc"
+	@echo "  openapi-copy-web-client Copy TypeScript frontend client to nova-web"
 	@echo "  openapi-clean  Remove generated OpenAPI outputs"
 	@echo "  wire           Generate Wire code for DI-based services"
 	@echo "  build          Build all Go projects"
@@ -68,14 +70,17 @@ openapi-generate:
 openapi-generate-go-gin-server:
 	$(MAKE) -C nova-contracts openapi-generate-go-gin-server
 
-openapi-generate-go-client:
-	$(MAKE) -C nova-contracts openapi-generate-go-client
+openapi-generate-ts-client:
+	$(MAKE) -C nova-contracts openapi-generate-ts-client
 
 openapi-generate-swagger-json:
 	$(MAKE) -C nova-contracts openapi-generate-swagger-json
 
 openapi-copy-apidoc:
 	$(MAKE) -C nova-contracts openapi-copy-apidoc
+
+openapi-copy-web-client:
+	$(MAKE) -C nova-contracts openapi-copy-web-client
 
 openapi-clean:
 	$(MAKE) -C nova-contracts openapi-clean

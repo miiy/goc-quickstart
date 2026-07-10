@@ -121,6 +121,36 @@ func TestUploadFilePostCoverWritesFileAndRecord(t *testing.T) {
 	}
 }
 
+func TestUploadFilePostContentWritesFileAndRecord(t *testing.T) {
+	dir := t.TempDir()
+	repo := &mockFileRepository{}
+	service := NewFileServiceServer(zap.NewNop(), repo, config.Storage{
+		Root:             dir,
+		MaxAvatarSize:    1024,
+		MaxPostCoverSize: 2048,
+	}).(*FileService)
+
+	content := validPNGBytes()
+	resp, err := service.UploadFile(fileTestContext(7), &pb.UploadFileRequest{
+		Scene:    pb.FileScene_FILE_SCENE_POST_CONTENT,
+		Filename: "body.png",
+		MimeType: "image/png",
+		Content:  content,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.GetFile().GetScene() != pb.FileScene_FILE_SCENE_POST_CONTENT {
+		t.Fatalf("scene = %v, want post content", resp.GetFile().GetScene())
+	}
+	if !strings.HasPrefix(resp.GetFile().GetObjectKey(), "post-content/") {
+		t.Fatalf("object key = %q, want post-content prefix", resp.GetFile().GetObjectKey())
+	}
+	if repo.file == nil || repo.file.Scene != entity.FileScenePostContent {
+		t.Fatalf("file record not saved with post content scene: %+v", repo.file)
+	}
+}
+
 func TestUploadFileRejectsUnsupportedMime(t *testing.T) {
 	service := NewFileServiceServer(zap.NewNop(), &mockFileRepository{}, config.Storage{
 		Root:          t.TempDir(),

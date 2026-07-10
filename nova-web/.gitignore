@@ -3,3 +3,6 @@
 config.yaml
 configs/x509/
 bin/
+node_modules/
+dist/
+*.tsbuildinfo

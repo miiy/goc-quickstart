@@ -2,8 +2,10 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"strconv"
 	"testing"
+	"time"
 
 	pb "github.com/miiy/goc-quickstart/nova-post/gen/go/nova/post/v1"
 	"github.com/miiy/goc-quickstart/nova-post/internal/entity"
@@ -18,9 +20,10 @@ import (
 
 // MockPostRepository implements repository.PostRepository for testing
 type MockPostRepository struct {
-	posts  map[int64]*entity.Post
-	nextID int64
-	err    error
+	posts      map[int64]*entity.Post
+	categories []*entity.Category
+	nextID     int64
+	err        error
 }
 
 func NewMockPostRepository() *MockPostRepository {
@@ -35,6 +38,10 @@ func authenticatedContext(userID int64) context.Context {
 		ID:       strconv.FormatInt(userID, 10),
 		Username: "alice",
 	})
+}
+
+func newTestPostService(logger *zap.Logger, repo *MockPostRepository) *PostService {
+	return NewPostServiceServer(logger, repo, repo).(*PostService)
 }
 
 func (m *MockPostRepository) Create(ctx context.Context, post *entity.Post) error {
@@ -64,6 +71,8 @@ func (m *MockPostRepository) Update(ctx context.Context, id int64, post *entity.
 		switch column {
 		case "title":
 			existing.Title = post.Title
+		case "summary":
+			existing.Summary = post.Summary
 		case "cover_url":
 			existing.CoverUrl = post.CoverUrl
 		case "content":
@@ -74,6 +83,8 @@ func (m *MockPostRepository) Update(ctx context.Context, id int64, post *entity.
 			existing.Tags = post.Tags
 		case "category_id":
 			existing.CategoryId = post.CategoryId
+		case "published_at":
+			existing.PublishedAt = post.PublishedAt
 		}
 	}
 	return 1, nil
@@ -106,6 +117,9 @@ func (m *MockPostRepository) List(ctx context.Context, filter *repository.ListFi
 	}
 	var result []*entity.Post
 	for _, p := range m.posts {
+		if filter.Status > 0 && p.Status != filter.Status {
+			continue
+		}
 		result = append(result, p)
 	}
 	return result, int64(len(result)), nil
@@ -117,14 +131,14 @@ func TestPostService_GetPost(t *testing.T) {
 
 	// Create a test post
 	repo.posts[1] = &entity.Post{
-		AuthorId:   1,
+		UserId:     1,
 		Title:      "Test Post",
 		Content:    "Test Content",
 		Status:     1,
 		CategoryId: 1,
 	}
 
-	service := NewPostServiceServer(logger, repo).(*PostService)
+	service := newTestPostService(logger, repo)
 
 	tests := []struct {
 		name    string
@@ -178,23 +192,24 @@ func TestPostService_GetPost(t *testing.T) {
 func TestPostService_CreatePost(t *testing.T) {
 	logger := zap.NewNop()
 	repo := NewMockPostRepository()
-	service := NewPostServiceServer(logger, repo).(*PostService)
+	service := newTestPostService(logger, repo)
 
 	tests := []struct {
-		name         string
-		ctx          context.Context
-		req          *pb.CreatePostRequest
-		wantErr      bool
-		errCode      codes.Code
-		wantAuthorID int64
+		name       string
+		ctx        context.Context
+		req        *pb.CreatePostRequest
+		wantErr    bool
+		errCode    codes.Code
+		wantUserID int64
 	}{
 		{
 			name: "create valid post",
 			ctx:  authenticatedContext(42),
 			req: &pb.CreatePostRequest{
 				Post: &pb.Post{
-					AuthorId:   999,
+					UserId:     999,
 					Title:      "New Post",
+					Summary:    "Short summary",
 					CoverUrl:   "http://cdn.test/cover.png",
 					Content:    "New Content",
 					Status:     pb.PostStatus_POST_STATUS_DRAFT,
@@ -202,16 +217,16 @@ func TestPostService_CreatePost(t *testing.T) {
 					Tags:       []string{"tag1", "tag2"},
 				},
 			},
-			wantErr:      false,
-			wantAuthorID: 42,
+			wantErr:    false,
+			wantUserID: 42,
 		},
 		{
 			name: "create post with empty title",
 			req: &pb.CreatePostRequest{
 				Post: &pb.Post{
-					AuthorId: 1,
-					Title:    "",
-					Content:  "Content",
+					UserId:  1,
+					Title:   "",
+					Content: "Content",
 				},
 			},
 			wantErr: true,
@@ -263,14 +278,61 @@ func TestPostService_CreatePost(t *testing.T) {
 				if resp.Post.Title != tt.req.Post.Title {
 					t.Errorf("expected title %s, got %s", tt.req.Post.Title, resp.Post.Title)
 				}
-				if resp.Post.AuthorId != tt.wantAuthorID {
-					t.Errorf("expected author id %d, got %d", tt.wantAuthorID, resp.Post.AuthorId)
+				if resp.Post.UserId != tt.wantUserID {
+					t.Errorf("expected user id %d, got %d", tt.wantUserID, resp.Post.UserId)
 				}
 				if resp.Post.CoverUrl != tt.req.Post.CoverUrl {
 					t.Errorf("expected cover url %s, got %s", tt.req.Post.CoverUrl, resp.Post.CoverUrl)
 				}
+				if resp.Post.Summary != tt.req.Post.Summary {
+					t.Errorf("expected summary %s, got %s", tt.req.Post.Summary, resp.Post.Summary)
+				}
 			}
 		})
+	}
+}
+
+func TestPostService_CreatePublishedPostDefaultsPublishedAt(t *testing.T) {
+	logger := zap.NewNop()
+	repo := NewMockPostRepository()
+	service := newTestPostService(logger, repo)
+
+	resp, err := service.CreatePost(authenticatedContext(42), &pb.CreatePostRequest{
+		Post: &pb.Post{
+			Title:   "Published Post",
+			Content: "Body",
+			Status:  pb.PostStatus_POST_STATUS_PUBLISHED,
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.GetPost().GetPublishedAt() == nil {
+		t.Fatal("expected published_at to be defaulted")
+	}
+}
+
+func TestPostService_CreatePostNormalizesUploadsCoverURL(t *testing.T) {
+	logger := zap.NewNop()
+	repo := NewMockPostRepository()
+	service := newTestPostService(logger, repo)
+
+	resp, err := service.CreatePost(authenticatedContext(42), &pb.CreatePostRequest{
+		Post: &pb.Post{
+			Title:    "Post With Cover",
+			Content:  "Body",
+			Status:   pb.PostStatus_POST_STATUS_DRAFT,
+			CoverUrl: "/uploads/post-covers/2026/07/cover.png",
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := resp.GetPost().GetCoverUrl(), "post-covers/2026/07/cover.png"; got != want {
+		t.Fatalf("cover url = %q, want %q", got, want)
+	}
+	if got, want := repo.posts[resp.GetPost().GetId()].CoverUrl, "post-covers/2026/07/cover.png"; got != want {
+		t.Fatalf("stored cover url = %q, want %q", got, want)
 	}
 }
 
@@ -280,7 +342,7 @@ func TestPostService_UpdatePost(t *testing.T) {
 
 	// Create a test post
 	repo.posts[1] = &entity.Post{
-		AuthorId:   1,
+		UserId:     1,
 		Title:      "Test Post",
 		CoverUrl:   "http://cdn.test/old.png",
 		Content:    "Test Content",
@@ -288,7 +350,7 @@ func TestPostService_UpdatePost(t *testing.T) {
 		CategoryId: 1,
 	}
 
-	service := NewPostServiceServer(logger, repo).(*PostService)
+	service := newTestPostService(logger, repo)
 
 	tests := []struct {
 		name    string
@@ -303,12 +365,13 @@ func TestPostService_UpdatePost(t *testing.T) {
 			req: &pb.UpdatePostRequest{
 				Id: 1,
 				Post: &pb.Post{
-					AuthorId: 999,
+					UserId:   999,
 					Title:    "Updated Title",
+					Summary:  "Updated Summary",
 					CoverUrl: "http://cdn.test/new.png",
 					Content:  "Updated Content",
 				},
-				UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"title", "content", "cover_url"}},
+				UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"title", "summary", "content", "cover_url"}},
 			},
 			wantErr: false,
 		},
@@ -343,7 +406,7 @@ func TestPostService_UpdatePost(t *testing.T) {
 			errCode: codes.Unauthenticated,
 		},
 		{
-			name: "update by non-author",
+			name: "update by non-user",
 			ctx:  authenticatedContext(2),
 			req: &pb.UpdatePostRequest{
 				Id: 1,
@@ -355,14 +418,14 @@ func TestPostService_UpdatePost(t *testing.T) {
 			errCode: codes.PermissionDenied,
 		},
 		{
-			name: "update author id is rejected",
+			name: "update user id is rejected",
 			ctx:  authenticatedContext(1),
 			req: &pb.UpdatePostRequest{
 				Id: 1,
 				Post: &pb.Post{
-					AuthorId: 2,
+					UserId: 2,
 				},
-				UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"author_id"}},
+				UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"user_id"}},
 			},
 			wantErr: true,
 			errCode: codes.InvalidArgument,
@@ -392,14 +455,79 @@ func TestPostService_UpdatePost(t *testing.T) {
 				if resp == nil || resp.Post == nil {
 					t.Error("expected response with post")
 				}
-				if resp.Post.AuthorId != 1 {
-					t.Errorf("expected author id to remain 1, got %d", resp.Post.AuthorId)
+				if resp.Post.UserId != 1 {
+					t.Errorf("expected user id to remain 1, got %d", resp.Post.UserId)
 				}
 				if resp.Post.CoverUrl != "http://cdn.test/new.png" {
 					t.Errorf("expected cover url to update, got %s", resp.Post.CoverUrl)
 				}
+				if resp.Post.Summary != "Updated Summary" {
+					t.Errorf("expected summary to update, got %s", resp.Post.Summary)
+				}
+				if resp.Post.Status != pb.PostStatus_POST_STATUS_PENDING_REVIEW {
+					t.Errorf("expected status to become pending review, got %s", resp.Post.Status)
+				}
 			}
 		})
+	}
+}
+
+func TestPostService_UpdatePostNormalizesUploadsCoverURL(t *testing.T) {
+	logger := zap.NewNop()
+	repo := NewMockPostRepository()
+	repo.posts[1] = &entity.Post{
+		UserId:   1,
+		Title:    "Draft",
+		CoverUrl: "post-covers/old.png",
+		Content:  "Body",
+		Status:   entity.PostStatusDraft,
+	}
+	service := newTestPostService(logger, repo)
+
+	resp, err := service.UpdatePost(authenticatedContext(1), &pb.UpdatePostRequest{
+		Id: 1,
+		Post: &pb.Post{
+			CoverUrl: "http://127.0.0.1:8081/uploads/post-covers/2026/07/cover.png",
+		},
+		UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"cover_url"}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := resp.GetPost().GetCoverUrl(), "post-covers/2026/07/cover.png"; got != want {
+		t.Fatalf("cover url = %q, want %q", got, want)
+	}
+	if got, want := repo.posts[1].CoverUrl, "post-covers/2026/07/cover.png"; got != want {
+		t.Fatalf("stored cover url = %q, want %q", got, want)
+	}
+}
+
+func TestPostService_UpdatePostForcesPendingReview(t *testing.T) {
+	logger := zap.NewNop()
+	repo := NewMockPostRepository()
+	repo.posts[1] = &entity.Post{
+		UserId:  1,
+		Title:   "Draft",
+		Content: "Body",
+		Status:  entity.PostStatusDraft,
+	}
+	service := newTestPostService(logger, repo)
+
+	resp, err := service.UpdatePost(authenticatedContext(1), &pb.UpdatePostRequest{
+		Id: 1,
+		Post: &pb.Post{
+			Status: pb.PostStatus_POST_STATUS_PUBLISHED,
+		},
+		UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"status"}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.GetPost().GetStatus() != pb.PostStatus_POST_STATUS_PENDING_REVIEW {
+		t.Fatalf("status = %s, want pending review", resp.GetPost().GetStatus())
+	}
+	if resp.GetPost().GetPublishedAt() != nil {
+		t.Fatal("expected pending review update not to default published_at")
 	}
 }
 
@@ -409,12 +537,12 @@ func TestPostService_DeletePost(t *testing.T) {
 
 	// Create a test post
 	repo.posts[1] = &entity.Post{
-		AuthorId: 1,
-		Title:    "Test Post",
-		Content:  "Test Content",
+		UserId:  1,
+		Title:   "Test Post",
+		Content: "Test Content",
 	}
 
-	service := NewPostServiceServer(logger, repo).(*PostService)
+	service := newTestPostService(logger, repo)
 
 	tests := []struct {
 		name    string
@@ -431,7 +559,7 @@ func TestPostService_DeletePost(t *testing.T) {
 			errCode: codes.Unauthenticated,
 		},
 		{
-			name:    "delete by non-author",
+			name:    "delete by non-user",
 			ctx:     authenticatedContext(2),
 			req:     &pb.DeletePostRequest{Id: 1},
 			wantErr: true,
@@ -490,7 +618,7 @@ func TestPostService_ListPosts(t *testing.T) {
 	// Create test posts
 	for i := 1; i <= 3; i++ {
 		repo.posts[int64(i)] = &entity.Post{
-			AuthorId:   1,
+			UserId:     1,
 			Title:      "Test Post",
 			Content:    "Test Content",
 			Status:     1,
@@ -498,7 +626,7 @@ func TestPostService_ListPosts(t *testing.T) {
 		}
 	}
 
-	service := NewPostServiceServer(logger, repo).(*PostService)
+	service := newTestPostService(logger, repo)
 
 	resp, err := service.ListPosts(context.Background(), &pb.ListPostsRequest{
 		Page:     1,
@@ -519,5 +647,23 @@ func TestPostService_ListPosts(t *testing.T) {
 
 	if len(resp.Posts) != 3 {
 		t.Errorf("expected 3 posts, got %d", len(resp.Posts))
+	}
+}
+
+func TestPostService_ListPostsFiltersStatus(t *testing.T) {
+	logger := zap.NewNop()
+	repo := NewMockPostRepository()
+	repo.posts[1] = &entity.Post{UserId: 1, Title: "Draft", Status: entity.PostStatusDraft}
+	repo.posts[2] = &entity.Post{UserId: 1, Title: "Published", Status: entity.PostStatusPublished, PublishedAt: sql.NullTime{Time: time.Now(), Valid: true}}
+	service := newTestPostService(logger, repo)
+
+	resp, err := service.ListPosts(context.Background(), &pb.ListPostsRequest{
+		Status: pb.PostStatus_POST_STATUS_PUBLISHED,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.GetTotal() != 1 || len(resp.GetPosts()) != 1 || resp.GetPosts()[0].GetTitle() != "Published" {
+		t.Fatalf("unexpected published list: %+v", resp)
 	}
 }

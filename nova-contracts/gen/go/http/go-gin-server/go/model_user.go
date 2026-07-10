@@ -21,6 +21,7 @@ type User struct {
 
 	Nickname string `json:"nickname"`
 
+	// Browser-readable avatar URL, for example /uploads/avatars/2026/07/a.png.
 	Avatar string `json:"avatar"`
 
 	Email string `json:"email"`

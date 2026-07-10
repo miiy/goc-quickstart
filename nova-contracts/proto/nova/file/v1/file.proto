@@ -14,6 +14,7 @@ enum FileScene {
   FILE_SCENE_UNSPECIFIED = 0;
   FILE_SCENE_AVATAR = 1;
   FILE_SCENE_POST_COVER = 2;
+  FILE_SCENE_POST_CONTENT = 3;
 }
 
 // FileStatus describes the lifecycle state of a stored file.

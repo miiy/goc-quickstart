@@ -1,14 +1,8 @@
-{{ template "layout.html" . }}
-
 {{ define "content" }}
-<div class="container">
-    <div class="row">
-        <div class="col-lg-8">
-            <h1 class="h3 mb-3">About</h1>
-            <p class="text-body-secondary mb-0">A small application built with goc, gRPC, and Gin.</p>
-        </div>
+<div class="app-container">
+    <div class="ui-panel px-6 py-8 sm:px-8">
+        <h1 class="ui-title mb-3">关于</h1>
+        <p class="text-slate-600">A small application built with goc, gRPC, and Gin.</p>
     </div>
 </div>
 {{ end }}
-
-{{ define "head" }}{{ end }}

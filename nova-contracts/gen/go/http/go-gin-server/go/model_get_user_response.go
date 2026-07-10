@@ -10,5 +10,5 @@
 package openapi
 
 type GetUserResponse struct {
-	User User `json:"user"`
+	User PublicUser `json:"user"`
 }

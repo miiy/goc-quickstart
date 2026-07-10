@@ -47,12 +47,18 @@ paths:
     $ref: ./post/v1/paths/post.yaml#/posts
   /posts/{id}:
     $ref: ./post/v1/paths/post.yaml#/postById
+  /users/{username}/posts:
+    $ref: ./post/v1/paths/post.yaml#/userPosts
+  /users/{username}/posts/{id}:
+    $ref: ./post/v1/paths/post.yaml#/userPostById
+  /categories:
+    $ref: ./post/v1/paths/category.yaml#/postCategories
   /users:
     $ref: ./user/v1/paths/user.yaml#/users
-  /users/batch:
-    $ref: ./user/v1/paths/user.yaml#/usersBatch
-  /users/{id}:
-    $ref: ./user/v1/paths/user.yaml#/userById
+  /users/{username}:
+    $ref: ./user/v1/paths/user.yaml#/userByUsername
+  /profile:
+    $ref: ./user/v1/paths/user.yaml#/profile
 components:
   securitySchemes:
     BearerAuth:
@@ -110,6 +116,10 @@ components:
       $ref: ./file/v1/schemas/file.yaml#/UploadFileResponse
     Post:
       $ref: ./post/v1/schemas/post.yaml#/Post
+    PostUser:
+      $ref: ./post/v1/schemas/post.yaml#/PostUser
+    Category:
+      $ref: ./post/v1/schemas/category.yaml#/Category
     PostStatus:
       $ref: ./post/v1/schemas/post.yaml#/PostStatus
     CreatePostInput:
@@ -128,21 +138,25 @@ components:
       $ref: ./post/v1/schemas/post.yaml#/UpdatePostResponse
     ListPostsResponse:
       $ref: ./post/v1/schemas/post.yaml#/ListPostsResponse
+    ListCategoriesResponse:
+      $ref: ./post/v1/schemas/category.yaml#/ListCategoriesResponse
     DeletePostResponse:
       $ref: ./post/v1/schemas/post.yaml#/DeletePostResponse
     User:
       $ref: ./user/v1/schemas/user.yaml#/User
+    PublicUser:
+      $ref: ./user/v1/schemas/user.yaml#/PublicUser
     UserStatus:
       $ref: ./user/v1/schemas/user.yaml#/UserStatus
     UserInput:
       $ref: ./user/v1/schemas/user.yaml#/UserInput
     GetUserResponse:
       $ref: ./user/v1/schemas/user.yaml#/GetUserResponse
-    BatchGetUsersResponse:
-      $ref: ./user/v1/schemas/user.yaml#/BatchGetUsersResponse
-    UpdateUserRequest:
-      $ref: ./user/v1/schemas/user.yaml#/UpdateUserRequest
-    UpdateUserResponse:
-      $ref: ./user/v1/schemas/user.yaml#/UpdateUserResponse
+    GetProfileResponse:
+      $ref: ./user/v1/schemas/user.yaml#/GetProfileResponse
+    UpdateProfileRequest:
+      $ref: ./user/v1/schemas/user.yaml#/UpdateProfileRequest
+    UpdateProfileResponse:
+      $ref: ./user/v1/schemas/user.yaml#/UpdateProfileResponse
     ListUsersResponse:
       $ref: ./user/v1/schemas/user.yaml#/ListUsersResponse

@@ -44,7 +44,8 @@ func InitApp(conf string) (*app.App, func(), error) {
 	zapLogger := provideZap(loggerLogger)
 	gormDB := provideGorm(dbDB)
 	postRepository := repository.NewPostRepository(gormDB)
-	postServiceServer := service.NewPostServiceServer(zapLogger, postRepository)
+	categoryRepository := repository.NewCategoryRepository(gormDB)
+	postServiceServer := service.NewPostServiceServer(zapLogger, postRepository, categoryRepository)
 	appApp := app.NewApp(configConfig, dbDB, universalClient, loggerLogger, postServiceServer)
 	return appApp, func() {
 	}, nil

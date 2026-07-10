@@ -340,7 +340,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UpdateUserResponse"
+                $ref: "#/components/schemas/UpdateProfileResponse"
           description: Updated user with avatar.
         default:
           content:
@@ -355,9 +355,9 @@ paths:
     get:
       operationId: listPosts
       parameters:
-      - description: Filter by author id.
+      - description: Filter by user id.
         in: query
-        name: author_id
+        name: user_id
         schema:
           format: int64
           minimum: 0
@@ -440,9 +440,8 @@ paths:
         name: id
         required: true
         schema:
-          format: int64
-          minimum: 1
-          type: integer
+          minLength: 1
+          type: string
       responses:
         "200":
           content:
@@ -467,9 +466,8 @@ paths:
         name: id
         required: true
         schema:
-          format: int64
-          minimum: 1
-          type: integer
+          minLength: 1
+          type: string
       responses:
         "200":
           content:
@@ -495,9 +493,8 @@ paths:
         name: id
         required: true
         schema:
-          format: int64
-          minimum: 1
-          type: integer
+          minLength: 1
+          type: string
       requestBody:
         content:
           application/json:
@@ -518,6 +515,104 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
           description: Error response.
       summary: Update a post
+      tags:
+      - Posts
+  /users/{username}/posts:
+    get:
+      operationId: listUserPosts
+      parameters:
+      - description: Username.
+        in: path
+        name: username
+        required: true
+        schema:
+          maxLength: 255
+          minLength: 1
+          type: string
+      - description: Page number.
+        in: query
+        name: page
+        schema:
+          format: int32
+          minimum: 0
+          type: integer
+      - description: Number of posts per page.
+        in: query
+        name: page_size
+        schema:
+          format: int32
+          maximum: 100
+          minimum: 0
+          type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListPostsResponse"
+          description: "Current user's posts, including drafts."
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Error response.
+      summary: List posts owned by the authenticated user
+      tags:
+      - Posts
+  /users/{username}/posts/{id}:
+    get:
+      operationId: getUserPost
+      parameters:
+      - description: Username.
+        in: path
+        name: username
+        required: true
+        schema:
+          maxLength: 255
+          minLength: 1
+          type: string
+      - description: Post id.
+        in: path
+        name: id
+        required: true
+        schema:
+          minLength: 1
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetPostResponse"
+          description: "Current user's post detail, including drafts."
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Error response.
+      summary: Get a post owned by the authenticated user
+      tags:
+      - Posts
+  /categories:
+    get:
+      operationId: listCategories
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListCategoriesResponse"
+          description: Read-only post categories.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Error response.
+      security: []
+      summary: List post categories
       tags:
       - Posts
   /users:
@@ -555,59 +650,25 @@ paths:
       summary: List users
       tags:
       - Users
-  /users/batch:
-    get:
-      operationId: batchGetUsers
-      parameters:
-      - description: User ids. Repeated query values and comma-separated values are
-          both accepted by the gateway.
-        explode: true
-        in: query
-        name: ids
-        required: true
-        schema:
-          items:
-            format: int64
-            minimum: 1
-            type: integer
-          minItems: 1
-          type: array
-        style: form
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BatchGetUsersResponse"
-          description: Users matched by ids.
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-          description: Error response.
-      summary: Batch get users
-      tags:
-      - Users
-  /users/{id}:
+  /users/{username}:
     get:
       operationId: getUser
       parameters:
-      - description: User id.
+      - description: Username.
         in: path
-        name: id
+        name: username
         required: true
         schema:
-          format: int64
-          minimum: 1
-          type: integer
+          maxLength: 255
+          minLength: 1
+          type: string
       responses:
         "200":
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/GetUserResponse"
-          description: User detail.
+          description: Public user detail.
         default:
           content:
             application/json:
@@ -617,37 +678,47 @@ paths:
       summary: Get a user
       tags:
       - Users
-    put:
-      operationId: updateUser
-      parameters:
-      - description: User id.
-        in: path
-        name: id
-        required: true
-        schema:
-          format: int64
-          minimum: 1
-          type: integer
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UpdateUserRequest"
-        required: true
+  /profile:
+    get:
+      operationId: getProfile
       responses:
         "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UpdateUserResponse"
-          description: Updated user.
+                $ref: "#/components/schemas/GetProfileResponse"
+          description: Current user profile.
         default:
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
           description: Error response.
-      summary: Update a user
+      summary: Get current user's profile
+      tags:
+      - Users
+    put:
+      operationId: updateProfile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdateProfileResponse"
+          description: Updated current user profile.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Error response.
+      summary: Update current user's profile
       tags:
       - Users
 components:
@@ -981,11 +1052,13 @@ components:
       - unspecified
       - avatar
       - post_cover
+      - post_content
       type: string
       x-enum-varnames:
       - FILE_SCENE_UNSPECIFIED
       - FILE_SCENE_AVATAR
       - FILE_SCENE_POST_COVER
+      - FILE_SCENE_POST_CONTENT
     FileStatus:
       description: Lifecycle state of a stored file.
       enum:
@@ -1023,28 +1096,39 @@ components:
     Post:
       description: Article published by a user.
       example:
-        id: 5
-        author_id: 2
+        id: id
+        user_id: 5
+        user:
+          username: username
+          nickname: nickname
+          avatar: avatar
         title: title
+        summary: summary
         content: content
         status: unspecified
         tags:
         - tags
         - tags
-        category_id: 7
+        category_id: 2
+        published_at: 2000-01-23T04:56:07.000+00:00
         created_at: 2000-01-23T04:56:07.000+00:00
         updated_at: 2000-01-23T04:56:07.000+00:00
         deleted_at: 2000-01-23T04:56:07.000+00:00
-        author_name: author_name
         cover_url: cover_url
+        can_manage: true
       properties:
         id:
+          description: Public post id used in URLs.
+          type: string
+        user_id:
           format: int64
           type: integer
-        author_id:
-          format: int64
-          type: integer
+        user:
+          $ref: "#/components/schemas/PostUser"
         title:
+          type: string
+        summary:
+          maxLength: 512
           type: string
         content:
           type: string
@@ -1057,6 +1141,10 @@ components:
         category_id:
           format: int64
           type: integer
+        published_at:
+          format: date-time
+          nullable: true
+          type: string
         created_at:
           format: date-time
           type: string
@@ -1067,14 +1155,13 @@ components:
           format: date-time
           nullable: true
           type: string
-        author_name:
-          description: Populated by nova-gateway from nova-user for web responses.
-          type: string
         cover_url:
+          description: "Browser-readable cover image URL, for example /uploads/post-covers/2026/07/a.png."
           type: string
+        can_manage:
+          description: Whether the authenticated caller can manage this post.
+          type: boolean
       required:
-      - author_id
-      - author_name
       - category_id
       - content
       - cover_url
@@ -1084,6 +1171,51 @@ components:
       - tags
       - title
       - updated_at
+      - user
+      - user_id
+      type: object
+    PostUser:
+      description: User display fields populated by nova-gateway from nova-user.
+      example:
+        username: username
+        nickname: nickname
+        avatar: avatar
+      properties:
+        username:
+          type: string
+        nickname:
+          type: string
+        avatar:
+          description: "Browser-readable avatar URL, for example /uploads/avatars/2026/07/a.png."
+          type: string
+      required:
+      - avatar
+      - nickname
+      - username
+      type: object
+    Category:
+      description: Read-only post category.
+      example:
+        id: 0
+        name: name
+        parent_id: 6
+        path: path
+      properties:
+        id:
+          format: int64
+          type: integer
+        name:
+          type: string
+        parent_id:
+          format: int64
+          type: integer
+        path:
+          type: string
+      required:
+      - id
+      - name
+      - parent_id
+      - path
       type: object
     PostStatus:
       description: Publication state of a post.
@@ -1091,15 +1223,18 @@ components:
       - unspecified
       - draft
       - published
+      - pending_review
       type: string
       x-enum-varnames:
       - POST_STATUS_UNSPECIFIED
       - POST_STATUS_DRAFT
       - POST_STATUS_PUBLISHED
+      - POST_STATUS_PENDING_REVIEW
     CreatePostInput:
       description: Post fields accepted when creating a post.
       example:
         title: title
+        summary: summary
         content: content
         status: unspecified
         tags:
@@ -1107,9 +1242,13 @@ components:
         - tags
         category_id: 0
         cover_url: cover_url
+        published_at: 2000-01-23T04:56:07.000+00:00
       properties:
         title:
           minLength: 1
+          type: string
+        summary:
+          maxLength: 512
           type: string
         content:
           type: string
@@ -1123,6 +1262,11 @@ components:
           format: int64
           type: integer
         cover_url:
+          description: Cover image object key or /uploads URL returned by file upload.
+          type: string
+        published_at:
+          format: date-time
+          nullable: true
           type: string
       required:
       - content
@@ -1132,6 +1276,7 @@ components:
       description: Mutable post fields accepted when updating a post.
       example:
         title: title
+        summary: summary
         content: content
         status: unspecified
         tags:
@@ -1139,9 +1284,13 @@ components:
         - tags
         category_id: 0
         cover_url: cover_url
+        published_at: 2000-01-23T04:56:07.000+00:00
       properties:
         title:
           minLength: 1
+          type: string
+        summary:
+          maxLength: 512
           type: string
         content:
           type: string
@@ -1155,12 +1304,18 @@ components:
           format: int64
           type: integer
         cover_url:
+          description: Cover image object key or /uploads URL returned by file upload.
+          type: string
+        published_at:
+          format: date-time
+          nullable: true
           type: string
       type: object
     CreatePostRequest:
       example:
         post:
           title: title
+          summary: summary
           content: content
           status: unspecified
           tags:
@@ -1168,6 +1323,7 @@ components:
           - tags
           category_id: 0
           cover_url: cover_url
+          published_at: 2000-01-23T04:56:07.000+00:00
       properties:
         post:
           $ref: "#/components/schemas/CreatePostInput"
@@ -1177,20 +1333,26 @@ components:
     CreatePostResponse:
       example:
         post:
-          id: 5
-          author_id: 2
+          id: id
+          user_id: 5
+          user:
+            username: username
+            nickname: nickname
+            avatar: avatar
           title: title
+          summary: summary
           content: content
           status: unspecified
           tags:
           - tags
           - tags
-          category_id: 7
+          category_id: 2
+          published_at: 2000-01-23T04:56:07.000+00:00
           created_at: 2000-01-23T04:56:07.000+00:00
           updated_at: 2000-01-23T04:56:07.000+00:00
           deleted_at: 2000-01-23T04:56:07.000+00:00
-          author_name: author_name
           cover_url: cover_url
+          can_manage: true
       properties:
         post:
           $ref: "#/components/schemas/Post"
@@ -1200,20 +1362,26 @@ components:
     GetPostResponse:
       example:
         post:
-          id: 5
-          author_id: 2
+          id: id
+          user_id: 5
+          user:
+            username: username
+            nickname: nickname
+            avatar: avatar
           title: title
+          summary: summary
           content: content
           status: unspecified
           tags:
           - tags
           - tags
-          category_id: 7
+          category_id: 2
+          published_at: 2000-01-23T04:56:07.000+00:00
           created_at: 2000-01-23T04:56:07.000+00:00
           updated_at: 2000-01-23T04:56:07.000+00:00
           deleted_at: 2000-01-23T04:56:07.000+00:00
-          author_name: author_name
           cover_url: cover_url
+          can_manage: true
       properties:
         post:
           $ref: "#/components/schemas/Post"
@@ -1224,6 +1392,7 @@ components:
       example:
         post:
           title: title
+          summary: summary
           content: content
           status: unspecified
           tags:
@@ -1231,8 +1400,10 @@ components:
           - tags
           category_id: 0
           cover_url: cover_url
+          published_at: 2000-01-23T04:56:07.000+00:00
         update_fields:
         - title
+        - summary
         - content
         - cover_url
       properties:
@@ -1242,13 +1413,16 @@ components:
           description: Mutable post fields to update.
           example:
           - title
+          - summary
           - content
           - cover_url
           items:
             enum:
             - title
+            - summary
             - content
             - cover_url
+            - published_at
             - status
             - tags
             - category_id
@@ -1260,20 +1434,26 @@ components:
     UpdatePostResponse:
       example:
         post:
-          id: 5
-          author_id: 2
+          id: id
+          user_id: 5
+          user:
+            username: username
+            nickname: nickname
+            avatar: avatar
           title: title
+          summary: summary
           content: content
           status: unspecified
           tags:
           - tags
           - tags
-          category_id: 7
+          category_id: 2
+          published_at: 2000-01-23T04:56:07.000+00:00
           created_at: 2000-01-23T04:56:07.000+00:00
           updated_at: 2000-01-23T04:56:07.000+00:00
           deleted_at: 2000-01-23T04:56:07.000+00:00
-          author_name: author_name
           cover_url: cover_url
+          can_manage: true
       properties:
         post:
           $ref: "#/components/schemas/Post"
@@ -1287,34 +1467,46 @@ components:
         page_size: 1
         current_page: 5
         posts:
-        - id: 5
-          author_id: 2
+        - id: id
+          user_id: 5
+          user:
+            username: username
+            nickname: nickname
+            avatar: avatar
           title: title
+          summary: summary
           content: content
           status: unspecified
           tags:
           - tags
           - tags
-          category_id: 7
+          category_id: 2
+          published_at: 2000-01-23T04:56:07.000+00:00
           created_at: 2000-01-23T04:56:07.000+00:00
           updated_at: 2000-01-23T04:56:07.000+00:00
           deleted_at: 2000-01-23T04:56:07.000+00:00
-          author_name: author_name
           cover_url: cover_url
-        - id: 5
-          author_id: 2
+          can_manage: true
+        - id: id
+          user_id: 5
+          user:
+            username: username
+            nickname: nickname
+            avatar: avatar
           title: title
+          summary: summary
           content: content
           status: unspecified
           tags:
           - tags
           - tags
-          category_id: 7
+          category_id: 2
+          published_at: 2000-01-23T04:56:07.000+00:00
           created_at: 2000-01-23T04:56:07.000+00:00
           updated_at: 2000-01-23T04:56:07.000+00:00
           deleted_at: 2000-01-23T04:56:07.000+00:00
-          author_name: author_name
           cover_url: cover_url
+          can_manage: true
       properties:
         total:
           format: int64
@@ -1338,6 +1530,25 @@ components:
       - posts
       - total
       - total_pages
+      type: object
+    ListCategoriesResponse:
+      example:
+        categories:
+        - id: 0
+          name: name
+          parent_id: 6
+          path: path
+        - id: 0
+          name: name
+          parent_id: 6
+          path: path
+      properties:
+        categories:
+          items:
+            $ref: "#/components/schemas/Category"
+          type: array
+      required:
+      - categories
       type: object
     DeletePostResponse:
       additionalProperties: false
@@ -1365,6 +1576,7 @@ components:
         nickname:
           type: string
         avatar:
+          description: "Browser-readable avatar URL, for example /uploads/avatars/2026/07/a.png."
           type: string
         email:
           format: email
@@ -1398,6 +1610,40 @@ components:
       - updated_at
       - username
       type: object
+    PublicUser:
+      description: Public user profile fields safe for anonymous reads.
+      example:
+        id: 0
+        username: username
+        nickname: nickname
+        avatar: avatar
+        created_at: 2000-01-23T04:56:07.000+00:00
+        updated_at: 2000-01-23T04:56:07.000+00:00
+      properties:
+        id:
+          format: int64
+          type: integer
+        username:
+          type: string
+        nickname:
+          type: string
+        avatar:
+          description: "Browser-readable avatar URL, for example /uploads/avatars/2026/07/a.png."
+          type: string
+        created_at:
+          format: date-time
+          type: string
+        updated_at:
+          format: date-time
+          type: string
+      required:
+      - avatar
+      - created_at
+      - id
+      - nickname
+      - updated_at
+      - username
+      type: object
     UserStatus:
       description: Lifecycle state of a user account.
       enum:
@@ -1421,6 +1667,7 @@ components:
         nickname:
           type: string
         avatar:
+          description: Avatar object key or /uploads URL returned by avatar upload.
           type: string
         email:
           format: email
@@ -1431,6 +1678,21 @@ components:
           $ref: "#/components/schemas/UserStatus"
       type: object
     GetUserResponse:
+      example:
+        user:
+          id: 0
+          username: username
+          nickname: nickname
+          avatar: avatar
+          created_at: 2000-01-23T04:56:07.000+00:00
+          updated_at: 2000-01-23T04:56:07.000+00:00
+      properties:
+        user:
+          $ref: "#/components/schemas/PublicUser"
+      required:
+      - user
+      type: object
+    GetProfileResponse:
       example:
         user:
           id: 0
@@ -1450,40 +1712,7 @@ components:
       required:
       - user
       type: object
-    BatchGetUsersResponse:
-      example:
-        users:
-        - id: 0
-          username: username
-          nickname: nickname
-          avatar: avatar
-          email: email
-          email_verified_time: 2000-01-23T04:56:07.000+00:00
-          phone: phone
-          status: unspecified
-          created_at: 2000-01-23T04:56:07.000+00:00
-          updated_at: 2000-01-23T04:56:07.000+00:00
-          deleted_at: 2000-01-23T04:56:07.000+00:00
-        - id: 0
-          username: username
-          nickname: nickname
-          avatar: avatar
-          email: email
-          email_verified_time: 2000-01-23T04:56:07.000+00:00
-          phone: phone
-          status: unspecified
-          created_at: 2000-01-23T04:56:07.000+00:00
-          updated_at: 2000-01-23T04:56:07.000+00:00
-          deleted_at: 2000-01-23T04:56:07.000+00:00
-      properties:
-        users:
-          items:
-            $ref: "#/components/schemas/User"
-          type: array
-      required:
-      - users
-      type: object
-    UpdateUserRequest:
+    UpdateProfileRequest:
       example:
         user:
           nickname: nickname
@@ -1514,7 +1743,7 @@ components:
       required:
       - user
       type: object
-    UpdateUserResponse:
+    UpdateProfileResponse:
       example:
         user:
           id: 0

@@ -290,6 +290,96 @@ func (x *GetUserResponse) GetUser() *User {
 	return nil
 }
 
+// GetUserByUsernameRequest identifies a public user by username.
+type GetUserByUsernameRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Username      string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUserByUsernameRequest) Reset() {
+	*x = GetUserByUsernameRequest{}
+	mi := &file_nova_user_v1_user_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUserByUsernameRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUserByUsernameRequest) ProtoMessage() {}
+
+func (x *GetUserByUsernameRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_nova_user_v1_user_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUserByUsernameRequest.ProtoReflect.Descriptor instead.
+func (*GetUserByUsernameRequest) Descriptor() ([]byte, []int) {
+	return file_nova_user_v1_user_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *GetUserByUsernameRequest) GetUsername() string {
+	if x != nil {
+		return x.Username
+	}
+	return ""
+}
+
+// GetUserByUsernameResponse returns a public user matched by username.
+type GetUserByUsernameResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	User          *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUserByUsernameResponse) Reset() {
+	*x = GetUserByUsernameResponse{}
+	mi := &file_nova_user_v1_user_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUserByUsernameResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUserByUsernameResponse) ProtoMessage() {}
+
+func (x *GetUserByUsernameResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_nova_user_v1_user_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUserByUsernameResponse.ProtoReflect.Descriptor instead.
+func (*GetUserByUsernameResponse) Descriptor() ([]byte, []int) {
+	return file_nova_user_v1_user_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *GetUserByUsernameResponse) GetUser() *User {
+	if x != nil {
+		return x.User
+	}
+	return nil
+}
+
 // BatchGetUsersRequest identifies multiple users by id.
 type BatchGetUsersRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -300,7 +390,7 @@ type BatchGetUsersRequest struct {
 
 func (x *BatchGetUsersRequest) Reset() {
 	*x = BatchGetUsersRequest{}
-	mi := &file_nova_user_v1_user_proto_msgTypes[3]
+	mi := &file_nova_user_v1_user_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -312,7 +402,7 @@ func (x *BatchGetUsersRequest) String() string {
 func (*BatchGetUsersRequest) ProtoMessage() {}
 
 func (x *BatchGetUsersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_nova_user_v1_user_proto_msgTypes[3]
+	mi := &file_nova_user_v1_user_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -325,7 +415,7 @@ func (x *BatchGetUsersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BatchGetUsersRequest.ProtoReflect.Descriptor instead.
 func (*BatchGetUsersRequest) Descriptor() ([]byte, []int) {
-	return file_nova_user_v1_user_proto_rawDescGZIP(), []int{3}
+	return file_nova_user_v1_user_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *BatchGetUsersRequest) GetIds() []int64 {
@@ -345,7 +435,7 @@ type BatchGetUsersResponse struct {
 
 func (x *BatchGetUsersResponse) Reset() {
 	*x = BatchGetUsersResponse{}
-	mi := &file_nova_user_v1_user_proto_msgTypes[4]
+	mi := &file_nova_user_v1_user_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -357,7 +447,7 @@ func (x *BatchGetUsersResponse) String() string {
 func (*BatchGetUsersResponse) ProtoMessage() {}
 
 func (x *BatchGetUsersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_nova_user_v1_user_proto_msgTypes[4]
+	mi := &file_nova_user_v1_user_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -370,7 +460,7 @@ func (x *BatchGetUsersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BatchGetUsersResponse.ProtoReflect.Descriptor instead.
 func (*BatchGetUsersResponse) Descriptor() ([]byte, []int) {
-	return file_nova_user_v1_user_proto_rawDescGZIP(), []int{4}
+	return file_nova_user_v1_user_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *BatchGetUsersResponse) GetUsers() []*User {
@@ -392,7 +482,7 @@ type UpdateUserRequest struct {
 
 func (x *UpdateUserRequest) Reset() {
 	*x = UpdateUserRequest{}
-	mi := &file_nova_user_v1_user_proto_msgTypes[5]
+	mi := &file_nova_user_v1_user_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -404,7 +494,7 @@ func (x *UpdateUserRequest) String() string {
 func (*UpdateUserRequest) ProtoMessage() {}
 
 func (x *UpdateUserRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_nova_user_v1_user_proto_msgTypes[5]
+	mi := &file_nova_user_v1_user_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -417,7 +507,7 @@ func (x *UpdateUserRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateUserRequest.ProtoReflect.Descriptor instead.
 func (*UpdateUserRequest) Descriptor() ([]byte, []int) {
-	return file_nova_user_v1_user_proto_rawDescGZIP(), []int{5}
+	return file_nova_user_v1_user_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *UpdateUserRequest) GetId() int64 {
@@ -451,7 +541,7 @@ type UpdateUserResponse struct {
 
 func (x *UpdateUserResponse) Reset() {
 	*x = UpdateUserResponse{}
-	mi := &file_nova_user_v1_user_proto_msgTypes[6]
+	mi := &file_nova_user_v1_user_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -463,7 +553,7 @@ func (x *UpdateUserResponse) String() string {
 func (*UpdateUserResponse) ProtoMessage() {}
 
 func (x *UpdateUserResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_nova_user_v1_user_proto_msgTypes[6]
+	mi := &file_nova_user_v1_user_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -476,7 +566,7 @@ func (x *UpdateUserResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateUserResponse.ProtoReflect.Descriptor instead.
 func (*UpdateUserResponse) Descriptor() ([]byte, []int) {
-	return file_nova_user_v1_user_proto_rawDescGZIP(), []int{6}
+	return file_nova_user_v1_user_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *UpdateUserResponse) GetUser() *User {
@@ -497,7 +587,7 @@ type ListUsersRequest struct {
 
 func (x *ListUsersRequest) Reset() {
 	*x = ListUsersRequest{}
-	mi := &file_nova_user_v1_user_proto_msgTypes[7]
+	mi := &file_nova_user_v1_user_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -509,7 +599,7 @@ func (x *ListUsersRequest) String() string {
 func (*ListUsersRequest) ProtoMessage() {}
 
 func (x *ListUsersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_nova_user_v1_user_proto_msgTypes[7]
+	mi := &file_nova_user_v1_user_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -522,7 +612,7 @@ func (x *ListUsersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListUsersRequest.ProtoReflect.Descriptor instead.
 func (*ListUsersRequest) Descriptor() ([]byte, []int) {
-	return file_nova_user_v1_user_proto_rawDescGZIP(), []int{7}
+	return file_nova_user_v1_user_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ListUsersRequest) GetPage() int32 {
@@ -553,7 +643,7 @@ type ListUsersResponse struct {
 
 func (x *ListUsersResponse) Reset() {
 	*x = ListUsersResponse{}
-	mi := &file_nova_user_v1_user_proto_msgTypes[8]
+	mi := &file_nova_user_v1_user_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -565,7 +655,7 @@ func (x *ListUsersResponse) String() string {
 func (*ListUsersResponse) ProtoMessage() {}
 
 func (x *ListUsersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_nova_user_v1_user_proto_msgTypes[8]
+	mi := &file_nova_user_v1_user_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -578,7 +668,7 @@ func (x *ListUsersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListUsersResponse.ProtoReflect.Descriptor instead.
 func (*ListUsersResponse) Descriptor() ([]byte, []int) {
-	return file_nova_user_v1_user_proto_rawDescGZIP(), []int{8}
+	return file_nova_user_v1_user_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *ListUsersResponse) GetTotal() int64 {
@@ -641,6 +731,10 @@ const file_nova_user_v1_user_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\x03B\n" +
 	"\xe0A\x02\xbaH\x04\"\x02 \x00R\x02id\"9\n" +
 	"\x0fGetUserResponse\x12&\n" +
+	"\x04user\x18\x01 \x01(\v2\x12.nova.user.v1.UserR\x04user\"E\n" +
+	"\x18GetUserByUsernameRequest\x12)\n" +
+	"\busername\x18\x01 \x01(\tB\r\xe0A\x02\xbaH\ar\x05\x10\x01\x18\xff\x01R\busername\"C\n" +
+	"\x19GetUserByUsernameResponse\x12&\n" +
 	"\x04user\x18\x01 \x01(\v2\x12.nova.user.v1.UserR\x04user\";\n" +
 	"\x14BatchGetUsersRequest\x12#\n" +
 	"\x03ids\x18\x01 \x03(\x03B\x11\xe0A\x02\xbaH\v\x92\x01\b\b\x01\"\x04\"\x02 \x00R\x03ids\"A\n" +
@@ -668,9 +762,10 @@ const file_nova_user_v1_user_proto_rawDesc = "" +
 	"UserStatus\x12\x1b\n" +
 	"\x17USER_STATUS_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12USER_STATUS_ACTIVE\x10\x01\x12\x17\n" +
-	"\x13USER_STATUS_DISABLE\x10\x022\xce\x02\n" +
+	"\x13USER_STATUS_DISABLE\x10\x022\xb4\x03\n" +
 	"\vUserService\x12F\n" +
-	"\aGetUser\x12\x1c.nova.user.v1.GetUserRequest\x1a\x1d.nova.user.v1.GetUserResponse\x12X\n" +
+	"\aGetUser\x12\x1c.nova.user.v1.GetUserRequest\x1a\x1d.nova.user.v1.GetUserResponse\x12d\n" +
+	"\x11GetUserByUsername\x12&.nova.user.v1.GetUserByUsernameRequest\x1a'.nova.user.v1.GetUserByUsernameResponse\x12X\n" +
 	"\rBatchGetUsers\x12\".nova.user.v1.BatchGetUsersRequest\x1a#.nova.user.v1.BatchGetUsersResponse\x12O\n" +
 	"\n" +
 	"UpdateUser\x12\x1f.nova.user.v1.UpdateUserRequest\x1a .nova.user.v1.UpdateUserResponse\x12L\n" +
@@ -690,46 +785,51 @@ func file_nova_user_v1_user_proto_rawDescGZIP() []byte {
 }
 
 var file_nova_user_v1_user_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_nova_user_v1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_nova_user_v1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_nova_user_v1_user_proto_goTypes = []any{
-	(UserStatus)(0),               // 0: nova.user.v1.UserStatus
-	(*User)(nil),                  // 1: nova.user.v1.User
-	(*GetUserRequest)(nil),        // 2: nova.user.v1.GetUserRequest
-	(*GetUserResponse)(nil),       // 3: nova.user.v1.GetUserResponse
-	(*BatchGetUsersRequest)(nil),  // 4: nova.user.v1.BatchGetUsersRequest
-	(*BatchGetUsersResponse)(nil), // 5: nova.user.v1.BatchGetUsersResponse
-	(*UpdateUserRequest)(nil),     // 6: nova.user.v1.UpdateUserRequest
-	(*UpdateUserResponse)(nil),    // 7: nova.user.v1.UpdateUserResponse
-	(*ListUsersRequest)(nil),      // 8: nova.user.v1.ListUsersRequest
-	(*ListUsersResponse)(nil),     // 9: nova.user.v1.ListUsersResponse
-	(*timestamppb.Timestamp)(nil), // 10: google.protobuf.Timestamp
-	(*fieldmaskpb.FieldMask)(nil), // 11: google.protobuf.FieldMask
+	(UserStatus)(0),                   // 0: nova.user.v1.UserStatus
+	(*User)(nil),                      // 1: nova.user.v1.User
+	(*GetUserRequest)(nil),            // 2: nova.user.v1.GetUserRequest
+	(*GetUserResponse)(nil),           // 3: nova.user.v1.GetUserResponse
+	(*GetUserByUsernameRequest)(nil),  // 4: nova.user.v1.GetUserByUsernameRequest
+	(*GetUserByUsernameResponse)(nil), // 5: nova.user.v1.GetUserByUsernameResponse
+	(*BatchGetUsersRequest)(nil),      // 6: nova.user.v1.BatchGetUsersRequest
+	(*BatchGetUsersResponse)(nil),     // 7: nova.user.v1.BatchGetUsersResponse
+	(*UpdateUserRequest)(nil),         // 8: nova.user.v1.UpdateUserRequest
+	(*UpdateUserResponse)(nil),        // 9: nova.user.v1.UpdateUserResponse
+	(*ListUsersRequest)(nil),          // 10: nova.user.v1.ListUsersRequest
+	(*ListUsersResponse)(nil),         // 11: nova.user.v1.ListUsersResponse
+	(*timestamppb.Timestamp)(nil),     // 12: google.protobuf.Timestamp
+	(*fieldmaskpb.FieldMask)(nil),     // 13: google.protobuf.FieldMask
 }
 var file_nova_user_v1_user_proto_depIdxs = []int32{
-	10, // 0: nova.user.v1.User.email_verified_time:type_name -> google.protobuf.Timestamp
+	12, // 0: nova.user.v1.User.email_verified_time:type_name -> google.protobuf.Timestamp
 	0,  // 1: nova.user.v1.User.status:type_name -> nova.user.v1.UserStatus
-	10, // 2: nova.user.v1.User.created_at:type_name -> google.protobuf.Timestamp
-	10, // 3: nova.user.v1.User.updated_at:type_name -> google.protobuf.Timestamp
-	10, // 4: nova.user.v1.User.deleted_at:type_name -> google.protobuf.Timestamp
+	12, // 2: nova.user.v1.User.created_at:type_name -> google.protobuf.Timestamp
+	12, // 3: nova.user.v1.User.updated_at:type_name -> google.protobuf.Timestamp
+	12, // 4: nova.user.v1.User.deleted_at:type_name -> google.protobuf.Timestamp
 	1,  // 5: nova.user.v1.GetUserResponse.user:type_name -> nova.user.v1.User
-	1,  // 6: nova.user.v1.BatchGetUsersResponse.users:type_name -> nova.user.v1.User
-	1,  // 7: nova.user.v1.UpdateUserRequest.user:type_name -> nova.user.v1.User
-	11, // 8: nova.user.v1.UpdateUserRequest.update_mask:type_name -> google.protobuf.FieldMask
-	1,  // 9: nova.user.v1.UpdateUserResponse.user:type_name -> nova.user.v1.User
-	1,  // 10: nova.user.v1.ListUsersResponse.users:type_name -> nova.user.v1.User
-	2,  // 11: nova.user.v1.UserService.GetUser:input_type -> nova.user.v1.GetUserRequest
-	4,  // 12: nova.user.v1.UserService.BatchGetUsers:input_type -> nova.user.v1.BatchGetUsersRequest
-	6,  // 13: nova.user.v1.UserService.UpdateUser:input_type -> nova.user.v1.UpdateUserRequest
-	8,  // 14: nova.user.v1.UserService.ListUsers:input_type -> nova.user.v1.ListUsersRequest
-	3,  // 15: nova.user.v1.UserService.GetUser:output_type -> nova.user.v1.GetUserResponse
-	5,  // 16: nova.user.v1.UserService.BatchGetUsers:output_type -> nova.user.v1.BatchGetUsersResponse
-	7,  // 17: nova.user.v1.UserService.UpdateUser:output_type -> nova.user.v1.UpdateUserResponse
-	9,  // 18: nova.user.v1.UserService.ListUsers:output_type -> nova.user.v1.ListUsersResponse
-	15, // [15:19] is the sub-list for method output_type
-	11, // [11:15] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	1,  // 6: nova.user.v1.GetUserByUsernameResponse.user:type_name -> nova.user.v1.User
+	1,  // 7: nova.user.v1.BatchGetUsersResponse.users:type_name -> nova.user.v1.User
+	1,  // 8: nova.user.v1.UpdateUserRequest.user:type_name -> nova.user.v1.User
+	13, // 9: nova.user.v1.UpdateUserRequest.update_mask:type_name -> google.protobuf.FieldMask
+	1,  // 10: nova.user.v1.UpdateUserResponse.user:type_name -> nova.user.v1.User
+	1,  // 11: nova.user.v1.ListUsersResponse.users:type_name -> nova.user.v1.User
+	2,  // 12: nova.user.v1.UserService.GetUser:input_type -> nova.user.v1.GetUserRequest
+	4,  // 13: nova.user.v1.UserService.GetUserByUsername:input_type -> nova.user.v1.GetUserByUsernameRequest
+	6,  // 14: nova.user.v1.UserService.BatchGetUsers:input_type -> nova.user.v1.BatchGetUsersRequest
+	8,  // 15: nova.user.v1.UserService.UpdateUser:input_type -> nova.user.v1.UpdateUserRequest
+	10, // 16: nova.user.v1.UserService.ListUsers:input_type -> nova.user.v1.ListUsersRequest
+	3,  // 17: nova.user.v1.UserService.GetUser:output_type -> nova.user.v1.GetUserResponse
+	5,  // 18: nova.user.v1.UserService.GetUserByUsername:output_type -> nova.user.v1.GetUserByUsernameResponse
+	7,  // 19: nova.user.v1.UserService.BatchGetUsers:output_type -> nova.user.v1.BatchGetUsersResponse
+	9,  // 20: nova.user.v1.UserService.UpdateUser:output_type -> nova.user.v1.UpdateUserResponse
+	11, // 21: nova.user.v1.UserService.ListUsers:output_type -> nova.user.v1.ListUsersResponse
+	17, // [17:22] is the sub-list for method output_type
+	12, // [12:17] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_nova_user_v1_user_proto_init() }
@@ -743,7 +843,7 @@ func file_nova_user_v1_user_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_nova_user_v1_user_proto_rawDesc), len(file_nova_user_v1_user_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   9,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

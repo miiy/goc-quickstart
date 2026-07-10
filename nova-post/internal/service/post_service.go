@@ -2,9 +2,12 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
+	"net/url"
 	"strings"
+	"time"
 
 	"buf.build/go/protovalidate"
 	pb "github.com/miiy/goc-quickstart/nova-post/gen/go/nova/post/v1"
@@ -21,8 +24,9 @@ import (
 
 type PostService struct {
 	pb.UnimplementedPostServiceServer
-	logger *zap.Logger
-	repo   repository.PostRepository
+	logger       *zap.Logger
+	repo         repository.PostRepository
+	categoryRepo repository.CategoryRepository
 }
 
 var (
@@ -31,10 +35,11 @@ var (
 	ErrPermissionDenied = errors.New("permission denied")
 )
 
-func NewPostServiceServer(logger *zap.Logger, repo repository.PostRepository) pb.PostServiceServer {
+func NewPostServiceServer(logger *zap.Logger, repo repository.PostRepository, categoryRepo repository.CategoryRepository) pb.PostServiceServer {
 	return &PostService{
-		logger: logger,
-		repo:   repo,
+		logger:       logger,
+		repo:         repo,
+		categoryRepo: categoryRepo,
 	}
 }
 
@@ -72,14 +77,17 @@ func (s *PostService) CreatePost(ctx context.Context, req *pb.CreatePostRequest)
 	tags, _ := json.Marshal(req.Post.Tags)
 
 	post := &entity.Post{
-		AuthorId:   userID,
-		Title:      strings.TrimSpace(req.Post.Title),
-		CoverUrl:   strings.TrimSpace(req.Post.CoverUrl),
-		Content:    req.Post.Content,
-		Status:     int64(req.Post.Status),
-		Tags:       string(tags),
-		CategoryId: req.Post.CategoryId,
+		UserId:      userID,
+		Title:       strings.TrimSpace(req.Post.Title),
+		Summary:     strings.TrimSpace(req.Post.Summary),
+		CoverUrl:    normalizeCoverObjectKey(req.Post.CoverUrl),
+		Content:     req.Post.Content,
+		Status:      int64(req.Post.Status),
+		Tags:        string(tags),
+		CategoryId:  req.Post.CategoryId,
+		PublishedAt: protoTimestampTime(req.Post.PublishedAt),
 	}
+	defaultPublishedAt(post)
 
 	if err := s.repo.Create(ctx, post); err != nil {
 		s.logger.Error("repo.Create", zap.Error(err))
@@ -108,21 +116,24 @@ func (s *PostService) UpdatePost(ctx context.Context, req *pb.UpdatePostRequest)
 		s.logger.Error("repo.First", zap.Error(err))
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	if existing.AuthorId != userID {
+	if existing.UserId != userID {
 		return nil, status.Error(codes.PermissionDenied, ErrPermissionDenied.Error())
 	}
 
 	tags, _ := json.Marshal(req.Post.Tags)
 
 	post := &entity.Post{
-		AuthorId:   existing.AuthorId,
-		Title:      strings.TrimSpace(req.Post.Title),
-		CoverUrl:   strings.TrimSpace(req.Post.CoverUrl),
-		Content:    req.Post.Content,
-		Status:     int64(req.Post.Status),
-		Tags:       string(tags),
-		CategoryId: req.Post.CategoryId,
+		UserId:      existing.UserId,
+		Title:       strings.TrimSpace(req.Post.Title),
+		Summary:     strings.TrimSpace(req.Post.Summary),
+		CoverUrl:    normalizeCoverObjectKey(req.Post.CoverUrl),
+		Content:     req.Post.Content,
+		Status:      int64(req.Post.Status),
+		Tags:        string(tags),
+		CategoryId:  req.Post.CategoryId,
+		PublishedAt: protoTimestampTime(req.Post.PublishedAt),
 	}
+	markPendingReview(post)
 
 	var columns []string
 	if req.UpdateMask != nil && len(req.UpdateMask.Paths) > 0 {
@@ -131,6 +142,7 @@ func (s *PostService) UpdatePost(ctx context.Context, req *pb.UpdatePostRequest)
 			return nil, status.Error(codes.InvalidArgument, "no updatable fields")
 		}
 	}
+	columns = ensureColumn(columns, "status")
 
 	rowsAffected, err := s.repo.Update(ctx, req.Id, post, columns...)
 	if err != nil {
@@ -161,7 +173,7 @@ func (s *PostService) DeletePost(ctx context.Context, req *pb.DeletePostRequest)
 		return nil, err
 	}
 
-	existing, err := s.repo.First(ctx, req.Id, "id", "author_id")
+	existing, err := s.repo.First(ctx, req.Id, "id", "user_id")
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, status.Error(codes.NotFound, ErrPostNotFound.Error())
@@ -169,7 +181,7 @@ func (s *PostService) DeletePost(ctx context.Context, req *pb.DeletePostRequest)
 		s.logger.Error("repo.First", zap.Error(err))
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	if existing.AuthorId != userID {
+	if existing.UserId != userID {
 		return nil, status.Error(codes.PermissionDenied, ErrPermissionDenied.Error())
 	}
 
@@ -205,13 +217,14 @@ func (s *PostService) ListPosts(ctx context.Context, req *pb.ListPostsRequest) (
 	pageSize := int64(req.PageSize)
 
 	filter := &repository.ListFilter{
-		AuthorId:   req.AuthorId,
+		UserId:     req.UserId,
 		CategoryId: req.CategoryId,
 		Tag:        req.Tag,
+		Status:     int64(req.Status),
 	}
 
-	// 列表只查询需要的字段，不查询 content
-	columns := []string{"id", "author_id", "title", "cover_url", "status", "tags", "category_id", "created_at", "updated_at"}
+	// List responses skip body content but keep display metadata needed by public cards.
+	columns := []string{"id", "user_id", "title", "summary", "cover_url", "status", "tags", "category_id", "published_at", "created_at", "updated_at"}
 
 	posts, total, err := s.repo.List(ctx, filter, page, pageSize, columns...)
 	if err != nil {
@@ -241,8 +254,9 @@ func entityToProto(p *entity.Post) *pb.Post {
 
 	protoPost := &pb.Post{
 		Id:         p.ID,
-		AuthorId:   p.AuthorId,
+		UserId:     p.UserId,
 		Title:      p.Title,
+		Summary:    p.Summary,
 		CoverUrl:   p.CoverUrl,
 		Content:    p.Content,
 		Status:     pb.PostStatus(p.Status),
@@ -250,6 +264,9 @@ func entityToProto(p *entity.Post) *pb.Post {
 		CategoryId: p.CategoryId,
 		CreatedAt:  timestamppb.New(p.CreatedAt),
 		UpdatedAt:  timestamppb.New(p.UpdatedAt),
+	}
+	if p.PublishedAt.Valid {
+		protoPost.PublishedAt = timestamppb.New(p.PublishedAt.Time)
 	}
 
 	if p.DeletedAt.Valid {
@@ -265,10 +282,14 @@ func protoPathsToDBColumns(paths []string) []string {
 		switch p {
 		case "title":
 			columns = append(columns, "title")
+		case "summary":
+			columns = append(columns, "summary")
 		case "content":
 			columns = append(columns, "content")
 		case "cover_url":
 			columns = append(columns, "cover_url")
+		case "published_at":
+			columns = append(columns, "published_at")
 		case "status":
 			columns = append(columns, "status")
 		case "tags":
@@ -278,4 +299,60 @@ func protoPathsToDBColumns(paths []string) []string {
 		}
 	}
 	return columns
+}
+
+func protoTimestampTime(value *timestamppb.Timestamp) sql.NullTime {
+	if value == nil {
+		return sql.NullTime{}
+	}
+	return sql.NullTime{Time: value.AsTime(), Valid: true}
+}
+
+func normalizeCoverObjectKey(value string) string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return ""
+	}
+
+	if parsed, err := url.Parse(value); err == nil && parsed.IsAbs() {
+		if !isUploadsPath(parsed.Path) {
+			return value
+		}
+		value = parsed.Path
+	}
+
+	value = strings.TrimLeft(value, "/")
+	return strings.TrimPrefix(value, "uploads/")
+}
+
+func isUploadsPath(value string) bool {
+	return value == "/uploads" || strings.HasPrefix(value, "/uploads/")
+}
+
+// Published posts always get a stable display time when callers omit one.
+func defaultPublishedAt(post *entity.Post) {
+	if post.Status != entity.PostStatusPublished || post.PublishedAt.Valid {
+		return
+	}
+	post.PublishedAt = sql.NullTime{Time: time.Now(), Valid: true}
+}
+
+func markPendingReview(post *entity.Post) {
+	post.Status = entity.PostStatusPendingReview
+}
+
+func ensureColumn(columns []string, column string) []string {
+	if len(columns) > 0 && !hasColumn(columns, column) {
+		return append(columns, column)
+	}
+	return columns
+}
+
+func hasColumn(columns []string, column string) bool {
+	for _, v := range columns {
+		if v == column {
+			return true
+		}
+	}
+	return false
 }

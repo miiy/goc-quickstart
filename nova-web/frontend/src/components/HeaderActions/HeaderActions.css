@@ -1,0 +1,31 @@
+@reference "../../styles/globals.css";
+
+@layer components {
+  .site-user-menu {
+    @apply relative;
+  }
+
+  .site-user-menu-trigger {
+    @apply inline-flex h-10 items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-brand-600 focus:ring-offset-2;
+  }
+
+  .site-user-menu-caret {
+    @apply h-0 w-0 border-x-4 border-t-4 border-x-transparent border-t-slate-500;
+  }
+
+  .site-user-menu-panel {
+    @apply absolute right-0 top-full z-50 mt-2 w-44 overflow-hidden rounded-md border border-slate-200 bg-white py-1 shadow-lg;
+  }
+
+  .site-user-menu-panel[data-open="false"] {
+    @apply hidden;
+  }
+
+  .site-user-menu-item {
+    @apply block w-full px-3 py-2 text-left text-sm font-medium text-slate-700 no-underline hover:bg-slate-100 hover:text-slate-950 hover:no-underline;
+  }
+
+  .site-user-menu-item-danger {
+    @apply text-red-600 hover:text-red-700;
+  }
+}

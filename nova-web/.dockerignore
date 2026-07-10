@@ -1,0 +1,7 @@
+.git
+.idea
+.DS_Store
+bin/
+node_modules/
+dist/
+config.yaml

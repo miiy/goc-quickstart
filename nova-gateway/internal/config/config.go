@@ -6,6 +6,9 @@ import (
 
 type Config struct {
 	App      AppConfig                `yaml:"app"`
+	Redis    RedisConfig              `yaml:"redis"`
+	Session  SessionConfig            `yaml:"session"`
+	CORS     CORSConfig               `yaml:"cors"`
 	Server   ServerConfig             `yaml:"server"`
 	Services map[string]ServiceConfig `yaml:"services"`
 	TLS      TLSConfig                `yaml:"tls"`
@@ -13,6 +16,25 @@ type Config struct {
 
 type AppConfig struct {
 	Debug bool `yaml:"debug"`
+}
+
+type RedisConfig struct {
+	Addr     string `yaml:"addr"`
+	Password string `yaml:"password"`
+	DB       int    `yaml:"db"`
+}
+
+type SessionConfig struct {
+	Name   string `yaml:"name"`
+	Secret string `yaml:"secret"`
+	Domain string `yaml:"domain"`
+	MaxAge int    `yaml:"maxAge"`
+	Secure bool   `yaml:"secure"`
+}
+
+type CORSConfig struct {
+	AllowOrigins     []string `yaml:"allowOrigins"`
+	AllowCredentials bool     `yaml:"allowCredentials"`
 }
 
 type ServerConfig struct {

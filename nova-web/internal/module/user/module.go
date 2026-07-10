@@ -1,17 +1,16 @@
 package user
 
 import (
-	"github.com/miiy/goc-quickstart/nova-web/client"
+	userv1 "github.com/miiy/goc-quickstart/nova-web/gen/go/nova/user/v1"
 	websession "github.com/miiy/goc-quickstart/nova-web/internal/session"
-	"github.com/miiy/goc/logger"
 )
 
 type Module struct {
 	handler *UserHandler
 }
 
-func NewModule(log logger.Logger, authClient *client.AuthClient, userClient *client.UserClient, fileClient *client.FileClient, sessionManager *websession.Manager) *Module {
+func NewModule(userClient userv1.UserServiceClient, sessionManager *websession.Manager) *Module {
 	return &Module{
-		handler: NewUserHandler(log, authClient, userClient, fileClient, sessionManager),
+		handler: NewUserHandler(userClient, sessionManager),
 	}
 }

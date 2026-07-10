@@ -15,11 +15,11 @@ import (
 
 type UsersAPI interface {
 
-	// BatchGetUsers Get /api/v1/users/batch
-	// Batch get users
-	BatchGetUsers(c *gin.Context)
+	// GetProfile Get /api/v1/profile
+	// Get current user's profile
+	GetProfile(c *gin.Context)
 
-	// GetUser Get /api/v1/users/:id
+	// GetUser Get /api/v1/users/:username
 	// Get a user
 	GetUser(c *gin.Context)
 
@@ -27,7 +27,7 @@ type UsersAPI interface {
 	// List users
 	ListUsers(c *gin.Context)
 
-	// UpdateUser Put /api/v1/users/:id
-	// Update a user
-	UpdateUser(c *gin.Context)
+	// UpdateProfile Put /api/v1/profile
+	// Update current user's profile
+	UpdateProfile(c *gin.Context)
 }

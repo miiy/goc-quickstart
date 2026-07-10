@@ -12,9 +12,10 @@ import (
 	"github.com/miiy/goc/logger/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
-// MockUserRepository implements repository.UserRepository for testing
+// MockUserRepository implements the user repository for testing.
 type MockUserRepository struct {
 	users  map[int64]*entity.User
 	nextID int64
@@ -60,12 +61,27 @@ func (m *MockUserRepository) Update(ctx context.Context, id int64, user *entity.
 	if m.err != nil {
 		return 0, m.err
 	}
-	if _, ok := m.users[id]; !ok {
+	existing, ok := m.users[id]
+	if !ok {
 		return 0, nil
 	}
-	user.ID = id
-	user.Username = m.users[id].Username
-	m.users[id] = user
+	if len(columns) == 0 {
+		columns = []string{"nickname", "avatar", "email", "phone", "status"}
+	}
+	for _, column := range columns {
+		switch column {
+		case "nickname":
+			existing.Nickname = user.Nickname
+		case "avatar":
+			existing.Avatar = user.Avatar
+		case "email":
+			existing.Email = user.Email
+		case "phone":
+			existing.Phone = user.Phone
+		case "status":
+			existing.Status = user.Status
+		}
+	}
 	return 1, nil
 }
 
@@ -75,6 +91,18 @@ func (m *MockUserRepository) First(ctx context.Context, id int64, columns ...str
 	}
 	if user, ok := m.users[id]; ok {
 		return user, nil
+	}
+	return nil, gorm.ErrRecordNotFound
+}
+
+func (m *MockUserRepository) FindByUsername(ctx context.Context, username string, columns ...string) (*entity.User, error) {
+	if m.err != nil {
+		return nil, m.err
+	}
+	for _, user := range m.users {
+		if user.Username == username {
+			return user, nil
+		}
 	}
 	return nil, gorm.ErrRecordNotFound
 }
@@ -187,6 +215,30 @@ func TestUserService_GetUser(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestUserService_GetUserByUsername(t *testing.T) {
+	logger := zap.NewNop()
+	repo := NewMockUserRepository()
+	repo.users[1] = testUser(1)
+
+	service := NewUserServiceServer(logger, repo).(*UserService)
+
+	resp, err := service.GetUserByUsername(context.Background(), &pb.GetUserByUsernameRequest{Username: "testuser"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp.GetUser().GetId() != 1 || resp.GetUser().GetUsername() != "testuser" {
+		t.Fatalf("unexpected user: %+v", resp.GetUser())
+	}
+	if resp.GetUser().GetEmail() != "" || resp.GetUser().GetPhone() != "" {
+		t.Fatalf("public user leaked private fields: %+v", resp.GetUser())
+	}
+
+	_, err = service.GetUserByUsername(context.Background(), &pb.GetUserByUsernameRequest{Username: "missing"})
+	if status.Code(err) != codes.NotFound {
+		t.Fatalf("expected not found, got %v", err)
 	}
 }
 
@@ -340,6 +392,35 @@ func TestUserService_UpdateUserNormalizesAvatarObjectKey(t *testing.T) {
 	}
 	if repo.users[1].Avatar != want {
 		t.Fatalf("stored avatar = %q, want %q", repo.users[1].Avatar, want)
+	}
+}
+
+func TestUserService_UpdateUserWithFieldMaskPreservesOtherFields(t *testing.T) {
+	logger := zap.NewNop()
+	repo := NewMockUserRepository()
+	repo.users[1] = testUser(1)
+
+	service := NewUserServiceServer(logger, repo).(*UserService)
+
+	resp, err := service.UpdateUser(authenticatedContext(1), &pb.UpdateUserRequest{
+		Id: 1,
+		User: &pb.User{
+			Nickname: "Updated Nickname",
+			Email:    "",
+		},
+		UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"nickname"}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.GetUser().GetNickname() != "Updated Nickname" {
+		t.Fatalf("nickname = %q, want Updated Nickname", resp.GetUser().GetNickname())
+	}
+	if resp.GetUser().GetEmail() != "test@example.com" {
+		t.Fatalf("email = %q, want preserved test@example.com", resp.GetUser().GetEmail())
+	}
+	if repo.users[1].Email != "test@example.com" {
+		t.Fatalf("stored email = %q, want preserved test@example.com", repo.users[1].Email)
 	}
 }
 

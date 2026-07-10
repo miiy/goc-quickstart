@@ -1,6 +1,6 @@
 # nova
 
-基于 gRPC 的博客微服务项目，采用 Go 语言开发。
+基于 gRPC 的内容微服务项目，采用 Go 语言开发。
 
 ## 项目架构
 
@@ -43,15 +43,15 @@ goc-quickstart
 
 ## 服务端口
 
-| 服务         | 端口  | 说明                   |
-| ------------ | ----- | ---------------------- |
-| nova-gateway | 8080  | HTTP 入口，路由转发    |
-| nova-web     | 8081  | Web 前端页面           |
-| nova-apidoc  | 8090  | Swagger UI/API 文档    |
-| nova-auth    | 50051 | 认证/登录/注册         |
-| nova-user    | 50052 | 用户信息管理           |
-| nova-post    | 50053 | 文章 CRUD              |
-| nova-file    | 50054 | 文件上传与管理         |
+| 服务         | 端口  | 说明                |
+| ------------ | ----- | ------------------- |
+| nova-gateway | 8080  | HTTP 入口，路由转发 |
+| nova-web     | 8081  | Web 前端页面        |
+| nova-apidoc  | 8090  | Swagger UI/API 文档 |
+| nova-auth    | 50051 | 认证/登录/注册      |
+| nova-user    | 50052 | 用户信息管理        |
+| nova-post    | 50053 | 文章 CRUD           |
+| nova-file    | 50054 | 文件上传与管理      |
 
 ## 技术栈
 

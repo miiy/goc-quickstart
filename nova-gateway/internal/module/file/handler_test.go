@@ -43,6 +43,10 @@ func (f *fakeAvatarUserClient) GetUser(ctx context.Context, in *userv1.GetUserRe
 	return nil, nil
 }
 
+func (f *fakeAvatarUserClient) GetUserByUsername(ctx context.Context, in *userv1.GetUserByUsernameRequest, opts ...grpc.CallOption) (*userv1.GetUserByUsernameResponse, error) {
+	return nil, nil
+}
+
 func (f *fakeAvatarUserClient) BatchGetUsers(ctx context.Context, in *userv1.BatchGetUsersRequest, opts ...grpc.CallOption) (*userv1.BatchGetUsersResponse, error) {
 	return nil, nil
 }
@@ -113,7 +117,7 @@ func TestAvatarUploadsAndUpdatesCurrentUser(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
 		t.Fatal(err)
 	}
-	if resp.User.Id != 7 || resp.User.Avatar != "avatars/2026/06/avatar.png" {
+	if resp.User.Id != 7 || resp.User.Avatar != "/uploads/avatars/2026/06/avatar.png" {
 		t.Fatalf("unexpected avatar response: %+v", resp.User)
 	}
 }
@@ -170,6 +174,7 @@ func TestUploadPostCoverUploadsFile(t *testing.T) {
 			OwnerId   int64  `json:"owner_id"`
 			Scene     string `json:"scene"`
 			ObjectKey string `json:"object_key"`
+			URL       string `json:"url"`
 			Size      int64  `json:"size"`
 			Status    string `json:"status"`
 		} `json:"file"`
@@ -180,8 +185,52 @@ func TestUploadPostCoverUploadsFile(t *testing.T) {
 	if resp.File.Id != 42 || resp.File.OwnerId != 7 || resp.File.Scene != "post_cover" || resp.File.Size != 4 {
 		t.Fatalf("unexpected upload response: %+v", resp.File)
 	}
-	if resp.File.ObjectKey != "avatars/2026/06/avatar.png" || resp.File.Status != "active" {
+	if resp.File.ObjectKey != "avatars/2026/06/avatar.png" || resp.File.URL != "/uploads/avatars/2026/06/avatar.png" || resp.File.Status != "active" {
 		t.Fatalf("unexpected upload file fields: %+v", resp.File)
+	}
+}
+
+func TestUploadPostContentUploadsFile(t *testing.T) {
+	fileClient := &fakeFileClient{}
+	userClient := &fakeAvatarUserClient{}
+	api := NewFilesAPI(fileClient, userClient)
+
+	r := gin.New()
+	r.POST("/api/v1/files/upload", func(c *gin.Context) {
+		ctx := gocauth.InjectAuthenticatedUser(c.Request.Context(), &gocauth.AuthenticatedUser{ID: "7", Username: "alice"})
+		c.Request = c.Request.WithContext(ctx)
+		api.UploadFile(c)
+	})
+
+	body := &strings.Builder{}
+	writer := multipart.NewWriter(body)
+	if err := writer.WriteField("scene", "post_content"); err != nil {
+		t.Fatal(err)
+	}
+	part, err := writer.CreateFormFile("file", "body.png")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := part.Write([]byte{0x89, 'P', 'N', 'G'}); err != nil {
+		t.Fatal(err)
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/files/upload", strings.NewReader(body.String()))
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, body=%s", rec.Code, rec.Body.String())
+	}
+	if fileClient.req == nil || fileClient.req.GetScene() != filev1.FileScene_FILE_SCENE_POST_CONTENT {
+		t.Fatalf("unexpected file request: %+v", fileClient.req)
+	}
+	if userClient.req != nil {
+		t.Fatalf("user update should not be called: %+v", userClient.req)
 	}
 }
 

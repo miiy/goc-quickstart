@@ -39,7 +39,7 @@ func (api *AuthAPI) Register(c *gin.Context) {
 		transport.WriteError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, openapi.RegisterResponse{User: openapiAuthUser(resp.GetUser())})
+	c.JSON(http.StatusOK, openapi.RegisterResponse{User: protoToAuthUser(resp.GetUser())})
 }
 
 func (api *AuthAPI) UsernameCheck(c *gin.Context) {
@@ -98,7 +98,7 @@ func (api *AuthAPI) Login(c *gin.Context) {
 		transport.WriteError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, openapiTokenResponse(resp))
+	c.JSON(http.StatusOK, protoToTokenResponse(resp))
 }
 
 func (api *AuthAPI) SendSmsCode(c *gin.Context) {
@@ -129,7 +129,7 @@ func (api *AuthAPI) PhoneAuth(c *gin.Context) {
 		transport.WriteError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, openapiTokenResponse(resp))
+	c.JSON(http.StatusOK, protoToTokenResponse(resp))
 }
 
 func (api *AuthAPI) MpLogin(c *gin.Context) {
@@ -143,7 +143,7 @@ func (api *AuthAPI) MpLogin(c *gin.Context) {
 		transport.WriteError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, openapiTokenResponse(resp))
+	c.JSON(http.StatusOK, protoToTokenResponse(resp))
 }
 
 func (api *AuthAPI) RefreshToken(c *gin.Context) {
@@ -157,7 +157,7 @@ func (api *AuthAPI) RefreshToken(c *gin.Context) {
 		transport.WriteError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, openapiTokenResponse(resp))
+	c.JSON(http.StatusOK, protoToTokenResponse(resp))
 }
 
 func (api *AuthAPI) ChangePassword(c *gin.Context) {

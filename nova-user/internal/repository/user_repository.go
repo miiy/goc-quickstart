@@ -10,6 +10,7 @@ import (
 
 type UserRepository interface {
 	First(ctx context.Context, id int64, columns ...string) (*entity.User, error)
+	FindByUsername(ctx context.Context, username string, columns ...string) (*entity.User, error)
 	FindByIDs(ctx context.Context, ids []int64, columns ...string) ([]*entity.User, error)
 	List(ctx context.Context, page, pageSize int64, columns ...string) ([]*entity.User, int64, error)
 	Create(ctx context.Context, user *entity.User) error
@@ -28,6 +29,20 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 func (r *userRepository) First(ctx context.Context, id int64, columns ...string) (*entity.User, error) {
 	var user entity.User
 	err := r.db.WithContext(ctx).Select(columns).First(&user, id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (r *userRepository) FindByUsername(ctx context.Context, username string, columns ...string) (*entity.User, error) {
+	db := r.db.WithContext(ctx)
+	if len(columns) > 0 {
+		db = db.Select(columns)
+	}
+
+	var user entity.User
+	err := db.Where("username = ?", username).First(&user).Error
 	if err != nil {
 		return nil, err
 	}

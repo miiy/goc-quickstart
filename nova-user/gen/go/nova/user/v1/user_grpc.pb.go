@@ -19,10 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	UserService_GetUser_FullMethodName       = "/nova.user.v1.UserService/GetUser"
-	UserService_BatchGetUsers_FullMethodName = "/nova.user.v1.UserService/BatchGetUsers"
-	UserService_UpdateUser_FullMethodName    = "/nova.user.v1.UserService/UpdateUser"
-	UserService_ListUsers_FullMethodName     = "/nova.user.v1.UserService/ListUsers"
+	UserService_GetUser_FullMethodName           = "/nova.user.v1.UserService/GetUser"
+	UserService_GetUserByUsername_FullMethodName = "/nova.user.v1.UserService/GetUserByUsername"
+	UserService_BatchGetUsers_FullMethodName     = "/nova.user.v1.UserService/BatchGetUsers"
+	UserService_UpdateUser_FullMethodName        = "/nova.user.v1.UserService/UpdateUser"
+	UserService_ListUsers_FullMethodName         = "/nova.user.v1.UserService/ListUsers"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -33,6 +34,8 @@ const (
 type UserServiceClient interface {
 	// GetUser returns a single user by id.
 	GetUser(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*GetUserResponse, error)
+	// GetUserByUsername returns public user fields by username.
+	GetUserByUsername(ctx context.Context, in *GetUserByUsernameRequest, opts ...grpc.CallOption) (*GetUserByUsernameResponse, error)
 	// BatchGetUsers returns multiple users by ids.
 	BatchGetUsers(ctx context.Context, in *BatchGetUsersRequest, opts ...grpc.CallOption) (*BatchGetUsersResponse, error)
 	// UpdateUser updates mutable profile fields for a user.
@@ -53,6 +56,16 @@ func (c *userServiceClient) GetUser(ctx context.Context, in *GetUserRequest, opt
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetUserResponse)
 	err := c.cc.Invoke(ctx, UserService_GetUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) GetUserByUsername(ctx context.Context, in *GetUserByUsernameRequest, opts ...grpc.CallOption) (*GetUserByUsernameResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetUserByUsernameResponse)
+	err := c.cc.Invoke(ctx, UserService_GetUserByUsername_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -97,6 +110,8 @@ func (c *userServiceClient) ListUsers(ctx context.Context, in *ListUsersRequest,
 type UserServiceServer interface {
 	// GetUser returns a single user by id.
 	GetUser(context.Context, *GetUserRequest) (*GetUserResponse, error)
+	// GetUserByUsername returns public user fields by username.
+	GetUserByUsername(context.Context, *GetUserByUsernameRequest) (*GetUserByUsernameResponse, error)
 	// BatchGetUsers returns multiple users by ids.
 	BatchGetUsers(context.Context, *BatchGetUsersRequest) (*BatchGetUsersResponse, error)
 	// UpdateUser updates mutable profile fields for a user.
@@ -115,6 +130,9 @@ type UnimplementedUserServiceServer struct{}
 
 func (UnimplementedUserServiceServer) GetUser(context.Context, *GetUserRequest) (*GetUserResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetUser not implemented")
+}
+func (UnimplementedUserServiceServer) GetUserByUsername(context.Context, *GetUserByUsernameRequest) (*GetUserByUsernameResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetUserByUsername not implemented")
 }
 func (UnimplementedUserServiceServer) BatchGetUsers(context.Context, *BatchGetUsersRequest) (*BatchGetUsersResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method BatchGetUsers not implemented")
@@ -160,6 +178,24 @@ func _UserService_GetUser_Handler(srv interface{}, ctx context.Context, dec func
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(UserServiceServer).GetUser(ctx, req.(*GetUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_GetUserByUsername_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserByUsernameRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetUserByUsername(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_GetUserByUsername_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetUserByUsername(ctx, req.(*GetUserByUsernameRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -228,6 +264,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetUser",
 			Handler:    _UserService_GetUser_Handler,
+		},
+		{
+			MethodName: "GetUserByUsername",
+			Handler:    _UserService_GetUserByUsername_Handler,
 		},
 		{
 			MethodName: "BatchGetUsers",

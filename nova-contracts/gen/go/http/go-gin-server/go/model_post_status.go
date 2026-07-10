@@ -14,7 +14,8 @@ type PostStatus string
 
 // List of PostStatus
 const (
-	POST_STATUS_UNSPECIFIED PostStatus = "unspecified"
-	POST_STATUS_DRAFT       PostStatus = "draft"
-	POST_STATUS_PUBLISHED   PostStatus = "published"
+	POST_STATUS_UNSPECIFIED    PostStatus = "unspecified"
+	POST_STATUS_DRAFT          PostStatus = "draft"
+	POST_STATUS_PUBLISHED      PostStatus = "published"
+	POST_STATUS_PENDING_REVIEW PostStatus = "pending_review"
 )

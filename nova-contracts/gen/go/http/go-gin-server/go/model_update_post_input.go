@@ -9,9 +9,15 @@
 
 package openapi
 
+import (
+	"time"
+)
+
 // UpdatePostInput - Mutable post fields accepted when updating a post.
 type UpdatePostInput struct {
 	Title string `json:"title,omitempty"`
+
+	Summary string `json:"summary,omitempty"`
 
 	Content string `json:"content,omitempty"`
 
@@ -21,5 +27,8 @@ type UpdatePostInput struct {
 
 	CategoryId int64 `json:"category_id,omitempty"`
 
+	// Cover image object key or /uploads URL returned by file upload.
 	CoverUrl string `json:"cover_url,omitempty"`
+
+	PublishedAt *time.Time `json:"published_at,omitempty"`
 }

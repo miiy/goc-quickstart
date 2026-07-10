@@ -28,9 +28,10 @@ const (
 type FileScene int32
 
 const (
-	FileScene_FILE_SCENE_UNSPECIFIED FileScene = 0
-	FileScene_FILE_SCENE_AVATAR      FileScene = 1
-	FileScene_FILE_SCENE_POST_COVER  FileScene = 2
+	FileScene_FILE_SCENE_UNSPECIFIED  FileScene = 0
+	FileScene_FILE_SCENE_AVATAR       FileScene = 1
+	FileScene_FILE_SCENE_POST_COVER   FileScene = 2
+	FileScene_FILE_SCENE_POST_CONTENT FileScene = 3
 )
 
 // Enum value maps for FileScene.
@@ -39,11 +40,13 @@ var (
 		0: "FILE_SCENE_UNSPECIFIED",
 		1: "FILE_SCENE_AVATAR",
 		2: "FILE_SCENE_POST_COVER",
+		3: "FILE_SCENE_POST_CONTENT",
 	}
 	FileScene_value = map[string]int32{
-		"FILE_SCENE_UNSPECIFIED": 0,
-		"FILE_SCENE_AVATAR":      1,
-		"FILE_SCENE_POST_COVER":  2,
+		"FILE_SCENE_UNSPECIFIED":  0,
+		"FILE_SCENE_AVATAR":       1,
+		"FILE_SCENE_POST_COVER":   2,
+		"FILE_SCENE_POST_CONTENT": 3,
 	}
 )
 
@@ -423,11 +426,12 @@ const file_nova_file_v1_file_proto_rawDesc = "" +
 	"\acontent\x18\x04 \x01(\fB\n" +
 	"\xe0A\x02\xbaH\x04z\x02\x10\x01R\acontent\"<\n" +
 	"\x12UploadFileResponse\x12&\n" +
-	"\x04file\x18\x01 \x01(\v2\x12.nova.file.v1.FileR\x04file*Y\n" +
+	"\x04file\x18\x01 \x01(\v2\x12.nova.file.v1.FileR\x04file*v\n" +
 	"\tFileScene\x12\x1a\n" +
 	"\x16FILE_SCENE_UNSPECIFIED\x10\x00\x12\x15\n" +
 	"\x11FILE_SCENE_AVATAR\x10\x01\x12\x19\n" +
-	"\x15FILE_SCENE_POST_COVER\x10\x02*Z\n" +
+	"\x15FILE_SCENE_POST_COVER\x10\x02\x12\x1b\n" +
+	"\x17FILE_SCENE_POST_CONTENT\x10\x03*Z\n" +
 	"\n" +
 	"FileStatus\x12\x1b\n" +
 	"\x17FILE_STATUS_UNSPECIFIED\x10\x00\x12\x16\n" +

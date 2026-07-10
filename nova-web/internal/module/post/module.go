@@ -1,17 +1,16 @@
 package post
 
 import (
-	"github.com/miiy/goc-quickstart/nova-web/client"
-	websession "github.com/miiy/goc-quickstart/nova-web/internal/session"
-	"github.com/miiy/goc/logger"
+	postv1 "github.com/miiy/goc-quickstart/nova-web/gen/go/nova/post/v1"
+	userv1 "github.com/miiy/goc-quickstart/nova-web/gen/go/nova/user/v1"
 )
 
 type Module struct {
 	handler *PostsHandler
 }
 
-func NewModule(log logger.Logger, postClient *client.PostClient, fileClient *client.FileClient, sessionManager *websession.Manager) *Module {
+func NewModule(postClient postv1.PostServiceClient, userClient userv1.UserServiceClient) *Module {
 	return &Module{
-		handler: NewPostsHandler(log, postClient, fileClient, sessionManager),
+		handler: NewPostsHandler(postClient, userClient),
 	}
 }

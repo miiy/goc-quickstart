@@ -17,13 +17,10 @@ func TestNewViewDataIncludesSiteData(t *testing.T) {
 		Name:            "nova-web",
 		URL:             "https://example.test",
 		Locale:          "zh-CN",
-		FooterCopyright: "&copy; 2024",
+		RegisterEnabled: true,
 	})
 
-	c, _ := gin.CreateTestContext(httptest.NewRecorder())
-	c.Request = httptest.NewRequest(http.MethodGet, "/", nil)
-
-	view := NewViewData(c)
+	view := newTestViewData(t, nil)
 	if view.Site.Name != "nova-web" {
 		t.Fatalf("expected site name, got %q", view.Site.Name)
 	}
@@ -33,8 +30,8 @@ func TestNewViewDataIncludesSiteData(t *testing.T) {
 	if view.Site.Locale != "zh-CN" {
 		t.Fatalf("expected site locale, got %q", view.Site.Locale)
 	}
-	if string(view.Site.FooterCopyright) != "&copy; 2024" {
-		t.Fatalf("expected footer copyright, got %q", view.Site.FooterCopyright)
+	if !view.Site.RegisterEnabled {
+		t.Fatal("expected register enabled")
 	}
 	if view.Auth.IsLoggedIn {
 		t.Fatal("expected logged out auth data")
@@ -42,8 +39,8 @@ func TestNewViewDataIncludesSiteData(t *testing.T) {
 	if view.Auth.CurrentUser != nil {
 		t.Fatalf("expected no current user, got %#v", view.Auth.CurrentUser)
 	}
-	if view.CSRFToken != "" {
-		t.Fatalf("expected no csrf token for logged out view, got %q", view.CSRFToken)
+	if view.CSRFToken == "" {
+		t.Fatal("expected csrf token")
 	}
 }
 
@@ -77,6 +74,28 @@ func TestNewViewDataIncludesAuthData(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Fatalf("GET / got %d", w.Code)
 	}
+}
+
+func newTestViewData(t *testing.T, user *gocauth.AuthenticatedUser) ViewData {
+	t.Helper()
+
+	var view ViewData
+	r := gin.New()
+	r.Use(sessions.Middleware("sess", sessions.NewCookieStore("test-secret")))
+	r.GET("/", func(c *gin.Context) {
+		if user != nil {
+			authctx.SetUser(c, user)
+		}
+		view = NewViewData(c)
+		c.Status(http.StatusOK)
+	})
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/", nil))
+	if w.Code != http.StatusOK {
+		t.Fatalf("GET / got %d", w.Code)
+	}
+	return view
 }
 
 func TestNewFormatTimeFunc(t *testing.T) {

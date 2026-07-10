@@ -4,6 +4,10 @@
 package di
 
 import (
+	"errors"
+	"net/http"
+	"strings"
+
 	"github.com/google/wire"
 	authv1 "github.com/miiy/goc-quickstart/nova-gateway/gen/go/nova/auth/v1"
 	filev1 "github.com/miiy/goc-quickstart/nova-gateway/gen/go/nova/file/v1"
@@ -17,6 +21,7 @@ import (
 	"github.com/miiy/goc-quickstart/nova-gateway/internal/module/file"
 	"github.com/miiy/goc-quickstart/nova-gateway/internal/module/post"
 	"github.com/miiy/goc-quickstart/nova-gateway/internal/module/user"
+	"github.com/miiy/goc/gin/sessions"
 	"github.com/miiy/goc/logger"
 )
 
@@ -29,6 +34,7 @@ func InitApp(conf string) (*app.App, func(), error) {
 		providePostClient,
 		provideFileClient,
 		provideUserClient,
+		provideSessionStore,
 		provideModules,
 		app.NewApp,
 	))
@@ -64,6 +70,49 @@ func provideFileClient(clients *client.Clients) filev1.FileServiceClient {
 
 func provideUserClient(clients *client.Clients) userv1.UserServiceClient {
 	return clients.User
+}
+
+func provideSessionStore(cfg *config.Config) (sessions.Store, error) {
+	if !sessionConfigured(cfg) {
+		return nil, nil
+	}
+	if strings.TrimSpace(cfg.Redis.Addr) == "" {
+		return nil, errors.New("session redis addr is required")
+	}
+	if strings.TrimSpace(cfg.Session.Name) == "" {
+		return nil, errors.New("session name is required")
+	}
+	if strings.TrimSpace(cfg.Session.Secret) == "" {
+		return nil, errors.New("session secret is required")
+	}
+
+	store, err := sessions.NewRedisStore(10, "tcp", cfg.Redis.Addr, cfg.Redis.Password, []byte(cfg.Session.Secret))
+	if err != nil {
+		return nil, err
+	}
+	if err := sessions.UseJSONSerializer(store); err != nil {
+		return nil, err
+	}
+	store.Options(sessions.Options{
+		Path:     "/",
+		Domain:   cfg.Session.Domain,
+		MaxAge:   cfg.Session.MaxAge,
+		Secure:   cfg.Session.Secure,
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	})
+	if cfg.Session.MaxAge > 0 {
+		if err := sessions.SetMaxAge(store, cfg.Session.MaxAge); err != nil {
+			return nil, err
+		}
+	}
+	return store, nil
+}
+
+func sessionConfigured(cfg *config.Config) bool {
+	return strings.TrimSpace(cfg.Redis.Addr) != "" ||
+		strings.TrimSpace(cfg.Session.Name) != "" ||
+		strings.TrimSpace(cfg.Session.Secret) != ""
 }
 
 func provideModules(
